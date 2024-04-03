@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="login.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
-
+    
 <body>
     <div class="header">
         <a href="#default"><img src="slsulogo.png" class="headlogo"></a>
@@ -23,12 +24,15 @@
                 <div class="card-body">
                     <form action="" method="">
                         <div class="form-group">
-                            <label for="name">Username</label>
-                            <input type="name" id="name" class="form-control" name=""/>
+                            <input type="name" id="name" class="form-control" name="" placeholder="Username" required/>
+                            <i class='bx bxs-user'></i>
                         </div>
                         <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" class="form-control" name=""/>
+                            <input type="password" id="password" class="form-control" name="" placeholder="Password" required/>
+                            <i class='bx bxs-lock-alt' ></i>
+                        </div>
+                        <div class="remember-forgot">
+                            <label><input type="checkbox">Remember me</label>
                         </div>
                         <input type="submit" class="btn btn-primary" value="Login" name="">
                     </form>
