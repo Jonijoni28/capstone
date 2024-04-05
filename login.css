@@ -32,10 +32,10 @@ h1 {
  }
 
 body {
-    width: 100%;
-    height: 400px;
-    background-image: url('nstp.jpg');
+    background: url('nstp.jpg') no-repeat;
+    background-position: center;
     background-size: cover;
+    height: 100vh;
   }
 
 
@@ -46,7 +46,7 @@ body {
     backdrop-filter: blur(20px);
     box-shadow: 0 0 10px rgba(0, 0, 0, .2);
     color: #fff;
-    top: 250px; 
+    top: 220px; 
     left: 550px;
     position:absolute;
     border-radius: 10px;
@@ -62,6 +62,7 @@ body {
     width: 100%;
     height: 50px;
     margin: 30px 0;
+    margin-bottom: 10px;
     
 }
 
@@ -85,8 +86,7 @@ body {
 .form-group i {
     position:absolute;
     right: 55px;
-
-    transform: translateY(-50%);
+    transform: translateY(70%);
     font-size: 20px;
 
 }
@@ -95,13 +95,14 @@ body {
     display: flex;
     justify-content: space-between;
     font-size: 14.5px;
-    margin: -15px 0 15px;
+  
 }
 
 
 .remember-forgot label input{
     accent-color: #fff;
     margin-right: 3px;
+    margin-bottom: 40px;
 }
 
 .container .btn {
@@ -116,4 +117,107 @@ body {
     font-size: 16px;
     color:#0a3a20;
     font-weight: 600;
+    margin-bottom: 5px;
+}
+
+@media (max-width: 700px) {
+    .header {
+        overflow: hidden;
+        background-color: #0a3a20;
+        color: white; 
+    }
+    
+    h1 {
+        margin-top: 20px;
+        margin-left: 80px;
+        font-size: 17px;
+    }
+    
+    .header p{
+        margin-left: 80px;
+        font-size: 15px;
+    }
+    
+    .headlogo{
+        width:-60%;
+        height:60px;   
+        float:left;
+        margin-top:10px;
+        margin-left: 10px;
+        margin-bottom: 10px;
+     }
+     
+    .header {
+        overflow: hidden;
+        background-color: #0a3a20;
+        color: white;
+    }
+}
+
+@media (max-width: 424px) {
+    .header {
+        overflow: hidden;
+        background-color: #0a3a20;
+        color: white; 
+    }
+    
+    h1 {
+        margin-top: 20px;
+        margin-left: 85px;
+        font-size: 15px;
+    }
+    
+    .header p{
+        margin-left: 85px;
+        font-size: 13px;
+    }
+    
+    .headlogo{
+        width:-60%;
+        height:60px;   
+        float:left;
+        margin-top:10px;
+        margin-left:15px;
+        margin-bottom: 10px;
+     }
+     
+    .header {
+        overflow: hidden;
+        background-color: #0a3a20;
+        color: white;
+    }
+}
+
+@media (max-width: 374px) {
+    .header {
+        overflow: hidden;
+        background-color: #0a3a20;
+        color: white; 
+    }
+    
+    h1 {
+        margin-top: 20px;
+        margin-left: 70px;
+        font-size: 12px;
+    }
+    
+    .header p{
+        margin-left: 70px;
+        font-size: 10px;
+    }
+    
+    .headlogo{
+        width:-50%;
+        height:50px;   
+        float:left;
+        margin-top:10px;
+        margin-left:10px;
+        margin-bottom: 10px;
+     }
+     
+    .header {
+        overflow: hidden;
+        background-color: #0a3a20;
+        color: white;
+    }
 }
