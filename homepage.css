@@ -36,35 +36,6 @@ h1 {
     color: white;
 }
 
-
-.navbar {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.navbar .links{
-    display: flex;
-    gap: 2rem;
-    margin-left: 500px;
-    margin-top: -120px;
-}
-
-.navbar li{
-    display: inline-block;
-    list-style: none;
-}
-
-.navbar li a {
-    font-size: 25px;
-    padding: 0px 50px;
-    color: white;
-    text-decoration: none;
-}
-
 .navbar li a:hover {
     color:#00f974;
     transition: all 0.4s ease 0s;
@@ -73,7 +44,7 @@ h1 {
 .navbar .toggle_btn {
     display: none;
     margin-top: -120px;
-    margin-left: 170px;
+   
     color: white;
     font-size: 1.5rem;
     cursor: pointer;
@@ -81,8 +52,9 @@ h1 {
 }
 
 .action_btn {
-    margin-top: -120px;
-    margin-right: -130px;
+    
+    margin-top: -80px;
+    margin-right: 30px;
     float: right;
     background-color: rgb(21, 134, 72);
     color: #fff;
@@ -169,7 +141,7 @@ label #cancel{
     left: -195px;
     top: 130px;
     font-size: 30px;
-    color: #fff;
+    color: #fff ;
     padding: 4px 9px;
     transition:  all .5s ease;
 }
@@ -332,7 +304,7 @@ label #cancel{
     }
 
     .navbar .toggle_btn {
-        margin-top: -100px;
+        margin-top: -80px;
         margin-left: 340px;
          color: white;
          font-size: 1.2rem;

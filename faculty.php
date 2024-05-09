@@ -23,13 +23,13 @@
                     <h2>Login Form</h2>
                 </div>
                 <div class="card-body">
-                    <form action="" method="">
+                    <form action="faculty_login.php" method="post">
                         <div class="form-group">
-                            <input type="name" id="name" class="form-control" name="" placeholder="Username" required/>
+                            <input type="name" id="name" class="form-control" name="username" placeholder="Username" required/>
                             <i class='bx bxs-user'></i>
                         </div>
                         <div class="form-group">
-                            <input type="password" id="password" class="form-control" name="" placeholder="Password" required/>
+                            <input type="password" id="password" class="form-control" name="password" placeholder="Password" required/>
                             <i class='bx bxs-lock-alt' ></i>
                         </div>
                         <div class="remember-forgot">
