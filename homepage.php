@@ -32,11 +32,11 @@
             <div class="sidebar">
             <header>Administrator</header>
             <ul> 
-                <li><a href="dashboard.html"><i class="fas fa-qrcode"></i>Dashboard</a></li>
-                <li><a href="viewgrades.html"><i class="fas fa-link"></i>View Grades</a></li>
-                <li><a href="cwtsStud.html"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
-                <li><a href="rotcStud.html"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
-                <li><a href="instructor.html"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
+                <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
+                <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
+                <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
+                <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
+                <li><a href="instructor.php"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
             </ul>
             </div>
             

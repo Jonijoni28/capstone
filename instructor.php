@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
     integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" type="text/css" href="dashboard.css">
+    <link rel="stylesheet" type="text/css" href="instructor.css">
 
     <div class="header">
         <a href="login.html"><img src="slsulogo.png" class="headlogo"></a>
@@ -34,11 +34,11 @@
         <div class="sidebar">
         <header>Administrator</header>
         <ul> 
-            <li><a href="dashboard.html"><i class="fas fa-qrcode"></i>Dashboard</a></li>
-            <li><a href="viewgrades.html"><i class="fas fa-link"></i>View Grades</a></li>
-            <li><a href="cwtsStud.html"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
-            <li><a href="rotcStud.html"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
-            <li><a href="instructor.html"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
+            <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
+            <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
+            <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
+            <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
+            <li><a href="instructor.php"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
         </ul>
         </div>
 

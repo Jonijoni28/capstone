@@ -15,7 +15,7 @@
             $data = $stmt_results->fetch_assoc();
             if($data['password'] === $password) {
                 echo "<h2>Login Successfully</h2>";
-                echo "<script>window.location = 'homepage.html' </script>";
+                echo "<script>window.location = 'homepage.php' </script>";
             } else {
                echo "<h2>Invalid Email or password</h2>";
             }

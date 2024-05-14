@@ -48,7 +48,7 @@ $results = $conn->query($sql);
     <tbody id="tableBody">
       <?php
       while ($rows = $results->fetch_assoc()) {
-        if ($rows["nstp"] === "CWTS") {
+        if ($rows["nstp"] === "ROTC") {
           echo "<tr data-id='" . $rows["school_id"] . "'>";
           echo "<td>" . $rows["school_id"] . "</td>";
           echo "<td>" . $rows["first_name"] . "</td>";
@@ -111,8 +111,8 @@ $results = $conn->query($sql);
       </select><br>
 
       <label for="editNSTP">NSTP:</label>
-      <select id="editNSTP" name="nstp">
-        <option value="CWTS">CWTS</option>
+      <select id="editNSTP" name="nstp" required>
+        <option value="ROTC">ROTC</option>
       </select>
 
       <label for="editDepartment">Department:</label>
@@ -148,7 +148,7 @@ $results = $conn->query($sql);
 
       <label for="addNSTP">NSTP:</label>
       <select id="addNSTP" name="nstp">
-        <option value="CWTS">CWTS</option>
+        <option value="CWTS">ROTC</option>
       </select><br>
 
       <label for="addDepartment">Department:</label>

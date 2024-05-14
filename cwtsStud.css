@@ -4,12 +4,12 @@
     list-style: none;
     text-decoration: none;
 }
- 
+
 .header {
     overflow: hidden;
     background-color: #0a3a20;
     color: white;
-    
+
 }
 
 h1 {
@@ -17,38 +17,38 @@ h1 {
     margin-left: 150px;
 }
 
-.header p{
+.header p {
     margin-left: 150px;
     font-size: 20px;
 }
 
-.headlogo{
-    width:-100%;
-    height:100px;   
-    float:left;
-    margin-top:10px;
-    margin-left:20px;
+.headlogo {
+    width: -100%;
+    height: 100px;
+    float: left;
+    margin-top: 10px;
+    margin-left: 20px;
     margin-bottom: 10px;
- }
+}
 
- .firstlogo{
-    width:-150%;
-    height:150px;   
-    float:right;
-    margin-top:10px;
-    margin-left:20px;
+.firstlogo {
+    width: -150%;
+    height: 150px;
+    float: right;
+    margin-top: 10px;
+    margin-left: 20px;
     margin-bottom: 10px;
- }
+}
 
- .secondlogo{
-    width:-150%;
-    height:150px;   
-    float:left;
-    margin-top:10px;
-    margin-left:20px;
+.secondlogo {
+    width: -150%;
+    height: 150px;
+    float: left;
+    margin-top: 10px;
+    margin-left: 20px;
     margin-bottom: 10px;
- }
- 
+}
+
 .header {
     overflow: hidden;
     background-color: #0a3a20;
@@ -61,10 +61,10 @@ body {
     background-position: center;
     background-size: cover;
     height: 100vh;
-  }
+}
 
-  .navbar li a:hover {
-    color:#00f974;
+.navbar li a:hover {
+    color: #00f974;
     transition: all 0.4s ease 0s;
 }
 
@@ -78,7 +78,7 @@ body {
 }
 
 .action_btn {
-    
+
     margin-top: -80px;
     margin-right: 50px;
     float: right;
@@ -93,7 +93,7 @@ body {
     cursor: pointer;
 }
 
-.action_btn:hover{
+.action_btn:hover {
     scale: 1.05;
     color: #fff;
 }
@@ -113,7 +113,7 @@ body {
     transition: all .5s ease;
 }
 
-.sidebar header{
+.sidebar header {
     font-size: 22px;
     color: white;
     text-align: center;
@@ -122,7 +122,7 @@ body {
     user-select: none;
 }
 
-.sidebar ul a{
+.sidebar ul a {
     display: block;
     height: 100%;
     width: 100%;
@@ -136,24 +136,27 @@ body {
     transition: .4s;
 }
 
-ul li:hover a{
+ul li:hover a {
     padding-left: 50px;
 }
 
-.sidebar ul a i{
+.sidebar ul a i {
     margin-right: 16px;
 }
 
-#check{
+#check {
     display: none;
 }
-label #btn,label #cancel{
+
+label #btn,
+label #cancel {
     position: absolute;
     cursor: pointer;
     background: #0a3a20;
     border-radius: 3px;
 }
-label #btn{
+
+label #btn {
     left: 20px;
     top: 130px;
     font-size: 35px;
@@ -162,60 +165,65 @@ label #btn{
     transition: all .5s;
 }
 
-label #cancel{
+label #cancel {
     z-index: 1111;
     left: -195px;
     top: 130px;
     font-size: 30px;
-    color: #fff ;
+    color: #fff;
     padding: 4px 9px;
-    transition:  all .5s ease;
+    transition: all .5s ease;
 }
-#check:checked ~ .sidebar{
+
+#check:checked~.sidebar {
     left: 0;
 }
-#check:checked ~ label #btn{
+
+#check:checked~label #btn {
     left: 250px;
     opacity: 0;
     pointer-events: none;
 }
-#check:checked ~ label #cancel{
+
+#check:checked~label #cancel {
     left: 195px;
-   
+
 }
-#check:checked ~ body{
+
+#check:checked~body {
     margin-left: 250px;
 }
 
 table {
     position: absolute;
     top: 200px;
-    right:0px;
+    right: 0px;
     width: 83.5%;
     border-collapse: collapse;
     border: 2px solid #dddddd;
     background-color: #f9f9f9;
-  }
-  
-  th, td {
+}
+
+th,
+td {
     border: 1px solid #dddddd;
     text-align: left;
     padding: 8px;
-  }
-  
-  th {
+}
+
+th {
     background-color: #f2f2f2;
-  }
-  
-  tr:nth-child(even) {
+}
+
+tr:nth-child(even) {
     background-color: #f2f2f2;
-  }
-  
-  .button-container {
+}
+
+.button-container {
     margin-bottom: 10px;
-  }
-  
-  .button-container button {
+}
+
+.button-container button {
     position: relative;
     top: 470px;
     left: 400px;
@@ -223,13 +231,13 @@ table {
     padding: 15px 30px;
     border-radius: 5px;
     cursor: pointer;
-  }
-  
-  .button-container button:last-child {
-    margin-right: 50;
-  }
+}
 
-  .button-container button:hover{
+.button-container button:last-child {
+    margin-right: 50;
+}
+
+.button-container button:hover {
     scale: 1.05;
     color: #000000;
 }
@@ -239,16 +247,53 @@ table {
 }
 
 .search-container {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .search-container input[type=text] {
     position: relative;
     top: 20px;
     right: -1200px;
-  padding: 10px;
-  width: 300px;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+    padding: 10px;
+    width: 300px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Centering the dialog */
+dialog {
+    width: 300px;
+    padding: 20px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+}
+
+/* Blurring the background */
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+/* Form styling */
+#editForm {
+    display: flex;
+    flex-direction: column;
+}
+
+#editForm label {
+    margin: 5px 0 2px;
+}
+
+#editForm input {
+    margin-bottom: 10px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
