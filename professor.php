@@ -10,7 +10,7 @@
     <link rel="stylesheet" type="text/css" href="homepage.css">
 
     <div class="header">
-        <a href="prof.php"><img src="slsulogo.png" class="headlogo"></a>
+        <a href="professor.php"><img src="slsulogo.png" class="headlogo"></a>
         <h1>Southern Luzon State University</h1>
         <p>National Service Training Program</p>
         </div>
@@ -30,14 +30,10 @@
                 <i class="fas fa-times" id="cancel"></i>
             </label>
             <div class="sidebar">
-            <header>Administrator</header>
+            <header>Instructor</header>
             <ul> 
-                <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
-                <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
-                <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
-                <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
-                <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
-                <li><a href="instructor.php"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
+                <li><a href="professor.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
+                <li><a href="inputgrades.php"><i class="fas fa-link"></i>Input Grades</a></li>
             </ul>
             </div>
             

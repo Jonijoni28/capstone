@@ -10,7 +10,7 @@
     <link rel="stylesheet" type="text/css" href="viewgrades.css">
 
     <div class="header">
-        <a href="login.html"><img src="slsulogo.png" class="headlogo"></a>
+        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
         <h1>Southern Luzon State University</h1>
         <p>National Service Training Program</p>
         </div>
@@ -34,6 +34,7 @@
         <div class="sidebar">
         <header>Administrator</header>
         <ul> 
+            <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
             <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
             <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
             <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>

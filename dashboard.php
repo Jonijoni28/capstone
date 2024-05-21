@@ -10,7 +10,7 @@
     <link rel="stylesheet" type="text/css" href="dashboard.css">
 
     <div class="header">
-        <a href="login.html"><img src="slsulogo.png" class="headlogo"></a>
+        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
         <h1>Southern Luzon State University</h1>
         <p>National Service Training Program</p>
         </div>
@@ -23,6 +23,20 @@
 </head>
 
 <body>
+<div class="dashboard">
+        <div class="box">
+            <h3>Total Students</h3>
+            <p id="total-students"><?php echo $totalStudents; ?></p>
+        </div>
+        <div class="box">
+            <h3>ROTC Students</h3>
+            <p id="rotc-students"><?php echo $rotcStudents; ?></p>
+        </div>
+        <div class="box">
+            <h3>CWTS Students</h3>
+            <p id="cwts-students"><?php echo $cwtsStudents; ?></p>
+        </div>
+    </div>
 
     <body>
        
@@ -34,6 +48,7 @@
         <div class="sidebar">
         <header>Administrator</header>
         <ul> 
+            <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
             <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
             <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
             <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>

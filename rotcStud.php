@@ -22,7 +22,7 @@ $results = $conn->query($sql);
 
 <body>
   <div class="header">
-    <a href="login.html"><img src="slsulogo.png" class="headlogo"></a>
+    <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
     <h1>Southern Luzon State University</h1>
     <p>National Service Training Program</p>
   </div>
@@ -46,25 +46,26 @@ $results = $conn->query($sql);
       </tr>
     </thead>
     <tbody id="tableBody">
-      <?php
-      while ($rows = $results->fetch_assoc()) {
-        if ($rows["nstp"] === "ROTC") {
-          echo "<tr data-id='" . $rows["school_id"] . "'>";
-          echo "<td>" . $rows["school_id"] . "</td>";
-          echo "<td>" . $rows["first_name"] . "</td>";
-          echo "<td>" . $rows["last_name"] . "</td>";
-          echo "<td>" . $rows["gender"] . "</td>";
-          echo "<td>" . $rows["nstp"] . "</td>";
-          echo "<td>" . $rows["deparment"] . "</td>";
-          echo "<td>" . $rows["course"] . "</td>";
-          echo "<td>";
-          echo "<button id=\"editBtn\" class='editButton' onclick=\"editStudentInfo(this)\">Edit</button>";
-          echo "<button id=\"deleteBtn\" class='deleteButton' onclick=\"deleteStudent(this)\">Delete</button>";
-          echo "</td>";
-          echo "</tr>";
-        }
-      }
-      ?>
+    <?php
+while ($rows = $results->fetch_assoc()) {
+    if ($rows["nstp"] === "ROTC") {
+        echo "<tr data-id='" . $rows["school_id"] . "'>";
+        echo "<td>" . $rows["school_id"] . "</td>";
+        echo "<td>" . $rows["first_name"] . "</td>";
+        echo "<td>" . $rows["last_name"] . "</td>";
+        echo "<td>" . $rows["gender"] . "</td>";
+        echo "<td>" . $rows["nstp"] . "</td>";
+        echo "<td>" . $rows["deparment"] . "</td>";
+        echo "<td>" . $rows["course"] . "</td>";
+        echo "<td>";
+        echo "<button id='editBtn' class='editButton' onclick='editStudentInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
+        echo "<button id='deleteBtn' class='deleteButton' onclick='deleteStudent(this)'><i class='fa-solid fa-trash'></i></button>";
+        echo "</td>";
+        echo "</tr>";
+    }
+}
+?>
+
 
     </tbody>
   </table>
@@ -77,6 +78,7 @@ $results = $conn->query($sql);
   <div class="sidebar">
     <header>Administrator</header>
     <ul>
+      <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
       <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
       <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
       <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
@@ -86,7 +88,7 @@ $results = $conn->query($sql);
   </div>
   <div class="search-container">
     <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by First Name...">
-    <button id="addBtn" class="addButton" onclick="openAddModal()">Add student</button>
+    <button id="addBtn" class="addButton" onclick="openAddModal()"><i class="fa-solid fa-plus"></i></button>
   </div>
   <div class="button-container">
   </div>
@@ -148,7 +150,7 @@ $results = $conn->query($sql);
 
       <label for="addNSTP">NSTP:</label>
       <select id="addNSTP" name="nstp">
-        <option value="CWTS">ROTC</option>
+        <option value="ROTC">ROTC</option>
       </select><br>
 
       <label for="addDepartment">Department:</label>

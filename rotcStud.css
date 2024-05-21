@@ -186,3 +186,103 @@ label #cancel{
 #check:checked ~ body{
     margin-left: 250px;
 }
+
+.editButton {
+    background-color: #007bff; /* Blue background */
+    border: none; /* Remove borders */
+    color: white; /* White text */
+    padding: 6px 10px; /* Some padding */
+    text-align: center; /* Center the text (if any) */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Make the button an inline-block element */
+    font-size: 16px; /* Increase font size */
+    margin: 0px 5px;
+    cursor: pointer; /* Add a pointer on hover */
+    border-radius: 12px; /* Rounded corners */
+}
+
+/* Hover effect for the edit button */
+.editButton:hover {
+    background-color: #0a007d; /* Darker green background on hover */
+}
+
+/* Style for the icon inside the button */
+.editButton .fa-pen-to-square {
+    font-size: 18px; /* Adjust the icon size */
+    color: white; /* Icon color */
+    vertical-align: middle; /* Vertically align icon with text */
+}
+
+/* If you want to add more padding or margin to the icon specifically */
+.editButton .fa-pen-to-square {
+    margin-left: 5px; /* Add some space to the left of the icon */
+    margin-right: 5px; /* Add some space to the right of the icon */
+}
+
+.deleteButton {
+    background-color: #d01919; /* Green background */
+    border: none; /* Remove borders */
+    color: white; /* White text */
+    padding: 6px 17px; /* Some padding */
+    text-align: center; /* Center the text (if any) */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Make the button an inline-block element */
+    font-size: 16px; /* Increase font size */
+    margin: 4px; /* Some margin */
+    cursor: pointer; /* Add a pointer on hover */
+    border-radius: 12px; /* Rounded corners */
+}
+
+/* Hover effect for the edit button */
+.deleteButton:hover {
+    background-color: #6c0000; /* Darker green background on hover */
+}
+
+/* Style for the icon inside the button */
+.deleteButton .fa-pen-to-square {
+    font-size: 18px; /* Adjust the icon size */
+    color: white; /* Icon color */
+    vertical-align: middle; /* Vertically align icon with text */
+}
+
+/* If you want to add more padding or margin to the icon specifically */
+.deleteButton .fa-pen-to-square {
+    margin-left: 5px; /* Add some space to the left of the icon */
+    margin-right: 5px; /* Add some space to the right of the icon */
+}
+
+/* Style for the add button */
+.addButton {
+    position: absolute;
+    background-color: #218e25; /* Green background */
+    
+    border: none; /* Remove borders */
+    color: white; /* White text */
+    padding: 15px 15px; /* Some padding */
+    text-align: center; /* Center the text (if any) */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Make the button an inline-block element */
+    font-size: 16px; /* Increase font size */
+    margin: 14px -40px; /* Some margin */
+    cursor: pointer; /* Add a pointer on hover */
+    border-radius: 12px; /* Rounded corners */
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+/* Hover effect for the add button */
+.addButton:hover {
+    background-color: #004310; /* Darker blue background on hover */
+}
+
+/* Style for the icon inside the button */
+.addButton .fa-plus {
+    font-size: 18px; /* Adjust the icon size */
+    color: white; /* Icon color */
+    vertical-align: middle; /* Vertically align icon with text */
+}
+
+/* Additional padding or margin for the icon */
+.addButton .fa-plus {
+    margin-left: 5px; /* Add some space to the left of the icon */
+    margin-right: 5px; /* Add some space to the right of the icon */
+}

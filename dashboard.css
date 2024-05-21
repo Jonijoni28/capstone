@@ -186,3 +186,29 @@ label #cancel{
 #check:checked ~ body{
     margin-left: 250px;
 }
+
+.dashboard {
+    display: flex;
+    gap: 20px;
+}
+
+.box {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+    width: 150px;
+}
+
+h3 {
+    margin: 0 0 10px;
+    font-size: 1.2em;
+    color: #333;
+}
+
+p {
+    margin: 0;
+    font-size: 2em;
+    color: #555;
+}
