@@ -1,3 +1,7 @@
+<?php
+    require_once("dashboardPHP.php");
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,15 +30,15 @@
 <div class="dashboard">
         <div class="box">
             <h3>Total Students</h3>
-            <p id="total-students"><?php echo $totalStudents; ?></p>
+            <p id="total-students"><?php echo get_all_student_count() ?></p>
         </div>
         <div class="box">
             <h3>ROTC Students</h3>
-            <p id="rotc-students"><?php echo $rotcStudents; ?></p>
+            <p id="rotc-students"><?php echo get_rotc_student_count() ?></p>
         </div>
         <div class="box">
             <h3>CWTS Students</h3>
-            <p id="cwts-students"><?php echo $cwtsStudents; ?></p>
+            <p id="cwts-students"><?php echo get_cwts_student_count() ?></p>
         </div>
     </div>
 

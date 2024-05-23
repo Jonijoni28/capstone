@@ -1,52 +1,64 @@
 <?php
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "registration";
+require_once ("db_conn.php");
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = connect_db();
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+$all_student_count_statement = 
+    "SELECT COUNT(*) FROM (SELECT `school_id` from `tbl_cwts`) as id";
+$all_rotc_count_statement = 
+    "SELECT COUNT(*) FROM 
+    (SELECT `school_id` from `tbl_cwts` WHERE `nstp` = \"ROTC\") as id";
+$all_cwts_count_statement = "SELECT COUNT(*) FROM 
+    (SELECT `school_id` from `tbl_cwts` WHERE `nstp` = \"CWTS\") as id";
+
+global $conn, $all_student_count_statement, $all_rotc_count_statement, 
+    $all_cwts_count_statement;
+
+function get_sql_query_result(string $query): bool | mysqli_result {
+    global $conn;
+
+    $result = $conn->query($query);
+
+    if ($conn->error) {
+        error_log("SQL Error: ".$conn->error);
+        return false;
+    }
+
+    return $result;
 }
 
-// Initialize variables to avoid undefined variable errors
-$totalStudents = 0;
-$rotcStudents = 0;
-$cwtsStudents = 0;
+function get_all_student_count(): int | string {
+    global $all_student_count_statement;
 
-// Query to get total students
-$totalQuery = "SELECT COUNT(*) as total FROM tbl_cwts";
-$totalResult = $conn->query($totalQuery);
+    $result = get_sql_query_result($all_student_count_statement);
 
-if ($totalResult) {
-    $totalStudents = $totalResult->fetch_assoc()['total'];
-} else {
-    echo "Error: " . $conn->error;
+    $row = $result->fetch_assoc();
+
+    $result->free_result();
+
+    return intval($row['COUNT(*)']);
 }
 
-// Query to get ROTC students
-$rotcQuery = "SELECT COUNT(*) as total FROM tbl_cwts WHERE nstp='ROTC'";
-$rotcResult = $conn->query($rotcQuery);
+function get_rotc_student_count(): int | string {
+    global $all_rotc_count_statement;
 
-if ($rotcResult) {
-    $rotcStudents = $rotcResult->fetch_assoc()['total'];
-} else {
-    echo "Error: " . $conn->error;
+    $result = get_sql_query_result($all_rotc_count_statement);
+
+    $row = $result->fetch_assoc();
+
+    $result->free_result();
+
+    return intval($row['COUNT(*)']);
 }
 
-// Query to get CWTS students
-$cwtsQuery = "SELECT COUNT(*) as total FROM tbl_cwts WHERE nstp='CWTS'";
-$cwtsResult = $conn->query($cwtsQuery);
+function get_cwts_student_count(): int | string {
+    global $all_cwts_count_statement;
+    
+    $result = get_sql_query_result($all_cwts_count_statement);
 
-if ($cwtsResult) {
-    $cwtsStudents = $cwtsResult->fetch_assoc()['total'];
-} else {
-    echo "Error: " . $conn->error;
+    $row = $result->fetch_assoc();
+
+    $result->free_result();
+
+    return intval($row['COUNT(*)']);
 }
-
-$conn->close();
-?>

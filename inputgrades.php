@@ -2,7 +2,24 @@
 require_once ("db_conn.php");
 
 $conn = connect_db();
-$sql = "SELECT * FROM tbl_cwts";
+$sql = "SELECT 
+c.school_id, 
+c.first_name, 
+c.last_name, 
+c.gender,
+c.nstp,
+c.deparment,
+c.course,
+g.grades_id,
+g.prelim, 
+g.midterm, 
+g.finals
+FROM 
+tbl_cwts c
+LEFT JOIN 
+tbl_students_grades g
+ON 
+c.school_id = g.school_id";
 $results = $conn->query($sql);
 ?>
 
@@ -42,28 +59,33 @@ $results = $conn->query($sql);
         <th>NSTP</th>
         <th>Department</th>
         <th>Course</th>
+        <th>Prelims</th>
+        <th>Midterms</th>
+        <th>Finals</th>
         <th>Actions</th>
       </tr>
     </thead>
     <tbody id="tableBody">
       <?php
       while ($rows = $results->fetch_assoc()) {
-    
-          echo "<tr data-id='" . $rows["school_id"] . "'>";
-          echo "<td>" . $rows["school_id"] . "</td>";
-          echo "<td>" . $rows["first_name"] . "</td>";
-          echo "<td>" . $rows["last_name"] . "</td>";
-          echo "<td>" . $rows["gender"] . "</td>";
-          echo "<td>" . $rows["nstp"] . "</td>";
-          echo "<td>" . $rows["deparment"] . "</td>";
-          echo "<td>" . $rows["course"] . "</td>";
-          echo "<td>";
-          echo "<button id='editBtn' class='editButton' onclick='editStudentInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
-          echo "<button id='deleteBtn' class='deleteButton' onclick='deleteStudent(this)'><i class='fa-solid fa-trash'></i></button>";
-          echo "</td>";
-          echo "</tr>";
-        }
-      
+
+        echo "<tr data-id='" . $rows["grades_id"] . "'>";
+        echo "<td>" . $rows["school_id"] . "</td>";
+        echo "<td>" . $rows["first_name"] . "</td>";
+        echo "<td>" . $rows["last_name"] . "</td>";
+        echo "<td>" . $rows["gender"] . "</td>";
+        echo "<td>" . $rows["nstp"] . "</td>";
+        echo "<td>" . $rows["deparment"] . "</td>";
+        echo "<td>" . $rows["course"] . "</td>";
+        echo "<td>" . $rows["prelim"] . "</td>";
+        echo "<td>" . $rows["midterm"] . "</td>";
+        echo "<td>" . $rows["finals"] . "</td>";
+        echo "<td>";
+        echo "<button id='editBtn' class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
+        echo "</td>";
+        echo "</tr>";
+      }
+
       ?>
 
     </tbody>
@@ -91,35 +113,18 @@ $results = $conn->query($sql);
   <!-- Add this HTML for the modal dialog inside the <body> tag -->
   <dialog id="editModal">
     <form method="dialog" id="editForm">
-      <h2>Edit Student Information</h2>
-      <label for="editSchoolId">School ID:</label>
-      <input type="text" id="editSchoolId" name="school_id" readonly><br>
+      <h2>Edit Student Grades</h2>
+      <label for="editPrelims">Prelims:</label>
+      <input type="text" id="editPrelim" name="prelim" required><br>
 
-      <label for="editFirstName">First Name:</label>
-      <input type="text" id="editFirstName" name="first_name" required><br>
+      <label for="editMidterm">Midterms:</label>
+      <input type="text" id="editMidterm" name="midterm" required><br>
 
-      <label for="editLastName">Last Name:</label>
-      <input type="text" id="editLastName" name="last_name" required><br>
-
-      <label for="editGender">Gender:</label>
-      <select id="editGender" name="gender" required>
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-      </select><br>
-
-      <label for="editNSTP">NSTP:</label>
-      <select id="editNSTP" name="nstp">
-        <option value="CWTS">CWTS</option>
-      </select>
-
-      <label for="editDepartment">Department:</label>
-      <input type="text" id="editDepartment" name="department" required><br>
-
-      <label for="editCourse">Course:</label>
-      <input type="text" id="editCourse" name="course" required><br>
+      <label for="editFinals">Finals:</label>
+      <input type="text" id="editFinals" name="finals" required><br>
 
       <button type="submit">Save</button>
-      <button type="button" onclick="closeModal()">Cancel</button>
+      <button type="button" onclick="closeEditModal()">Cancel</button>
     </form>
   </dialog>
 
@@ -159,7 +164,7 @@ $results = $conn->query($sql);
     </form>
   </dialog>
 
-  <script src="./crud_function.js"></script>
+  <script src="./crud_input_grades.js"></script>
 </body>
 
 </html>
