@@ -60,6 +60,7 @@
             <li><a href="instructor.php"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
         </ul>
         </div>
+            
 
 </header>
 </body>

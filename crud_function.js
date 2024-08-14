@@ -25,6 +25,7 @@ function deleteStudent(button) {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
+        
         return response.text();
       })
       .then(() => {

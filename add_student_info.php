@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Check for duplicates
     $conn = connect_db();
-    $sql_check_duplicate = "SELECT COUNT(*) FROM tbl_cwts WHERE first_name = ? AND last_name = ? AND deparment = ?";
+    $sql_check_duplicate = "SELECT COUNT(*) FROM tbl_cwts WHERE first_name = ? AND last_name = ? AND department = ?";
     $stmt_check_duplicate = $conn->prepare($sql_check_duplicate);
     $stmt_check_duplicate->bind_param("sss", $first_name, $last_name, $department);
     $stmt_check_duplicate->execute();
@@ -32,7 +32,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $course = $_POST["course"];
 
     // Insert into database
-    $sql_insert = "INSERT INTO tbl_cwts (school_id, first_name, last_name, gender, nstp, deparment, course) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $sql_insert = "INSERT INTO tbl_cwts (school_id, first_name, last_name, gender, nstp, department, course) VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt_insert = $conn->prepare($sql_insert);
     $stmt_insert->bind_param("sssssss", $school_id, $first_name, $last_name, $gender, $nstp, $department, $course);
 

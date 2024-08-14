@@ -8,9 +8,9 @@ c.first_name,
 c.last_name, 
 c.gender,
 c.nstp,
-c.deparment,
+c.department,
 c.course,
-g.grades_id,
+COALESCE(g.grades_id, 0) AS grades_id,
 g.prelim, 
 g.midterm, 
 g.finals
@@ -68,26 +68,23 @@ $results = $conn->query($sql);
     <tbody id="tableBody">
       <?php
       while ($rows = $results->fetch_assoc()) {
-
-        echo "<tr data-id='" . $rows["grades_id"] . "'>";
-        echo "<td>" . $rows["school_id"] . "</td>";
-        echo "<td>" . $rows["first_name"] . "</td>";
-        echo "<td>" . $rows["last_name"] . "</td>";
-        echo "<td>" . $rows["gender"] . "</td>";
-        echo "<td>" . $rows["nstp"] . "</td>";
-        echo "<td>" . $rows["deparment"] . "</td>";
-        echo "<td>" . $rows["course"] . "</td>";
-        echo "<td>" . $rows["prelim"] . "</td>";
-        echo "<td>" . $rows["midterm"] . "</td>";
-        echo "<td>" . $rows["finals"] . "</td>";
+        echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
+        echo "<td>{$rows["school_id"]}</td>";
+        echo "<td>{$rows["first_name"]}</td>";
+        echo "<td>{$rows["last_name"]}</td>";
+        echo "<td>{$rows["gender"]}</td>";
+        echo "<td>{$rows["nstp"]}</td>";
+        echo "<td>{$rows["department"]}</td>";
+        echo "<td>{$rows["course"]}</td>";
+        echo "<td>{$rows["prelim"]}</td>";
+        echo "<td>{$rows["midterm"]}</td>";
+        echo "<td>{$rows["finals"]}</td>";
         echo "<td>";
         echo "<button id='editBtn' class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
         echo "</td>";
         echo "</tr>";
       }
-
       ?>
-
     </tbody>
   </table>
 
@@ -115,16 +112,16 @@ $results = $conn->query($sql);
     <form method="dialog" id="editForm">
       <h2>Edit Student Grades</h2>
       <label for="editPrelims">Prelims:</label>
-      <input type="text" id="editPrelim" name="prelim" required><br>
+      <input type="number" id="editPrelim" name="prelim" min="0.1" max="5.0" step="0.001"><br>
 
       <label for="editMidterm">Midterms:</label>
-      <input type="text" id="editMidterm" name="midterm" required><br>
+      <input type="text" id="editMidterm" name="midterm" min="0.1" max="5.0" step="0.001"><br>
 
       <label for="editFinals">Finals:</label>
-      <input type="text" id="editFinals" name="finals" required><br>
+      <input type="text" id="editFinals" name="finals" min="0.100" max="5.0" step="0.001"><br>
 
       <button type="submit">Save</button>
-      <button type="button" onclick="closeEditModal()">Cancel</button>
+      <button type="button" onclick="editModal.close()">Cancel</button>
     </form>
   </dialog>
 

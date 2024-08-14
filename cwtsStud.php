@@ -55,7 +55,7 @@ $results = $conn->query($sql);
           echo "<td>" . $rows["last_name"] . "</td>";
           echo "<td>" . $rows["gender"] . "</td>";
           echo "<td>" . $rows["nstp"] . "</td>";
-          echo "<td>" . $rows["deparment"] . "</td>";
+          echo "<td>" . $rows["department"] . "</td>";
           echo "<td>" . $rows["course"] . "</td>";
           echo "<td>";
           echo "<button id='editBtn' class='editButton' onclick='editStudentInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
