@@ -20,6 +20,7 @@ h1 {
 .header p{
     margin-left: 150px;
     font-size: 20px;
+    color: white;
 }
 
 .headlogo{
@@ -53,6 +54,10 @@ h1 {
     overflow: hidden;
     background-color: #0a3a20;
     color: white;
+}
+
+.header .p{
+    color:white;
 }
 
 
@@ -195,6 +200,7 @@ label #cancel{
 .box {
     background-color: #fff;
     border-radius: 10px;
+    margin-top: 20;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
     text-align: center;

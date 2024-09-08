@@ -6,15 +6,106 @@
     <title>Southern Luzon State University - NSTP</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
     integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+    <div class="header">
+    <img src="slsulogo.png" class="headlogo">
+    <h1>Southern Luzon State University</h1>
+    <p>National Service Training Program</p>
+    <div class="navbar">    
+        <a href="faculty.php" class="action_btn">Sign In</a>
+    </div> 
+</div>
+
+<body>
     <style>
+
+/* HEADER CSS START */
 
 
 body {
     background-color: white; /* Set background to white */
     background-image: none; /* Ensure no background image is applied */
     margin: 0;
+    list-style: none;
+    text-decoration: none;
 }
+
+.header {
+    overflow: hidden;
+    background-color: #0a3a20;
+    color: white;
+    height: 80px;
+    
+}
+
+h1 {
+    margin-top: 10px;
+    margin-left: 0px;
+}
+
+.header p {
+    margin-left: 0px;
+    font-size: 20px;
+    margin-top: 0px;
+}
+
+.headlogo {
+    width: 100px;
+    height: 100px;   
+    float: left;
+    margin-right: 20px;
+    margin-top: -10px;
+}
+
+.navbar {
+    float: right;
+    margin-top: -70px;
+}
+
+
+
+.action_btn {
+    background-color: rgb(21, 134, 72);
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    outline: none;
+}
+
+.navbar li a:hover {
+    color:#00f974;
+    transition: all 0.4s ease 0s;
+}
+
+.navbar .toggle_btn {
+    display: none;
+    margin-top: -120px;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+
+}
+
+.action_btn:hover{
+    scale: 1.05;
+    color: #fff;
+}
+
+.action_btn:active {
+    scale: 0.95
+}
+
+/* HEADER CSS ENDS */
+
+/* SLIDESHOW CSS START */
+
 
 .slide img {
     width: auto; /* Maintain the aspect ratio of the images */
@@ -28,8 +119,8 @@ body {
 .slideshow-container {
     position: relative;
     max-width: 100%;
-    height: 500px; /* Set a fixed height for the slideshow */
-    margin: auto;
+    height: 550px; /* Set a fixed height for the slideshow */
+    margin-bottom: 10px;
     overflow: hidden;
     display: flex;
     justify-content: center; /* Center horizontally */
@@ -57,6 +148,10 @@ body {
     pointer-events: none; /* Ensure the overlay doesn't affect interactivity */
 }
 
+/* SLIDESHOW CSS END */
+
+
+/* TEXT AND LOGO START */
 
 .text {
     position: absolute;
@@ -89,6 +184,16 @@ body {
     font-weight: normal; /* Normal weight for the smaller text */
 }
 
+        @keyframes fade {
+            from {opacity: .4}
+            to {opacity: 1}
+        }
+
+        .fade {
+            animation-name: fade;
+            animation-duration: 1.5s;
+        }
+
 
         .caption-container {
             display: flex;
@@ -110,91 +215,9 @@ body {
             font-family: sans-serif;
         }
 
-        @keyframes fade {
-            from {opacity: .4}
-            to {opacity: 1}
-        }
-
-        .fade {
-            animation-name: fade;
-            animation-duration: 1.5s;
-        }
-
-        @media (max-width: 700px) {
-            h1 {
-                font-size: 20px;
-                padding-left: 100px;
-            }
-
-            .header p {
-                font-size: 14px;
-                padding-left: 100px;
-            }
-
-            .headlogo {
-                width: 60px;
-                height: 60px;   
-                margin-right: 10px;
-            }
-
-            .action_btn {
-                font-size: 14px;
-                padding: 5px 10px;
-            }
-
-            .text {
-                font-size: 20px;
-            
-            }
-
-            .logo {
-                width: 80px;
-            }
-        }
-
-        @media (max-width: 424px) {
-            h1 {
-                font-size: 18px;
-                padding-left: 80px;
-            }
-
-            .header p {
-                font-size: 12px;
-                padding-left: 80px;
-            }
-
-            .headlogo {
-                width: 50px;
-                height: 50px;   
-                margin-right: 10px;
-            }
-
-            .action_btn {
-                font-size: 12px;
-                padding: 5px 10px;
-            }
-
-            .text {
-                font-size: 18px;
-                padding: 5px;
-            }
-
-            .logo {
-                width: 70px;
-            }
-        }
+       /* TEXT AND LOGO ENDS */
     </style>
-</head>
-<body>
-
-<div class="header">
-    <img src="slsulogo.png" class="headlogo">
-    <h1>Southern Luzon State University</h1>
-    <p>National Service Training Program</p>
-    <div class="navbar">    
-        <a href="faculty.php" class="action_btn">Sign In</a>
-    </div> 
-</div>
+    </body>
 
 <div class="slideshow-container">
     <!-- Slide 1 -->

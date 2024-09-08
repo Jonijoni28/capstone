@@ -1,7 +1,8 @@
 body {
     margin: 0;
     padding: 0;
-    
+    list-style: none;
+    text-decoration: none;
 }
 
 .header {
@@ -31,6 +32,8 @@ h1 {
 .navbar {
     float: right;
 }
+
+
 
 .action_btn {
     background-color: rgb(21, 134, 72);

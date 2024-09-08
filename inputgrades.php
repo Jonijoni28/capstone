@@ -38,6 +38,7 @@ $results = $conn->query($sql);
 </head>
 
 <body>
+
   <div class="header">
     <a href="professor.php"><img src="slsulogo.png" class="headlogo"></a>
     <h1>Southern Luzon State University</h1>

@@ -1,8 +1,8 @@
 * {
     margin: 0;
     padding: 0;
-    list-style: none;
-    text-decoration: none;
+    list-style: none !important;
+    text-decoration: none !important;
 }
 
 .header {
@@ -20,6 +20,7 @@ h1 {
 .header p{
     margin-left: 150px;
     font-size: 20px;
+    margin-top: 0px;
 }
 
 .headlogo{
@@ -45,30 +46,11 @@ h1 {
 .navbar .toggle_btn {
     display: none;
     margin-top: -120px;
-   
     color: white;
     font-size: 1.5rem;
     cursor: pointer;
 
 }
-
-.dashboard {
-    display: flex;
-    gap: 20px;
-}
-
-.box {
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    text-align: center;
-    width: 150px;
-}
-
-
-
-
 
 .action_btn {
     
@@ -95,90 +77,21 @@ h1 {
     scale: 0.95
 }
 
-/* SIDE BAR MENU */
-
-.sidebar {
-    position: fixed;
-    left: -250px;
-    width: 250px;
-    height: 100%;
-    background: #096c37;
-    transition: all .5s ease;
+.dashboard {
+    display: flex;
+    gap: 20px;
 }
 
-.sidebar header{
-    font-size: 22px;
-    color: white;
+.box {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
     text-align: center;
-    line-height: 70px;
-    background: 063146;
-    user-select: none;
+    width: 150px;
 }
 
-.sidebar ul a{
-    display: block;
-    height: 100%;
-    width: 100%;
-    line-height: 65px;
-    font-size: 20px;
-    color: white;
-    padding-left: 40px;
-    box-sizing: border-box;
-    border-top: 1px solid rgba(255, 255, 255, .1);
-    border-bottom: 1px solid black;
-    transition: .4s;
-}
-
-ul li:hover a{
-    padding-left: 50px;
-}
-
-.sidebar ul a i{
-    margin-right: 16px;
-}
-
-#check{
-    display: none;
-}
-label #btn,label #cancel{
-    position: absolute;
-    cursor: pointer;
-    background: #0a3a20;
-    border-radius: 3px;
-}
-label #btn{
-    left: 20px;
-    top: 130px;
-    font-size: 35px;
-    color: white;
-    padding: 6px 12px;
-    transition: all .5s;
-}
-
-label #cancel{
-    z-index: 1111;
-    left: -195px;
-    top: 130px;
-    font-size: 30px;
-    color: #fff ;
-    padding: 4px 9px;
-    transition:  all .5s ease;
-}
-#check:checked ~ .sidebar{
-    left: 0;
-}
-#check:checked ~ label #btn{
-    left: 250px;
-    opacity: 0;
-    pointer-events: none;
-}
-#check:checked ~ label #cancel{
-    left: 195px;
-   
-}
-#check:checked ~ body{
-    margin-left: 250px;
-}
+/* SIDE BAR MENU */
 
 
 
@@ -218,158 +131,3 @@ label #cancel{
 }
 
 
-
-/*RESPONSIVE DESIGN */
-@media (max-width: 992px) {
-    .navbar .links,
-    .navbar .action_btn {
-        display: none;
-    }
-
-    .navbar .toggle_btn {
-        display: block;
-    }
-
-    .dropdown_menu {
-        display: block;
-    }
-
-    .navbar .toggle_btn {
-        margin-top: -150px;
-        margin-left: 710px;
-         color: white;
-         font-size: 1.5rem;
-         cursor: pointer;
- }
-}
-
-@media (max-width: 700px) {
-    .header {
-        overflow: hidden;
-        background-color: #0a3a20;
-        color: white; 
-    }
-    
-    h1 {
-        margin-top: 20px;
-        margin-left: 80px;
-        font-size: 17px;
-    }
-    
-    .header p{
-        margin-left: 80px;
-        font-size: 15px;
-    }
-    
-    .headlogo{
-        width:-60%;
-        height:60px;   
-        float:left;
-        margin-top:10px;
-        margin-left: 10px;
-        margin-bottom: 10px;
-     }
-     
-    .header {
-        overflow: hidden;
-        background-color: #0a3a20;
-        color: white;
-    }
-
-    .navbar .toggle_btn {
-        margin-top: -100px;
-        margin-left: 380px;
-         color: white;
-         font-size: 1.3rem;
-         cursor: pointer;
- }
-    
-
-
-    
-}
-
-@media (max-width: 424px) {
-    .header {
-        overflow: hidden;
-        background-color: #0a3a20;
-        color: white; 
-    }
-    
-    h1 {
-        margin-top: 20px;
-        margin-left: 85px;
-        font-size: 15px;
-    }
-    
-    .header p{
-        margin-left: 85px;
-        font-size: 13px;
-    }
-    
-    .headlogo{
-        width:-60%;
-        height:60px;   
-        float:left;
-        margin-top:10px;
-        margin-left:15px;
-        margin-bottom: 10px;
-     }
-     
-    .header {
-        overflow: hidden;
-        background-color: #0a3a20;
-        color: white;
-    }
-
-    .navbar .toggle_btn {
-        margin-top: -80px;
-        margin-left: 340px;
-         color: white;
-         font-size: 1.2rem;
-         cursor: pointer;
- }
-}
-
-@media (max-width: 374px) {
-    .header {
-        overflow: hidden;
-        background-color: #0a3a20;
-        color: white; 
-    }
-    
-    h1 {
-        margin-top: 20px;
-        margin-left: 70px;
-        font-size: 12px;
-    }
-    
-    .header p{
-        margin-left: 70px;
-        font-size: 10px;
-    }
-    
-    .headlogo{
-        width:-50%;
-        height:50px;   
-        float:left;
-        margin-top:10px;
-        margin-left:10px;
-        margin-bottom: 10px;
-     }
-     
-    .header {
-        overflow: hidden;
-        background-color: #0a3a20;
-        color: white;
-    }
-
-    .navbar .toggle_btn {
-       margin-top: -100px;
-       margin-left: 280px;
-        color: white;
-        font-size: 1.1rem;
-        cursor: pointer;
-}
-
-}
