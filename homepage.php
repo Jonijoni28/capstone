@@ -1,3 +1,14 @@
+<?php
+    session_start();
+
+    // Check if the session ID stored in the cookie matches the current session
+    if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type']) && $_SESSION["user_type"] == "admin")) {
+        // If no valid session, redirect to login page
+        header('Location: faculty.php');
+        exit();
+    }
+?>      
+    
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -71,44 +82,42 @@
         <div id="addAnnouncementForm" style="display:none;">
             <div class="input-section">
                 <label>Title</label>
-                <input type="text" placeholder="Enter title" value="ROTC Parade">
+                <input type="text" placeholder="Enter title" value="">
             </div>
 
             <div class="input-section">
                 <label>Who</label>
-                <input type="text" placeholder="Enter audience" value="All ROTC Students">
+                <input type="text" placeholder="Enter audience" value="">
             </div>
 
             <div class="input-section">
                 <label>What</label>
-                <input type="text" placeholder="Enter announcement title" value="Special Training Day">
+                <input type="text" placeholder="Enter announcement title" value="">
             </div>
 
             <div class="input-section">
                 <label>When</label>
-                <input type="text" placeholder="Enter date and time" value="30 May, 2024, Thursday 0700H Onwards">
+                <input type="text" placeholder="Enter date and time" value="">
             </div>
 
             <div class="input-section">
                 <label>Where</label>
-                <input type="text" placeholder="Enter location" value="SLSU Covered Court & Gymnasium">
+                <input type="text" placeholder="Enter location" value="">
             </div>
 
             <div class="input-section">
                 <label>Attire</label>
-                <textarea placeholder="Enter attire details">Regular Basic Cadet - Freestyle Attire
-Basic ROTC Officer - BDU
-Advance Officer - Philarpat</textarea>
+                <textarea placeholder="Enter attire details"></textarea>
             </div>
 
             <div class="input-section">
                 <label>Note</label>
-                <textarea placeholder="Enter additional notes">Attendees Will be Given 20 points for their Final Examination - Attendance is must</textarea>
+                <textarea placeholder="Enter additional notes"></textarea>
             </div>
 
             <div class="input-section">
                 <label>Announced By</label>
-                <input type="text" placeholder="Enter announcer's name" value="Commandant ASCOM">
+                <input type="text" placeholder="Enter announcer's name" value="">
             </div>
         </div>
 

@@ -1,6 +1,6 @@
-const deleteEndpoint = "/capstone/delete_student.php";
-const editEndpoint = "/capstone/edit_student_info.php";
-const addEndpoint = "/capstone/add_student_info.php";
+const deleteEndpoint = "/delete_student.php";
+const editEndpoint = "/edit_student_info.php";
+const addEndpoint = "/add_student_info.php";
 
 /**
  * Deletes a row from the table based on the button clicked.
@@ -28,9 +28,9 @@ function deleteStudent(button) {
         
         return response.text();
       })
-      .then(() => {
+      .then((text) => {
         row.remove(); // Remove the row from the table
-        alert("Data deleted successfully");
+        alert(text);
       })
       .catch(error => {
         console.error('There was a problem with your fetch operation:', error);
@@ -162,6 +162,8 @@ function addTableRow(newData) {
 function submitAddForm() {
   const addForm = document.getElementById('addForm');
   const formData = new URLSearchParams(new FormData(addForm)); // Serialize form data
+
+  console.log()
 
   fetch(addEndpoint, {
     method: "POST",

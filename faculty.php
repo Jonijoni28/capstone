@@ -1,3 +1,47 @@
+<?php
+    session_start();
+
+    // Check if the session ID stored in the cookie matches the current session
+    if (isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type'])) {
+        // Redirect based on user type
+        if ($_SESSION['user_type'] === 'admin') {
+            header("Location: homepage.php");
+            exit();
+        } elseif ($_SESSION['user_type'] === 'instructor') {
+            header("Location: professor.php");
+            exit();
+        }
+    }
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+    <style>
+        /* Add your CSS styling here */
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        <a href="login.php"><img src="slsulogo.png" class="headlogo"></a>
+        <h1>Southern Luzon State University</h1>
+        <p>National Service Training Program</p>
+    </div>
+
+    <!-- Login Form Section -->
+    <div class="container">
+        <div class="login-box">
+            <h2>Login Form</h2>
+            <form action="faculty_login.php" method="post">
+                <div class="form-group">
+                    <input type="text" id="username" na
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

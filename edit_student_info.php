@@ -21,12 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $course = $_POST['course']; // change to match your form field names
 
     // Prepare and execute the UPDATE statement
-    $statement = $conn->prepare("UPDATE tbl_cwts SET first_name=?, last_name=?, gender=?, nstp=?, deparment=?, course=? WHERE school_id=?");
+    $statement = $conn->prepare("UPDATE tbl_cwts SET first_name=?, last_name=?, gender=?, nstp=?, department=?, course=? WHERE school_id=?");
     $statement->bind_param("sssssss", $first_name, $last_name, $gender, $nstp, $department, $course, $school_id);
 
     if ($statement->execute()) {
         // If update is successful
-        echo "Data updated successfully";
+        echo "Data updated successfully.";
     } else {
         // If update fails
         http_response_code(500);

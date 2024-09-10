@@ -1,26 +1,77 @@
 <?php
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+require_once "db_conn.php";
+$sql_statement = "SELECT username, password, user_type FROM registration WHERE username = ?";
 
-    //DATABASE CONNECTION HERE
-    $con = new mysqli("localhost","root","","login");
-    if($con->connect_error) {
-        die("Failed to connect : ".$con->connect_error);
-    } else {
-        $stmt = $con->prepare("select * from registration where username = ?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $stmt_results = $stmt->get_result();
-        if($stmt_results->num_rows > 0) {
-            $data = $stmt_results->fetch_assoc();
-            if($data['password'] === $password) {
-                echo "<h2>Login Successfully</h2>";
-                echo "<script>window.location = 'homepage.php' </script>";
-            } else {
-               echo "<h2>Invalid Email or password</h2>";
-            }
-        } else {
-            echo "<script>window.location = 'faculty.php' </script>";
-        }
+session_start();
+
+// Reject all request, except POST
+
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    echo "Invalid request method.";
+}
+
+// Grab database
+$db = connect_db();
+
+// Check if 'username' and 'password' are set in POST
+if (!isset($_POST["username"]) || !isset($_POST["password"])) {
+    http_response_code(400);
+    header("Location: faculty.php");
+    exit();
+}
+
+// Grab username + password
+$input_username = $_POST["username"];
+$input_password = $_POST["password"];
+
+// Check first if user exists
+$stmt = $db->prepare($sql_statement);
+$stmt->bind_param("s", $input_username);
+$stmt->execute();
+$stmt_results = $stmt->get_result();
+
+if ($stmt_results->num_rows > 0) {
+    $user = $stmt_results->fetch_assoc();
+
+    // Verify the password
+    if (!$input_password == $user["password"]) {
+        http_response_code(401);
+        echo "Invalid username or password.";
     }
-?>
+
+    if ($user["user_type"] == "admin") {
+        http_response_code(301);
+        http_response_code(301);
+        // Generate a session identifier (or token)
+        $session_id = session_id();
+
+        // Set a cookie for the session
+        setcookie('auth', $session_id, time() + (86400 * 30), "/"); // 30 days expiry
+
+        // Set the session variable
+        $_SESSION['username'] = $user["username"];
+        $_SESSION['user_type'] = $user["user_type"];
+
+        header('Location: homepage.php');
+        exit();
+    }
+
+    if ($user["user_type"] == "instructor") {
+        http_response_code(301);
+        // Generate a session identifier (or token)
+        $session_id = session_id();
+
+        // Set a cookie for the session
+        setcookie('auth', $session_id, time() + (86400 * 30), "/"); // 30 days expiry
+
+        // Set the session variable
+        $_SESSION['username'] = $user["username"];
+        $_SESSION['user_type'] = $user["user_type"];
+
+        header('Location: professor.php');
+        exit();
+    }
+} else {
+    http_response_code(401);
+    echo "Invalid username or password.";
+}
