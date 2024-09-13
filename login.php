@@ -13,6 +13,7 @@
     <h1>Southern Luzon State University</h1>
     <p>National Service Training Program</p>
     <div class="navbar">    
+        <a href="registration.php" class="action_btn">Registration</a>
         <a href="faculty.php" class="action_btn">Sign In</a>
     </div> 
 </div>
