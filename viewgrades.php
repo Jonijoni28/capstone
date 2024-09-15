@@ -45,7 +45,7 @@ $results = $conn->query($sql);
     <p>National Service Training Program</p>
   </div>
   <div class="navbar">
-    <a href="#" class="action_btn">Instructor</a>
+    <a href="#" class="action_btn">Administrator</a>
     <div class="toggle_btn">
       <i class="fa-solid fa-bars"></i>
     </div>
@@ -91,7 +91,7 @@ $results = $conn->query($sql);
     <i class="fas fa-times" id="cancel"></i>
   </label>
   <div class="sidebar">
-    <header>Instructor</header>
+    <header>Administrator</header>
     <ul>
     <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
                     <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
@@ -102,7 +102,7 @@ $results = $conn->query($sql);
     </ul>
   </div>
   <div class="search-container">
-    <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by First Name...">
+  <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
   </div>
   <div class="button-container">
   </div>
@@ -143,6 +143,35 @@ $results = $conn->query($sql);
     </form>
   </dialog>
 
+  <script>
+    function searchRecords() {
+  let input = document.getElementById('searchInput');
+  let filter = input.value.toUpperCase();
+  let table = document.getElementById("editableTable");
+  let tr = table.getElementsByTagName("tr");
+
+  // Loop through all rows except the header
+  for (let i = 1; i < tr.length; i++) {
+    let row = tr[i];
+    let cells = row.getElementsByTagName("td");
+    let textContent = "";
+    // Concatenate text from desired columns
+    for (let j = 0; j < cells.length; j++) {
+      // Only add columns that are relevant to the search
+      if (j === 0 || j === 1 || j === 2 || j === 3 || j === 4 || j === 5 || j === 6) { // Indices of the columns School ID, First Name, etc.
+        textContent += cells[j].textContent || cells[j].innerText;
+      }
+    }
+    // Check if row should be displayed
+    if (textContent.toUpperCase().indexOf(filter) > -1) {
+      tr[i].style.display = "";
+    } else {
+      tr[i].style.display = "none";
+    }
+  }
+}
+
+  </script>
   <script src="./crud_input_grades.js"></script>
 </body>
 

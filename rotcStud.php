@@ -87,8 +87,9 @@ while ($rows = $results->fetch_assoc()) {
     </ul>
   </div>
   <div class="search-container">
-    <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by First Name...">
+  <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
     <button id="addBtn" class="addButton" onclick="openAddModal()"><i class="fa-solid fa-plus"></i></button>
+    
   </div>
   <div class="button-container">
   </div>
@@ -163,6 +164,70 @@ while ($rows = $results->fetch_assoc()) {
       <button type="button" onclick="closeAddModal()">Cancel</button>
     </form>
   </dialog>
+
+  <script>
+function searchRecords() {
+  let input = document.getElementById('searchInput');
+  let filter = input.value.toUpperCase();
+  let table = document.getElementById("editableTable");
+  let tr = table.getElementsByTagName("tr");
+
+  // Loop through all rows except the header
+  for (let i = 1; i < tr.length; i++) {
+    let row = tr[i];
+    let cells = row.getElementsByTagName("td");
+    let textContent = "";
+    // Concatenate text from desired columns
+    for (let j = 0; j < cells.length; j++) {
+      // Only add columns that are relevant to the search
+      if (j === 0 || j === 1 || j === 2 || j === 3 || j === 4 || j === 5 || j === 6) { // Indices of the columns School ID, First Name, etc.
+        textContent += cells[j].textContent || cells[j].innerText;
+      }
+    }
+    // Check if row should be displayed
+    if (textContent.toUpperCase().indexOf(filter) > -1) {
+      tr[i].style.display = "";
+    } else {
+      tr[i].style.display = "none";
+    }
+  }
+}
+
+  function sortTable() {
+    let table, rows, switching, i, x, y, shouldSwitch;
+    table = document.getElementById("editableTable");
+    switching = true;
+    
+    // Loop to keep sorting until no switching has been done
+    while (switching) {
+      switching = false;
+      rows = table.rows;
+      
+      // Loop through all rows, except the first (header row)
+      for (i = 1; i < (rows.length - 1); i++) {
+        shouldSwitch = false;
+        
+        // Get the two elements to compare (last names)
+        x = rows[i].getElementsByTagName("TD")[2]; // Last Name column (index 2)
+        y = rows[i + 1].getElementsByTagName("TD")[2];
+        
+        // Compare the two last names alphabetically
+        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+          shouldSwitch = true;
+          break;
+        }
+      }
+      if (shouldSwitch) {
+        // If a switch is needed, make the switch and mark switching as true
+        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+      }
+    }
+  }
+
+  // Call the sortTable function when the page loads
+  window.onload = sortTable;
+  </script>
 
   <script src="./crud_function.js"></script>
 </body>

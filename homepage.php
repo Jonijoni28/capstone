@@ -24,7 +24,7 @@
 
         <body>
         <div class="header">
-            <a href="prof.php"><img src="slsulogo.png" class="headlogo"></a>
+            <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
             <h1>Southern Luzon State University</h1>
             <p>National Service Training Program</p>
             </div>
@@ -40,7 +40,9 @@
                     <i class="fas fa-bars" id="btn"></i>
                     <i class="fas fa-times" id="cancel"></i>
                 </label>
+                
                 <div class="sidebar">
+                
                 <header>Administrator</header>
                 <ul> 
                     <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
@@ -252,8 +254,46 @@ label #cancel {
     margin-left: 250px;
 }
 
+.menu .profile .btn,
+.menu .profile .delete-btn{
+    padding: 2px 7px 2px 7px;
+}
 
-    /* SLIDESHOW CSS */
+.menu .profile{
+    margin-top: 60px;
+    padding: 10px;
+    text-align: center;
+    width: 260px;
+    border-radius: 5px;
+    position: fixed;
+}
+
+.menu .profile h3{
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #575757;
+}
+.menu .profile a{
+    font-size: 12px;
+    text-align: center;
+    color: white;
+    text-decoration: none;
+    font-weight: 300%;
+}
+.menu .profile a:hover{
+    text-decoration: underline;
+    background-color: #D323C2;
+}
+.menu .profile img{
+    height: 80px;
+    width: 85px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 5px;
+}
+
+
+    /* SIDEBAR END */
 
   /* SLIDESHOW CSS START */
 
@@ -977,7 +1017,7 @@ Children</h1>
     <div class="line"></div> <!-- Vertical line between logo and content -->
     <div class="socials-campuses">
         <div class="socials">
-            <h4>Socials</h4>
+            <h4>Facebook Pages</h4>
             <a href="https://www.facebook.com/slsuMain">SLSU Main Campus</a>
             <a href="https://www.facebook.com/slsuOSR">SLSU Student Regent</a>
             <a href="https://www.facebook.com/slsulucbanrotcu">ROTC Main Campus</a>

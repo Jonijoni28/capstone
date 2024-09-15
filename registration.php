@@ -204,10 +204,17 @@
                     <div class="form-group">
                         <select name="title" required>
                             <option value="" disabled selected>Title</option>
+                            <option value="Archi">Architech</option>
+                            <option value="Atty">Atty.</option>
+                            <option value="Dean">Dean</option>
+                            <option value="Director">Director</option>
+                            <option value="Dr.">Dr.</option>
+                            <option value="Engr.">Engr.</option>
                             <option value="Mr.">Mr.</option>
                             <option value="Ms.">Ms.</option>
                             <option value="Mrs.">Mrs.</option>
-                            <option value="Dr.">Dr.</option>
+                            <option value="Pres.">President</option>
+                            <option value="Prof.">Prof.</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -260,6 +267,7 @@
                             <option value="Full-time">Full-time</option>
                             <option value="Part-time">Part-time</option>
                             <option value="Contractual">Contractual</option>
+                            <option value="Student">Student</option>
                         </select>
                     </div>
                     <div class="form-group">
