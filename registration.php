@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,8 +50,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: calc(100vh - 200px); /* Adjusted for header height */
-            margin-top: 40px; /* Adds space between the header and the form */
+            height: calc(100vh - 200px);
+            /* Adjusted for header height */
+            margin-top: 40px;
+            /* Adds space between the header and the form */
             padding: 20px;
         }
 
@@ -66,7 +69,8 @@
             color: white;
             overflow-y: auto;
             position: relative;
-            max-height: calc(90vh - 100px); /* Ensures it doesn't overflow out of view */
+            max-height: calc(90vh - 100px);
+            /* Ensures it doesn't overflow out of view */
         }
 
         .registration-box h2 {
@@ -79,7 +83,8 @@
             margin-bottom: 15px;
         }
 
-        .form-group input, .form-group select {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 10px;
             background-color: rgba(255, 255, 255, 0.8);
@@ -138,7 +143,7 @@
             margin-right: 10px;
         }
 
-           /* Modal styles */
+        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -147,8 +152,10 @@
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Remove page scrolling when modal is open */
-            background-color: rgba(0, 0, 0, 0.4); /* Black with opacity */
+            overflow: hidden;
+            /* Remove page scrolling when modal is open */
+            background-color: rgba(0, 0, 0, 0.4);
+            /* Black with opacity */
         }
 
         .modal-content {
@@ -162,14 +169,16 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%); /* Center horizontally and vertically */
+            transform: translate(-50%, -50%);
+            /* Center horizontally and vertically */
         }
 
         .modal-content p {
             font-size: 18px;
         }
 
-        .close-btn, .back-btn {
+        .close-btn,
+        .back-btn {
             background-color: #4CAF50;
             color: white;
             padding: 10px 20px;
@@ -179,11 +188,13 @@
             border-radius: 5px;
         }
 
-        .close-btn:hover, .back-btn:hover {
+        .close-btn:hover,
+        .back-btn:hover {
             background-color: #45a049;
         }
     </style>
 </head>
+
 <body>
     <!-- Header Section -->
     <div class="header">
@@ -200,7 +211,7 @@
             <!-- Basic Information Section -->
             <div class="form-section">
                 <h3>Basic Information</h3>
-                <form action="register_process.php" method="post" enctype="multipart/form-data">
+                <form id="registerForm" action="register_process.php" method="post" enctype="multipart/form-data">
                     <div class="form-group">
                         <select name="title" required>
                             <option value="" disabled selected>Title</option>
@@ -247,53 +258,53 @@
                         <label for="photo">2x2 ID Picture:</label>
                         <input type="file" id="photo" name="photo" accept="image/*" required />
                     </div>
-                </div>
+            </div>
 
-                <!-- Affiliation Section -->
-                <div class="form-section">
-                    <h3>Affiliation</h3>
-                    <div class="form-group">
-                        <input type="text" name="university" placeholder="University" required />
-                    </div>
-                    <div class="form-group">
-                        <input type="text" name="department" placeholder="Department" required />
-                    </div>
-                    <div class="form-group">
-                        <input type="text" name="designation" placeholder="Designation/Position" required />
-                    </div>
-                    <div class="form-group">
-                        <select name="employment_status" required>
-                            <option value="" disabled selected>Employment Status</option>
-                            <option value="Full-time">Full-time</option>
-                            <option value="Part-time">Part-time</option>
-                            <option value="Contractual">Contractual</option>
-                            <option value="Student">Student</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" name="area_assignment" placeholder="Area of Assignment" required />
-                    </div>
+            <!-- Affiliation Section -->
+            <div class="form-section">
+                <h3>Affiliation</h3>
+                <div class="form-group">
+                    <input type="text" name="university" placeholder="University" required />
                 </div>
-
-                <!-- User Account Section -->
-                <div class="form-section">
-                    <h3>User Account</h3>
-                    <div class="form-group">
-                        <input type="text" name="username" placeholder="Username" required />
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="password" placeholder="Password" required />
-                    </div>
-                    <div class="form-group">
-                        <input type="password" name="confirm_password" placeholder="Confirm Password" required />
-                    </div>
-                    <div class="checkbox-group">
-                        <input type="checkbox" name="terms" required />
-                        <label for="terms">I agree to the terms and conditions</label>
-                    </div>
+                <div class="form-group">
+                    <input type="text" name="department" placeholder="Department" required />
                 </div>
+                <div class="form-group">
+                    <input type="text" name="designation" placeholder="Designation/Position" required />
+                </div>
+                <div class="form-group">
+                    <select name="employment_status" required>
+                        <option value="" disabled selected>Employment Status</option>
+                        <option value="Full-time">Full-time</option>
+                        <option value="Part-time">Part-time</option>
+                        <option value="Contractual">Contractual</option>
+                        <option value="Student">Student</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="area_assignment" placeholder="Area of Assignment" required />
+                </div>
+            </div>
 
-                <input type="submit" class="btn" value="Register" />
+            <!-- User Account Section -->
+            <div class="form-section">
+                <h3>User Account</h3>
+                <div class="form-group">
+                    <input type="text" name="username" placeholder="Username" required />
+                </div>
+                <div class="form-group">
+                    <input type="password" name="password" placeholder="Password" required />
+                </div>
+                <div class="form-group">
+                    <input type="password" name="confirm_password" placeholder="Confirm Password" required />
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" name="terms" required />
+                    <label for="terms">I agree to the terms and conditions</label>
+                </div>
+            </div>
+
+            <input type="submit" class="btn" value="Register" />
             </form>
         </div>
     </div>
@@ -307,21 +318,73 @@
     </div>
 
     <script>
-        // Function to show modal after form submission
-        function showModal() {
-            event.preventDefault(); // Prevents the default form submission behavior
+        /**
+         * Shows the registration confirmation modal.
+         * @function
+         * @name showModal
+         * @param {string} message - The message to display in the modal.
+         */
+        function showModal(message) {
             const modal = document.getElementById('registerModal');
-            modal.style.display = 'block'; // Shows the modal
+            const modalMessage = modal.querySelector('p');
+            modalMessage.textContent = message;
+            modal.style.display = 'block';
         }
 
-        // Handle redirection to the login page
-        document.getElementById('backBtn').onclick = function() {
+        /**
+         * Handles the click event on the "Go to Login Page" button.
+         * Redirects the user to the login page.
+         * @function
+         * @name backBtnClickHandler
+         */
+        document.getElementById('backBtn').onclick = function backBtnClickHandler() {
             window.location.href = 'login.php'; // Redirect to login page
         }
 
-        // Attach the showModal function to the form submission
-        document.querySelector('form').addEventListener('submit', showModal);
+        /**
+         * Handles the form submission event.
+         * Prevents default form submission, sends form data to the server, and shows the confirmation modal.
+         * @function
+         * @name submit_register
+         * @param {Event} event - The form submission event object.
+         */
+        function submit_register(event) {
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // Get the form element
+            const form = document.getElementById('registerForm');
+
+            // Check if the form exists
+            if (form) {
+                // Create a FormData object
+                const formData = new FormData(form);
+
+                // Send the form data to the server using fetch
+                fetch('/register_process.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showModal(data.message);
+                        } else {
+                            showModal('Registration failed: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showModal('An error occurred during registration. Please try again.');
+                    });
+            } else {
+                console.error('Form with ID "registerForm" not found');
+            }
+        }
+
+        // Attach the submit_register function to the form submission
+        document.getElementById('registerForm').addEventListener('submit', submit_register);
     </script>
-    
 </body>
+
 </html>
