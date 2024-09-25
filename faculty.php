@@ -147,7 +147,7 @@
 <body>
     <!-- Header Section -->
     <div class="header">
-        <a href="login.php"><img src="slsulogo.png" class="headlogo"></a>
+        <a href="index.php"><img src="slsulogo.png" class="headlogo"></a>
         <h1>Southern Luzon State University</h1>
         <p>National Service Training Program</p>
     </div>
