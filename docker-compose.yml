@@ -28,7 +28,7 @@ services:
     image: 'php:latest'  # or any specific PHP version you need
     restart: always
     volumes:
-      - .:/app  # Mount your PHP code
+      - ./:/app  # Mount your PHP code
     environment:
       DB_HOST: db
       DB_USER: root
