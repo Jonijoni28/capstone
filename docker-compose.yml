@@ -1,0 +1,40 @@
+version: '3.7'
+services:
+  db:
+    image: 'mysql:latest'
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: dator123
+      MYSQL_DATABASE: login
+      MYSQL_USER: dator
+      MYSQL_PASSWORD: dator123
+    volumes:
+      - './mysql_data:/var/lib/mysql'
+    ports:
+      - '3306:3306'
+
+  phpmyadmin:
+    image: 'phpmyadmin/phpmyadmin:latest'
+    restart: always
+    depends_on:
+      - db
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: dator123
+    ports:
+      - '8081:80'
+      
+  php:
+    image: 'php:latest'  # or any specific PHP version you need
+    restart: always
+    volumes:
+      - .:/app  # Mount your PHP code
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: dator123
+      DB_NAME: login
+    depends_on:
+      - db
+    ports:
+      - '80:80'
