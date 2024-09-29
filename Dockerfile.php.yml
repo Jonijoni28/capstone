@@ -1,0 +1,7 @@
+FROM php:apache
+
+# Install mysqli extension
+RUN docker-php-ext-install mysqli
+
+# Restart the server automatically to apply changes
+CMD ["apache2-foreground"]

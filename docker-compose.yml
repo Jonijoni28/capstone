@@ -25,6 +25,9 @@ services:
       - '8081:80'
 
   php:
+    build:
+      context: .
+      dockerfile: Dockerfile.php.yml
     image: 'php:apache'  # Latest Apache with PHP included
     restart: always
     volumes:
