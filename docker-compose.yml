@@ -23,12 +23,12 @@ services:
       MYSQL_ROOT_PASSWORD: dator123
     ports:
       - '8081:80'
-      
+
   php:
-    image: 'php:latest'  # or any specific PHP version you need
+    image: 'php:apache'  # Latest Apache with PHP included
     restart: always
     volumes:
-      - ./:/app  # Mount your PHP code
+      - ./:/var/www/html  # Mount your PHP code into the Apache directory
     environment:
       DB_HOST: db
       DB_USER: root
@@ -37,4 +37,4 @@ services:
     depends_on:
       - db
     ports:
-      - '3000:3000'
+      - '3000:80'  # Map port 3000 on the host to port 80 in the container
