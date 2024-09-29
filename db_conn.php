@@ -1,9 +1,9 @@
 <?php
     function connect_db() {
-        $servername = "localhost";
-        $username = "root";
-        $password = "";
-        $dbname = "login";
+        $servername = getenv('DB_HOST') ?? "localhost";
+        $username = getenv('DB_USER') ?? "root";
+        $password = getenv('DB_PASS') ?? "";
+        $dbname = getenv('DB_NAME') ?? "login";
         
         $conn = new mysqli($servername, $username, $password, $dbname);
         
