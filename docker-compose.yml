@@ -28,7 +28,7 @@ services:
     image: 'php:apache'  # Latest Apache with PHP included
     restart: always
     volumes:
-      - ./:/var/www/html  # Mount your PHP code into the Apache directory
+      - .:/var/www/html  # Mount your PHP code into the Apache directory
     environment:
       DB_HOST: db
       DB_USER: root
