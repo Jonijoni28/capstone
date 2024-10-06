@@ -14,7 +14,7 @@
         }
 
         body {
-            background: url('nstp.jpg') no-repeat center center/cover;
+            background: url('greens.jpg') no-repeat center center/cover;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -61,7 +61,7 @@
             background-color: rgba(255, 255, 255, 0.15);
             border-radius: 15px;
             padding: 30px;
-            width: 500px;
+            width: 700px;
             max-height: 100%;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(20px);

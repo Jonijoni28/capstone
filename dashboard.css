@@ -61,12 +61,6 @@ h1 {
 }
 
 
-body {
-    background: url('nstp.jpg') no-repeat;
-    background-position: center;
-    background-size: cover;
-    height: 100vh;
-  }
 
   .navbar li a:hover {
     color:#00f974;

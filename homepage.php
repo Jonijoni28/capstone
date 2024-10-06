@@ -1,4 +1,5 @@
 <?php
+require_once 'db_conn.php';
 session_start();
 
 // Check if the session ID stored in the cookie matches the current session
@@ -7,6 +8,9 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
     header('Location: faculty.php');
     exit();
 }
+
+$conn = connect_db();
+$user_id = $_SESSION['user_id'] ?? null;
 ?>
 
 <!DOCTYPE html>
@@ -29,12 +33,7 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
         <h1>Southern Luzon State University</h1>
         <p>National Service Training Program</p>
     </div>
-    <div class="navbar">
-        <a href="#" class="action_btn">Administrator</a>
-        <div class="toggle_btn">
-            <i class="fa-solid fa-bars"></i>
-        </div>
-    </div>
+
 
     <input type="checkbox" id="check">
     <label for="check">
@@ -43,20 +42,42 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
     </label>
 
     <div class="sidebar">
+    <header>
+        <!-- Move the avatar and name above the "Administrator" text -->
+        <?php
+            $select = mysqli_query($conn, "SELECT * FROM `user_info` WHERE id = '$user_id'") or die('query failed');
+            $fetch = mysqli_fetch_assoc($select);
 
+            if ($fetch['photo'] == '') {
+                echo '<img src="default/avatar.png" class="user-avatar">';
+            }  else {
+                // Fetch the photo as a blob
+                $photoBlob = $fetch['photo'];
+
+                // Check if the blob is not empty
+                if (!empty($photoBlob)) {
+                    // Output the image
+                    echo "<img src=\"$photoBlob\" class=\"user-avatar\" >";
+                } else {
+                    // Debugging output if the blob is empty
+                    echo '<img src="default/avatar.png" class="user-avatar">';
+                }
+            }
+        ?>
+        <h2><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h2>
         <header>Administrator</header>
-        <ul>
-            <li><a href="homepage.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
-            <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
-            <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
-            <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</i></a></li>
-            <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
-            <li><a href="instructor.php"><i class="fa-regular fa-user"></i></i>Instructor</a></li>
-            <form action="logout.php" method="post">
-                <button>Logout <i class="fa-solid fa-power-off"></i></button>
-            </form>
-        </ul>
-    </div>
+    </header>
+    <ul>
+        <li><a href="homepage.php"><i class="fa-solid fa-house"></i>Homepage</a></li>
+        <li><a href="dashboard.php"><i class="fas fa-qrcode"></i>Dashboard</a></li>
+        <li><a href="viewgrades.php"><i class="fas fa-link"></i>View Grades</a></li>
+        <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</a></li>
+        <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
+        <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
+        <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+    </ul>
+</div>
+
 
     <div class="top-right-buttons">
         <button onclick="viewAnnouncement()"><i class="fa-solid fa-book fa-xl"></i></button>
@@ -156,22 +177,19 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
             margin: 0;
         }
 
+
+
         /* Sidebar */
         .sidebar {
             position: fixed;
-            /* Keeps sidebar fixed when scrolling */
             left: -250px;
-            /* Initially off-screen */
-            top: 30;
-            /* Fix the sidebar from the top */
+            top: 0;
             width: 250px;
             height: 100%;
             background: #096c37;
             transition: all .5s ease;
             z-index: 1000;
-            /* Ensure the sidebar stays above the main content */
             overflow-y: auto;
-            /* Allow scrolling inside the sidebar if content exceeds height */
         }
 
         /* Sidebar header */
@@ -187,8 +205,6 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
         /* Sidebar links styling */
         .sidebar ul a {
             display: block;
-            height: 100%;
-            width: 100%;
             line-height: 65px;
             font-size: 20px;
             color: white;
@@ -199,6 +215,7 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
             transition: .4s;
         }
 
+        /* Hover effect for sidebar links */
         ul li:hover a {
             padding-left: 50px;
         }
@@ -207,6 +224,31 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
         .sidebar ul a i {
             margin-right: 16px;
         }
+
+        /* Logout link specific styling */
+        .sidebar ul a.logout-link {
+            color: white;
+            /* Set the text color to red */
+        }
+
+        /* Logout link hover effect */
+        ul li:hover a.logout-link {
+            padding-left: 50px;
+            color: #ff5c5c;
+            /* Lighter red on hover */
+        }
+
+        .user-avatar {
+    width: 80px; /* Adjust the size as needed */
+    height: 80px; /* Keep it the same as width for a circle */
+    border-radius: 50%; /* Makes the image circular */
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+    margin-top: 11px; /* Center the image in the sidebar */
+}
+
+h2{
+    margin-top: -30px;
+}
 
         /* Sidebar toggle button */
         #check {
@@ -236,7 +278,7 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
         label #cancel {
             z-index: 1111;
             left: -195px;
-            top: 130px;
+            top: 170px;
             font-size: 30px;
             color: #fff;
             padding: 4px 9px;

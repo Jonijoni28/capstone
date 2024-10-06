@@ -1,11 +1,10 @@
 <?php
 require_once "db_conn.php";
-$sql_statement = "SELECT username, password, user_type FROM registration WHERE username = ?";
-
+$sql_statement = "SELECT id, username, password, user_type FROM registration WHERE username = ?";
+$sql_statement_user_info = "SELECT * FROM user_info WHERE registration_id = ?";
 session_start();
 
 // Reject all request, except POST
-
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     echo "Invalid request method.";
 }
@@ -39,6 +38,17 @@ if ($stmt_results->num_rows > 0) {
         echo "Invalid username or password.";
     }
 
+    $stmt_user_info = $db->prepare($sql_statement_user_info);
+    $stmt_user_info->bind_param("i", $user["id"]);
+    $stmt_user_info->execute();
+    $stmt_user_info_results = $stmt_user_info->get_result();
+    $user_info = $stmt_user_info_results->fetch_assoc();
+
+    // Set the session variable
+    $_SESSION['user_id'] = $user_info["id"];
+    $_SESSION['username'] = $user["username"];
+    $_SESSION['user_type'] = $user["user_type"];
+
     if ($user["user_type"] == "admin") {
         http_response_code(301);
         http_response_code(301);
@@ -47,10 +57,6 @@ if ($stmt_results->num_rows > 0) {
 
         // Set a cookie for the session
         setcookie('auth', $session_id, time() + (86400 * 30), "/"); // 30 days expiry
-
-        // Set the session variable
-        $_SESSION['username'] = $user["username"];
-        $_SESSION['user_type'] = $user["user_type"];
 
         header('Location: homepage.php');
         exit();
@@ -63,10 +69,6 @@ if ($stmt_results->num_rows > 0) {
 
         // Set a cookie for the session
         setcookie('auth', $session_id, time() + (86400 * 30), "/"); // 30 days expiry
-
-        // Set the session variable
-        $_SESSION['username'] = $user["username"];
-        $_SESSION['user_type'] = $user["user_type"];
 
         header('Location: professor.php');
         exit();
