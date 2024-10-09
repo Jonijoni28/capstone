@@ -32,7 +32,7 @@
         }
 
         body {
-            background: url('nstp.jpg') no-repeat center center/cover;
+            background-color: #185519;
              height: 100vh;
             display: flex;
             flex-direction: column;

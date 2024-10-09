@@ -69,12 +69,6 @@ $user_id = $_SESSION['user_id'] ?? null;
             color: white;
         }
 
-        body {
-            background: url('nstp.jpg') no-repeat center center;
-            background-size: cover;
-            height: 100vh;
-        }
-
         /* Sidebar */
 .sidebar {
     position: fixed;
@@ -201,6 +195,12 @@ h2{
     margin-top: -30px;
 }
 
+h5 {
+    margin-bottom: -1   0px;
+    margin-top: -30px;
+    font-size: 20px;
+}
+
 
         .dashboard {
             display: flex;
@@ -322,7 +322,7 @@ input[type="number"] {
                 }
             }
         ?>
-        <h2><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h2>
+        <h5><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h5>
         <header>Administrator</header>
     </header>
     <ul>

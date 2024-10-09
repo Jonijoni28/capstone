@@ -245,7 +245,7 @@ $user_id = $_SESSION['user_id'] ?? null;
                 }
             }
         ?>
-        <h2><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h2>
+        <h5><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h5>
         <header>Instructor</header>
         <ul>
             <li><a href="professor.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
@@ -273,6 +273,12 @@ body {
 
 h2{
     margin-top: -30px;
+}
+
+h5 {
+    margin-bottom: -1   0px;
+    margin-top: -30px;
+    font-size: 20px;
 }
      /* Sidebar */
 .sidebar {
@@ -303,6 +309,7 @@ h2{
     line-height: 65px;
     font-size: 20px;
     color: white;
+    text-align: left;
     padding-left: 40px;
     box-sizing: border-box;
     border-top: 1px solid rgba(255, 255, 255, .1);
@@ -387,11 +394,57 @@ label #cancel {
 #check:checked~body {
     margin-left: 250px;
 }
+
+.pagination-container {
+    display: flex;
+    justify-content: center; /* Align to the left */
+    align-items: center;
+    margin-bottom: 20px; /* Space between pagination and table */
+    margin-top: -30px;  /* Adjust to align with the search bar and add button */
+}
+
+.pagination-container button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: none;
+    background-color: #096c37;
+    color: white;
+    cursor: pointer;
+}
+
+.pagination-container button.active {
+    background-color: #0a3a20;
+}
+
+.pagination-container button[disabled] {
+    background-color: grey;
+    cursor: not-allowed;
+}
+
+.page-button {
+    padding: 5px 10px;
+    margin: 0 5px;
+    cursor: pointer;
+}
+
+.page-button.active {
+    background-color: #0a3a20;
+    color: white;
+}
+
+
   </style>
+
+
   <!-- Search functionality -->
   <div class="search-container">
     <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
   </div>
+  <div class="pagination-container">
+    <button id="prevPage" onclick="prevPage()">Previous</button>
+    <span id="pagination"></span>
+    <button id="nextPage" onclick="nextPage()">Next</button>
+</div>
 
   <!-- Modal dialogs -->
   <dialog id="editModal">
@@ -646,6 +699,78 @@ label #cancel {
           alert('An unexpected error occurred. Please check the console for details.');
         });
     });
+
+    let currentPage = 1;
+let rowsPerPage = 2;
+
+function paginateTable() {
+    let table = document.getElementById("editableTable");
+    let tr = table.getElementsByTagName("tr");
+    let totalRows = tr.length - 1; // excluding the header row
+    let totalPages = Math.ceil(totalRows / rowsPerPage);
+
+    let start = (currentPage - 1) * rowsPerPage + 1; // skip the header row
+    let end = start + rowsPerPage - 1;
+
+    // Show only the rows for the current page
+    for (let i = 1; i < tr.length; i++) {
+        if (i >= start && i <= end) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+        }
+    }
+
+    // Disable/Enable Previous and Next buttons
+    document.getElementById('prevPage').disabled = (currentPage === 1);
+    document.getElementById('nextPage').disabled = (currentPage === totalPages);
+
+    // Update the pagination display
+    updatePagination(totalPages);
+}
+
+function updatePagination(totalPages) {
+    let paginationElement = document.getElementById('pagination');
+    paginationElement.innerHTML = "";
+
+    // Create pagination buttons
+    for (let i = 1; i <= totalPages; i++) {
+        let pageButton = document.createElement("button");
+        pageButton.innerHTML = i;
+        pageButton.classList.add('page-button');
+        if (i === currentPage) {
+            pageButton.classList.add('active');
+        }
+        pageButton.onclick = function () {
+            currentPage = i;
+            paginateTable();
+        };
+        paginationElement.appendChild(pageButton);
+    }
+}
+
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
+        paginateTable();
+    }
+}
+
+function nextPage() {
+    let table = document.getElementById("editableTable");
+    let totalRows = table.getElementsByTagName("tr").length - 1;
+    let totalPages = Math.ceil(totalRows / rowsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        paginateTable();
+    }
+}
+
+// Initialize pagination on page load
+window.onload = function() {
+    paginateTable();
+};
+
   </script>
 
 </body>

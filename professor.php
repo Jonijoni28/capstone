@@ -13,6 +13,8 @@ $conn = connect_db();
 $user_id = $_SESSION['user_id'] ?? null;
 ?>
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -42,8 +44,7 @@ $user_id = $_SESSION['user_id'] ?? null;
     </label>
     <div class="sidebar">
     <header>
-        <!-- Move the avatar and name above the "Administrator" text -->
-        <?php
+    <?php
             $select = mysqli_query($conn, "SELECT * FROM `user_info` WHERE id = '$user_id'") or die('query failed');
             $fetch = mysqli_fetch_assoc($select);
 
@@ -63,7 +64,7 @@ $user_id = $_SESSION['user_id'] ?? null;
                 }
             }
         ?>
-        <h2><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h2>
+        <h5><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h5>
         <header>Instructor</header>
         <ul>
             <li><a href="professor.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
@@ -200,6 +201,7 @@ $user_id = $_SESSION['user_id'] ?? null;
     line-height: 65px;
     font-size: 20px;
     color: white;
+    text-align: left;
     padding-left: 40px;
     box-sizing: border-box;
     border-top: 1px solid rgba(255, 255, 255, .1);
@@ -285,6 +287,23 @@ label #cancel {
     margin-left: 250px;
 }
 
+.user-avatar {
+    width: 80px; /* Adjust the size as needed */
+    height: 80px; /* Keep it the same as width for a circle */
+    border-radius: 50%; /* Makes the image circular */
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+    margin-top: 11px; /* Center the image in the sidebar */
+}
+
+h2{
+    margin-top: -30px;
+}
+
+h5 {
+    margin-bottom: -1   0px;
+    margin-top: -30px;
+    font-size: 20px;
+}
 
         /* SLIDESHOW CSS */
 

@@ -66,7 +66,7 @@ $user_id = $_SESSION['user_id'] ?? null;
                 }
             }
         ?>
-        <h2><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h2>
+        <h5><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h5>
         <header>Administrator</header>
     </header>
     <ul>
@@ -82,6 +82,13 @@ $user_id = $_SESSION['user_id'] ?? null;
 
 
   <style>
+
+* {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    text-decoration: none;
+}
     /* Sidebar */
 .sidebar {
     position: fixed;
@@ -317,6 +324,12 @@ h2 {
 
 h2{
     margin-top: -30px;
+}
+
+h5 {
+    margin-bottom: -1   0px;
+    margin-top: -30px;
+    font-size: 20px;
 }
     </style>
 

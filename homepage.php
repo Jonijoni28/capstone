@@ -64,7 +64,7 @@ $user_id = $_SESSION['user_id'] ?? null;
                 }
             }
         ?>
-        <h2><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h2>
+        <h5><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h5>
         <header>Administrator</header>
     </header>
     <ul>
@@ -238,6 +238,8 @@ $user_id = $_SESSION['user_id'] ?? null;
             /* Lighter red on hover */
         }
 
+        /* Profile */
+
         .user-avatar {
     width: 80px; /* Adjust the size as needed */
     height: 80px; /* Keep it the same as width for a circle */
@@ -248,6 +250,12 @@ $user_id = $_SESSION['user_id'] ?? null;
 
 h2{
     margin-top: -30px;
+}
+
+h5 {
+    margin-bottom: -1   0px;
+    margin-top: -30px;
+    font-size: 20px;
 }
 
         /* Sidebar toggle button */
