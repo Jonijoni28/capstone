@@ -94,41 +94,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Existing code...
 
   // Handling delete requests
-  if (isset($_POST['action']) && $_POST['action'] === 'delete_grade') {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'delete_grade') {
     $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
-    $selected_grades = isset($_POST['selected_grades']) ? json_decode($_POST['selected_grades'], true) : [];
 
-    if ($grades_id > 0 && !empty($selected_grades)) {
-      $conn = connect_db();
-      $updates = [];
-      $params = [];
+    if ($grades_id > 0) {
+        // Prepare the SQL to set the grades to NULL for the specific grades_id
+        $sql = "UPDATE tbl_students_grades SET prelim = NULL, midterm = NULL, finals = NULL WHERE grades_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $grades_id);
 
-      // Prepare the SQL updates for only the selected grades
-      foreach ($selected_grades as $grade) {
-        $updates[] = "$grade = NULL"; // Set the selected grade column to NULL
-      }
-
-      $sql = "UPDATE tbl_students_grades SET " . implode(', ', $updates) . " WHERE grades_id = ?";
-      $stmt = $conn->prepare($sql);
-      $params[] = $grades_id;
-
-      // Bind parameters and execute
-      $stmt->bind_param(str_repeat('s', count($selected_grades)) . 'i', ...array_merge(array_fill(0, count($selected_grades), null), $params));
-
-      if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Selected grades deleted successfully']);
-      } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
-      }
-
-      $stmt->close();
-      $conn->close();
-      exit;
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Grades deleted successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
+        }
+        
+        $stmt->close();
     } else {
-      echo json_encode(['success' => false, 'message' => 'Invalid request']);
-      exit;
+        echo json_encode(['success' => false, 'message' => 'Invalid grades ID.']);
     }
-  }
+}
+
 }
 
 ?>
@@ -174,7 +160,7 @@ $user_id = $_SESSION['user_id'] ?? null;
   
 
   <!-- Table of students with grades -->
-  <table id="editableTable" style="border-collapse: collapse; empty-cells: show;" class="table">
+  <table id="editableTable" class="table">
     <thead>
       <tr>
         <th>School ID</th>
@@ -213,9 +199,11 @@ $user_id = $_SESSION['user_id'] ?? null;
         echo "</tr>";
       }
       ?>
-
-    </tbody>
-  </table>
+<tr id="noResultsRow" style="display: none;">
+      <td colspan="8" style="text-align: center; color: red;">No Results Found</td>
+    </tr>
+  </tbody>
+</table>
 
   <input type="checkbox" id="check">
   <label for="check">
@@ -496,49 +484,71 @@ label #cancel {
     </form>
   </dialog>
 
-  <!-- Delete Modal -->
-  <dialog id="deleteModal">
+ <!-- Delete Modal -->
+<dialog id="deleteModal">
     <form id="deleteForm">
-      <h2>Delete Student Grades</h2>
-      <p>Select the grades you want to delete:</p>
+        <h2>Delete Student Grades</h2>
+        <p>Are you sure you want to delete all grades for this student?</p>
 
-      <div>
-        <input type="checkbox" id="deletePrelim" name="gradeType[]" value="prelim">
-        <label for="deletePrelim" id="deletePrelimLabel">Prelim: </label>
-      </div>
+        <!-- Hidden Action Field -->
+        <input type="hidden" name="action" value="delete_grade">
 
-      <div>
-        <input type="checkbox" id="deleteMidterm" name="gradeType[]" value="midterm">
-        <label for="deleteMidterm" id="deleteMidtermLabel">Midterm: </label>
-      </div>
+        <!-- This field will hold the grades_id for submission -->
+        <input type="hidden" name="grades_id" id="gradesIdInput">
 
-      <div>
-        <input type="checkbox" id="deleteFinals" name="gradeType[]" value="finals">
-        <label for="deleteFinals" id="deleteFinalsLabel">Finals: </label>
-      </div>
-
-      <!-- Hidden Action Field -->
-      <input type="hidden" name="action" value="delete_grade">
-
-      <button type="submit">Delete</button>
-      <button type="button" onclick="document.getElementById('deleteModal').close()">Cancel</button>
+        <button type="submit">Delete All Grades</button>
+        <button type="button" onclick="document.getElementById('deleteModal').close()">Cancel</button>
     </form>
-  </dialog>
+</dialog>
+
 
 
 
   <script>
     // Search function
     function searchRecords() {
-      const input = document.getElementById("searchInput").value.toLowerCase();
-      const rows = document.querySelectorAll("#editableTable tbody tr");
+  let input = document.getElementById('searchInput');
+  let filter = input.value.toUpperCase();
+  let table = document.getElementById("editableTable");
+  let tr = table.getElementsByTagName("tr");
+  let noResultsRow = document.getElementById('noResultsRow');
+  let hasVisibleRows = false; // Track if any rows are visible
 
-      rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(" ");
-        row.style.display = rowText.includes(input) ? "" : "none";
-      });
+  // Reset to the first page if the search input is cleared
+  if (filter === "") {
+    currentPage = 1;
+    paginateTable();
+    noResultsRow.style.display = 'none'; // Hide "No Results Found" message when search is cleared
+    return;
+  }
+
+  // Loop through all rows except the header and no results row
+  for (let i = 1; i < tr.length - 1; i++) {
+    let row = tr[i];
+    let cells = row.getElementsByTagName("td");
+    let textContent = "";
+
+    // Concatenate text from desired columns for search
+    for (let j = 0; j < cells.length; j++) {
+      textContent += cells[j].textContent || cells[j].innerText;
     }
+
+    // Show or hide rows based on search filter
+    if (textContent.toUpperCase().indexOf(filter) > -1) {
+      tr[i].style.display = "";
+      hasVisibleRows = true; // Mark as having visible rows
+    } else {
+      tr[i].style.display = "none";
+    }
+  }
+
+  // Show the "No Results Found" row if no rows are visible, otherwise hide it
+  if (!hasVisibleRows) {
+    noResultsRow.style.display = 'table-row';
+  } else {
+    noResultsRow.style.display = 'none';
+  }
+}
 
     // Open add student modal
     function openAddModal() {
@@ -568,40 +578,39 @@ label #cancel {
     }
 
     // Handle edit form submission
-    document.getElementById('editForm').addEventListener('submit', function(event) {
-      event.preventDefault();
+document.getElementById('editForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-      const editForm = event.target;
-      const gradesId = editForm.getAttribute('data-grades-id');
-      const schoolId = editForm.getAttribute('data-school-id');
+    const editForm = event.target;
+    const gradesId = editForm.getAttribute('data-grades-id');
+    const schoolId = editForm.getAttribute('data-school-id');
 
-      // Get the grade values and set to null if empty
-      const prelim = document.getElementById('editPrelim').value.trim() !== '' ? parseFloat(document.getElementById('editPrelim').value) : null;
-      const midterm = document.getElementById('editMidterm').value.trim() !== '' ? parseFloat(document.getElementById('editMidterm').value) : null;
-      const finals = document.getElementById('editFinals').value.trim() !== '' ? parseFloat(document.getElementById('editFinals').value) : null;
+    // Get the grade values and set to null if empty
+    const prelim = document.getElementById('editPrelim').value.trim() !== '' ? parseFloat(document.getElementById('editPrelim').value) : null;
+    const midterm = document.getElementById('editMidterm').value.trim() !== '' ? parseFloat(document.getElementById('editMidterm').value) : null;
+    const finals = document.getElementById('editFinals').value.trim() !== '' ? parseFloat(document.getElementById('editFinals').value) : null;
 
+    // Prepare the form data
+    const formData = new FormData();
+    formData.append('grades_id', gradesId);
+    formData.append('school_id', schoolId);
+    formData.append('prelim', prelim);
+    formData.append('midterm', midterm);
+    formData.append('finals', finals);
 
-      // Prepare the form data
-      const formData = new FormData();
-      formData.append('grades_id', gradesId);
-      formData.append('school_id', schoolId);
-      formData.append('prelim', prelim);
-      formData.append('midterm', midterm);
-      formData.append('finals', finals);
-
-      // Send the request to the server
-      fetch('', { // The same PHP file to process form submissions
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Update the table row with the new grades
+    // Send the request to the server
+    fetch('', { // The same PHP file to process form submissions
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the table row with the new grades formatted to three decimal places
             const row = document.querySelector(`tr[data-school-id="${schoolId}"]`);
-            row.querySelector('.prelim').textContent = data.prelim !== null ? data.prelim : '';
-            row.querySelector('.midterm').textContent = data.midterm !== null ? data.midterm : '';
-            row.querySelector('.finals').textContent = data.finals !== null ? data.finals : '';
+            row.querySelector('.prelim').textContent = prelim !== null ? prelim.toFixed(3) : '';
+            row.querySelector('.midterm').textContent = midterm !== null ? midterm.toFixed(3) : '';
+            row.querySelector('.finals').textContent = finals !== null ? finals.toFixed(3) : '';
 
             // Close the modal
             const editModal = document.getElementById('editModal');
@@ -609,111 +618,98 @@ label #cancel {
 
             // Show success message
             alert('Grades updated successfully!');
-          } else {
+        } else {
             console.error('Error:', data.message);
             alert('Error: ' + data.message);
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An unexpected error occurred. Please check the console for details.');
-        });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred. Please check the console for details.');
     });
+});
+
 
 
 
     //DELETE BUTTON
 
-    // Open delete modal and populate with current grades
-    function openDeleteModal(button) {
-      const row = button.closest('tr');
-      const gradesId = row.getAttribute('data-grades-id');
+    // Open delete modal and populate with grades ID
+function openDeleteModal(button) {
+    const row = button.closest('tr');
+    const gradesId = row.getAttribute('data-grades-id');
 
-      // Get current grades
-      const prelim = row.querySelector('.prelim').textContent.trim();
-      const midterm = row.querySelector('.midterm').textContent.trim();
-      const finals = row.querySelector('.finals').textContent.trim();
+    // Set the grades_id in the hidden input for submission
+    document.getElementById('gradesIdInput').value = gradesId;
 
-      // Populate the delete modal with current grades
-      document.getElementById('deletePrelimLabel').textContent = `Prelim: ${prelim || 'N/A'}`;
-      document.getElementById('deleteMidtermLabel').textContent = `Midterm: ${midterm || 'N/A'}`;
-      document.getElementById('deleteFinalsLabel').textContent = `Finals: ${finals || 'N/A'}`;
+    // Show the modal
+    const deleteModal = document.getElementById('deleteModal');
+    deleteModal.showModal();
+}
 
-      // Set checkboxes based on grades
-      document.getElementById('deletePrelim').checked = prelim !== '';
-      document.getElementById('deleteMidterm').checked = midterm !== '';
-      document.getElementById('deleteFinals').checked = finals !== '';
+// Handle delete form submission
+// Handle delete form submission
+document.getElementById('deleteForm').addEventListener('submit', function(event) {
+    event.preventDefault();
 
-      // Store grades_id in the form for submission
-      const deleteForm = document.getElementById('deleteForm');
-      deleteForm.setAttribute('data-grades-id', gradesId);
+    const gradesId = document.getElementById('gradesIdInput').value;
 
-      // Show the modal
-      const deleteModal = document.getElementById('deleteModal');
-      deleteModal.showModal();
-    }
+    // Prepare the form data
+    const formData = new FormData();
+    formData.append('action', 'delete_grade');
+    formData.append('grades_id', gradesId);
 
-    // Update delete form submission handler
-    document.getElementById('deleteForm').addEventListener('submit', function(event) {
-      event.preventDefault();
-
-      const deleteForm = event.target;
-      const gradesId = deleteForm.getAttribute('data-grades-id');
-
-      // Get all checked checkboxes
-      const selectedGrades = Array.from(deleteForm.querySelectorAll('input[name="gradeType[]"]:checked')).map(input => input.value);
-
-      if (selectedGrades.length === 0) {
-        alert('Please select at least one grade to delete.');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('action', 'delete_grade');
-      formData.append('grades_id', gradesId);
-      formData.append('selected_grades', JSON.stringify(selectedGrades));
-
-      // Send the request to the server
-      fetch('', { // Adjust URL if needed
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
-          if (data.success) {
+    // Send the request to the server
+    fetch('', { // The same PHP file to process form submissions
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the table row to clear the grades
             const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
-            selectedGrades.forEach(grade => {
-              row.querySelector(`.${grade}`).textContent = ''; // Clear the grade cell
-            });
+            if (row) {
+                // Clear the grades from the row
+                row.querySelector('.prelim').textContent = '';
+                row.querySelector('.midterm').textContent = '';
+                row.querySelector('.finals').textContent = '';
+            }
 
+            // Close the modal
             const deleteModal = document.getElementById('deleteModal');
             deleteModal.close();
 
-            alert('Selected grades deleted successfully!');
-          } else {
+            // Show success message
+            alert('Grades deleted successfully!');
+        } else {
+            console.error('Error:', data.message);
             alert('Error: ' + data.message);
-          }
-        })
-        .catch(error => {
-          alert('An unexpected error occurred. Please check the console for details.');
-        });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred. Please check the console for details.');
     });
+});
 
-    let currentPage = 1;
+
+
+ /* PAGINATION OF THE TABLE JS */
+let currentPage = 1;
 let rowsPerPage = 2;
 
 function paginateTable() {
     let table = document.getElementById("editableTable");
     let tr = table.getElementsByTagName("tr");
-    let totalRows = tr.length - 1; // excluding the header row
+    let totalRows = tr.length - 2; // excluding the header row and "No Results Found" row
     let totalPages = Math.ceil(totalRows / rowsPerPage);
 
     let start = (currentPage - 1) * rowsPerPage + 1; // skip the header row
     let end = start + rowsPerPage - 1;
 
     // Show only the rows for the current page
-    for (let i = 1; i < tr.length; i++) {
+    for (let i = 1; i < tr.length - 1; i++) {
         if (i >= start && i <= end) {
             tr[i].style.display = "";
         } else {
@@ -758,7 +754,7 @@ function prevPage() {
 
 function nextPage() {
     let table = document.getElementById("editableTable");
-    let totalRows = table.getElementsByTagName("tr").length - 1;
+    let totalRows = table.getElementsByTagName("tr").length - 2;
     let totalPages = Math.ceil(totalRows / rowsPerPage);
     if (currentPage < totalPages) {
         currentPage++;

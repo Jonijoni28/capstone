@@ -42,7 +42,7 @@ $user_id = $_SESSION['user_id'] ?? null;
     <p>National Service Training Program</p>
   </div>
   
-  <table id="editableTable" style="border-collapse: collapse; empty-cells: show;" class="table">
+  <table id="editableTable" class="table">
     <thead>
       <tr>
         <th>School ID</th>
@@ -76,8 +76,14 @@ $user_id = $_SESSION['user_id'] ?? null;
       }
       ?>
 
-    </tbody>
-  </table>
+<tr id="noResultsRow" style="display: none;">
+      <td colspan="8" style="text-align: center; color: red;">No Results Found</td>
+    </tr>
+  </tbody>
+</table>
+
+  
+
 
   <input type="checkbox" id="check">
   <label for="check">
@@ -391,51 +397,60 @@ function searchRecords() {
   let filter = input.value.toUpperCase();
   let table = document.getElementById("editableTable");
   let tr = table.getElementsByTagName("tr");
+  let noResultsRow = document.getElementById('noResultsRow');
+  let hasVisibleRows = false; // Track if any rows are visible
 
   // Reset to the first page if the search input is cleared
   if (filter === "") {
     currentPage = 1;
     paginateTable();
-    return; // Exit the function if input is cleared
+    noResultsRow.style.display = 'none'; // Hide "No Results Found" message when search is cleared
+    return;
   }
 
-  // Loop through all rows except the header
-  for (let i = 1; i < tr.length; i++) {
+  // Loop through all rows except the header and no results row
+  for (let i = 1; i < tr.length - 1; i++) {
     let row = tr[i];
     let cells = row.getElementsByTagName("td");
     let textContent = "";
 
     // Concatenate text from desired columns for search
     for (let j = 0; j < cells.length; j++) {
-      if (j === 0 || j === 1 || j === 2 || j === 3 || j === 4 || j === 5 || j === 6) {
-        textContent += cells[j].textContent || cells[j].innerText;
-      }
+      textContent += cells[j].textContent || cells[j].innerText;
     }
 
     // Show or hide rows based on search filter
     if (textContent.toUpperCase().indexOf(filter) > -1) {
       tr[i].style.display = "";
+      hasVisibleRows = true; // Mark as having visible rows
     } else {
       tr[i].style.display = "none";
     }
   }
+
+  // Show the "No Results Found" row if no rows are visible, otherwise hide it
+  if (!hasVisibleRows) {
+    noResultsRow.style.display = 'table-row';
+  } else {
+    noResultsRow.style.display = 'none';
+  }
 }
 
-/*PAGINATION OF THE TABLE JS*/
+/* PAGINATION OF THE TABLE JS */
 let currentPage = 1;
 let rowsPerPage = 2;
 
 function paginateTable() {
     let table = document.getElementById("editableTable");
     let tr = table.getElementsByTagName("tr");
-    let totalRows = tr.length - 1; // excluding the header row
+    let totalRows = tr.length - 2; // excluding the header row and "No Results Found" row
     let totalPages = Math.ceil(totalRows / rowsPerPage);
 
     let start = (currentPage - 1) * rowsPerPage + 1; // skip the header row
     let end = start + rowsPerPage - 1;
 
     // Show only the rows for the current page
-    for (let i = 1; i < tr.length; i++) {
+    for (let i = 1; i < tr.length - 1; i++) {
         if (i >= start && i <= end) {
             tr[i].style.display = "";
         } else {
@@ -480,7 +495,7 @@ function prevPage() {
 
 function nextPage() {
     let table = document.getElementById("editableTable");
-    let totalRows = table.getElementsByTagName("tr").length - 1;
+    let totalRows = table.getElementsByTagName("tr").length - 2;
     let totalPages = Math.ceil(totalRows / rowsPerPage);
     if (currentPage < totalPages) {
         currentPage++;
@@ -492,9 +507,7 @@ function nextPage() {
 window.onload = function() {
     paginateTable();
 };
-
-
-  </script>
+</script>
 
   <script src="./crud_function.js"></script>
 </body>

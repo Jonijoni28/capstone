@@ -20,6 +20,84 @@
             flex-direction: column;
         }
 
+        /* Preloader styles */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('./PICTURES/abtusbg.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+
+        #preloader::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 128, 0, 28); /* Semi-transparent green overlay */
+            backdrop-filter: blur(5px); /* Optional: adds a blur effect for a glass-like appearance */
+            z-index: 1;
+        }
+
+        .preloader-logo {
+            width: 150px;
+            height: auto;
+            margin-bottom: 20px;
+            animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite alternate;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        .progress-container {
+            width: 200px;
+            height: 5px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+            z-index: 2;
+        }
+
+        #progress-bar {
+            width: 0;
+            height: 100%;
+            background-color: white;
+            transition: width 0.02s linear;
+        }
+
+        #main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #main-content.show {
+            opacity: 1;
+        }
+
+        /* PRELOADER CSS */
+
         /* Header styling */
         .header {
             overflow: hidden;
@@ -196,6 +274,13 @@
 </head>
 
 <body>
+
+<div id="preloader">
+        <img src="slsulogo.png" alt="Logo" class="preloader-logo">
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
     <!-- Header Section -->
     <div class="header">
         <a href="index.php"><img src="slsulogo.png" class="headlogo"></a>
@@ -384,6 +469,30 @@
 
         // Attach the submit_register function to the form submission
         document.getElementById('registerForm').addEventListener('submit', submit_register);
+
+        // Preloader script
+    document.addEventListener('DOMContentLoaded', function() {
+        const preloader = document.getElementById('preloader');
+        const mainContent = document.getElementById('main-content');
+        const progressBar = document.getElementById('progress-bar');
+        let progress = 0;
+
+        const interval = setInterval(() => {
+            progress += 1;
+            progressBar.style.width = `${progress}%`;
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    setTimeout(() => {
+                        mainContent.classList.add('show');
+                    }, 50);
+                }, 500);
+            }
+        }, 20);
+    });
     </script>
 </body>
 
