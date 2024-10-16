@@ -306,6 +306,33 @@ h5 {
     color: white;
 }
 
+.addModal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Background overlay */
+  z-index: 1050; /* Ensure it's on top of other elements */
+}
+
+.addModal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: left;
+  max-width: 500px; /* Optional: Limit the modal width */
+  width: 90%; /* Optional: Responsive width */
+  margin: auto; /* Center the modal */
+  position: relative; /* Ensure it is positioned relative to the modal */
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Adjust for half its height */
+}
+
+
   </style>
   <div class="search-container">
   <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
@@ -507,6 +534,15 @@ function nextPage() {
 window.onload = function() {
     paginateTable();
 };
+
+function openModal() {
+  let modal = document.getElementById('myModal');
+  modal.style.display = 'block';
+
+  // Ensure the modal is centered
+  modal.style.top = (window.innerHeight - modal.offsetHeight) / 2 + 'px';
+}
+
 </script>
 
   <script src="./crud_function.js"></script>

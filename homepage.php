@@ -11,6 +11,103 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
 
 $conn = connect_db();
 $user_id = $_SESSION['user_id'] ?? null;
+
+// Function to submit an announcement
+function submitAnnouncement() {
+    global $conn;
+
+
+    // Get form data
+    $title = $_POST['title'];
+    $who = $_POST['audience'];
+    $what = $_POST['what'];
+    $when = $_POST['date'];
+    $where = $_POST['location'];
+    $attire = $_POST['attire'];
+    $note = $_POST['note'];
+    $announced_by = $_POST['announced_by'];
+    $image = $_FILES['image']['name'] ? 'uploads/' . basename($_FILES['image']['name']) : '';
+
+    if ($image) {
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $image)) {
+            echo '<script>alert("Image uploaded successfully!");</script>';
+        } else {
+            echo '<script>alert("Image upload failed!");</script>';
+        }
+    }
+
+    // SQL Insert
+    $stmt = $conn->prepare("INSERT INTO announcement (title, audience, what, date, location, attire, note, announced_by, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssssss", $title, $who, $what, $when, $where, $attire, $note, $announced_by, $image);
+
+    // Execute the statement
+    if ($stmt->execute()) {
+        echo '<script>alert("Announcement added successfully!");</script>';
+    } else {
+        echo '<script>alert("Error: ' . $stmt->error . '");</script>';
+    }
+
+    // Close the statement
+    $stmt->close();
+}
+
+
+
+// Function to fetch announcements
+function fetchAnnouncements() {
+    global $conn; // Use the global connection variable
+
+    $result = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+    if (!$result) {
+        return []; // Return an empty array if there's an error
+    }
+
+    $announcements = [];
+    while ($row = $result->fetch_assoc()) {
+        $announcements[] = $row; // Add each row to the announcements array
+    }
+
+    return $announcements; // Return the array of announcements
+}
+
+// Function to fetch and display announcements
+function displayAnnouncements() {
+    global $conn; // Use the global connection variable
+
+    $result = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+    if (!$result) {
+        echo '<p style="text-align:center; font-style:italic;">*Error fetching announcements*</p>';
+        return;
+    }
+
+    if ($result->num_rows === 0) {
+        echo '<p style="text-align:center; font-style:italic;">*No Further Announcements*</p>';
+        return;
+    }
+
+    // Display the announcements
+    while ($row = $result->fetch_assoc()) {
+        echo '
+            <div class="announcement">
+                <h4>Title: ' . htmlspecialchars($row['title']) . '</h4>
+                <p>Who: ' . htmlspecialchars($row['audience']) . '</p>
+                <p>What: ' . htmlspecialchars($row['what']) . '</p>
+                <p>When: ' . htmlspecialchars($row['date']) . '</p>
+                <p>Where: ' . htmlspecialchars($row['location']) . '</p>
+                <p>Attire: ' . htmlspecialchars($row['attire']) . '</p>
+                <p>Note: ' . htmlspecialchars($row['note']) . '</p>
+                <p>Announced By: ' . htmlspecialchars($row['announced_by']) . '</p>
+                ' . ($row['image'] ? '<img src="' . htmlspecialchars($row['image']) . '" style="width:100%;height:auto;"/>' : '') . '
+                <button class="delete-btn" onclick="deleteAnnouncement(' . $row['id'] . ')">Delete</button>
+            </div>
+        ';
+    }
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    submitAnnouncement();
+}
 ?>
 
 <!DOCTYPE html>
@@ -95,87 +192,70 @@ $user_id = $_SESSION['user_id'] ?? null;
     <!-- Blurred background overlay -->
     <div id="blurOverlay" class="blur-overlay"></div>
 
-    <!-- Popup content -->
-    <div id="announcementPopup" class="popup">
-        <div class="popup-content">
-            <h3>Add Announcement/News</h3>
-
-            <!-- Upload Image Button -->
-            <div class="buttons">
-                <button class="upload-img-btn" onclick="uploadImage()">Upload Image</button>
-                <button class="add-announce-btn" onclick="showAddAnnouncementForm()">Add Announcement</button>
+  <!-- Popup content for adding announcements -->
+  <div id="announcementPopup" class="popup">
+    <div class="popup-content">
+        <h3>Add Announcement/News</h3>
+        <form method="POST" enctype="multipart/form-data" onsubmit="handleSubmit(event)"> <!-- Ensure this calls handleSubmit -->
+            <div class="input-section">
+                <label>Title</label>
+                <input type="text" name="title" placeholder="Enter title" required>
             </div>
-
-            <!-- Upload Image Section -->
-            <div class="input-section" id="imageUploadSection" style="display:none;">
+            <div class="input-section">
+                <label>Who</label>
+                <input type="text" name="audience" placeholder="Enter audience" required>
+            </div>
+            <div class="input-section">
+                <label>What</label>
+                <input type="text" name="what" placeholder="Enter announcement title" required>
+            </div>
+            <div class="input-section">
+                <label>When</label>
+                <input type="text" name="date" placeholder="Enter date and time" required>
+            </div>
+            <div class="input-section">
+                <label>Where</label>
+                <input type="text" name="location" placeholder="Enter location" required>
+            </div>
+            <div class="input-section">
+                <label>Attire</label>
+                <textarea name="attire" placeholder="Enter attire details"></textarea>
+            </div>
+            <div class="input-section">
+                <label>Note</label>
+                <textarea name="note" placeholder="Enter additional notes"></textarea>
+            </div>
+            <div class="input-section">
+                <label>Announced By</label>
+                <input type="text" name="announced_by" placeholder="Enter name of announcer" required>
+            </div>
+            <div class="input-section">
                 <label>Upload Image</label>
-                <input type="file" id="imageUpload">
+                <input type="file" name="image" id="imageUpload"> <!-- Ensure this has an ID -->
             </div>
-
-            <!-- Add Announcement Form -->
-
-            <div id="addAnnouncementForm" style="display:none;">
-                <div class="input-section">
-                    <label>Title</label>
-                    <input type="text" placeholder="Enter title" value="">
-                </div>
-
-                <div class="input-section">
-                    <label>Who</label>
-                    <input type="text" placeholder="Enter audience" value="">
-                </div>
-
-                <div class="input-section">
-                    <label>What</label>
-                    <input type="text" placeholder="Enter announcement title" value="">
-                </div>
-
-                <div class="input-section">
-                    <label>When</label>
-                    <input type="text" placeholder="Enter date and time" value="">
-                </div>
-
-                <div class="input-section">
-                    <label>Where</label>
-                    <input type="text" placeholder="Enter location" value="">
-                </div>
-
-                <div class="input-section">
-                    <label>Attire</label>
-                    <textarea placeholder="Enter attire details"></textarea>
-                </div>
-
-                <div class="input-section">
-                    <label>Note</label>
-                    <textarea placeholder="Enter additional notes"></textarea>
-                </div>
-
-                <div class="input-section">
-                    <label>Announced By</label>
-                    <input type="text" placeholder="Enter announcer's name" value="">
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
             <div class="buttons">
-                <button class="cancel-btn" onclick="hideAnnouncementPopup()">Cancel</button>
-                <button class="upload-btn" onclick="submitAnnouncement()">Submit</button>
+                <button type="button" class="cancel-btn" onclick="hideAnnouncementPopup()">Cancel</button>
+                <button type="submit" class="upload-btn">Submit</button>
             </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Announcements -->
+<div id="viewAnnouncementPopup" class="popup">
+    <div class="popup-content">
+        <h3>View Announcements</h3>
+        <div id="announcementsDisplay">
+            <?php
+            displayAnnouncements(); // Ensure this function is called
+            ?>
+        </div>
+        <div class="buttons">
+            <button class="cancel-btn" onclick="hideViewAnnouncementPopup()">Cancel</button>
         </div>
     </div>
+</div>
 
-    <div id="viewAnnouncementPopup" class="popup">
-        <div class="popup-content">
-            <h3>View Announcements</h3>
-            <div id="announcementsDisplay">
-                <!-- Dynamically filled with announcements or placeholder -->
-            </div>
-            <!-- Cancel Button -->
-            <div class="buttons">
-                <button class="cancel-btn" onclick="hideViewAnnouncementPopup()">Cancel</button>
-            </div>
-        </div>
-    </div>
     <style>
         body {
             background-color: white;
@@ -1071,7 +1151,7 @@ h5 {
         <div class="slideshow-container">
             <!-- Slide 1 -->
             <div class="slide fade">
-                <img src="sinag1.jpg" alt="SLSU ROTC">
+                <img src="sinag2.jpg" alt="SLSU ROTC">
                 <div class="text">
                     <h1>CWTS visits<br>
                         Sinag Kalinga</h1>
@@ -1092,7 +1172,7 @@ h5 {
             </div>
             <!-- Slide 3 -->
             <div class="slide fade">
-                <img src="clean.jpg" alt="SLSU ROTC">
+                <img src="clean1.jpg" alt="SLSU ROTC">
                 <div class="text">
                     <h1>CWTS Clean Up<br> Drive Launches</h1>
                     <p>As part of the CWATS mandates, they have launched their<br>
@@ -1103,7 +1183,7 @@ h5 {
             </div>
             <!-- Slide 4 -->
             <div class="slide fade">
-                <img src="gun.png" alt="SLSU ROTC">
+                <img src="gun.jpg" alt="SLSU ROTC">
                 <div class="text">
                     <h1>ROTC Fires up Rifle<br> Handling and Drills.</h1>
                     <p>In preparation for the Annual Inter school ROTC Meet Up,<br>
@@ -1114,7 +1194,7 @@ h5 {
             </div>
             <!-- Slide 5 -->
             <div class="slide fade">
-                <img src="tree.jpg" alt="SLSU ROTC">
+                <img src="tree1.jpg" alt="SLSU ROTC">
                 <div class="text">
                     <h1>CWTS Tree<br> Planting Activity</h1>
                     <p>As part of their community initiative, CWATS committed<br>
@@ -1137,7 +1217,7 @@ h5 {
             </div>
             <!-- Slide 7 -->
             <div class="slide fade">
-                <img src="children.jpg" alt="SLSU ROTC">
+                <img src="children1.jpg" alt="SLSU ROTC">
                 <div class="text">
                     <h1>CWTS visits the<br>
                         Children</h1>
@@ -1313,11 +1393,9 @@ h5 {
             let announcements = [];
 
             function viewAnnouncement() {
-                document.getElementById('viewAnnouncementPopup').classList.add('show');
-                document.getElementById('blurOverlay').classList.add('show');
-                displayAnnouncements();
-            }
-
+    document.getElementById('viewAnnouncementPopup').classList.add('show');
+    document.getElementById('blurOverlay').classList.add('show');
+}
             function displayAnnouncements() {
                 const display = document.getElementById('announcementsDisplay');
                 display.innerHTML = ''; // Clear previous entries
@@ -1341,58 +1419,103 @@ h5 {
                 <p>Where: ${ann.where}</p>
                 <p>Attire: ${ann.attire}</p>
                 <p>Note: ${ann.note}</p>
+                <p>Note: ${ann.announced_by}</p>
                 ${ann.image ? '<img src="' + ann.image + '" style="width:100%;height:auto;"/>' : ''}
-                <button class="delete-btn" onclick="deleteAnnouncement(${index})">Delete</button>
+                <button class="delete-btn" onclick="deleteAnnouncement(' . $row['id'] . ')">Delete</button>
             `;
                         display.appendChild(section);
                     });
                 }
             }
 
-            function deleteAnnouncement(index) {
-                if (confirm("Are you sure you want to delete this announcement?")) {
-                    announcements.splice(index, 1); // Remove announcement from array
-                    displayAnnouncements(); // Refresh the display
-                }
+            function deleteAnnouncement(id) {
+    console.log("Deleting announcement with ID:", id); // Log the ID for debugging
+    if (!id) {
+        alert('Invalid announcement ID.'); // Check if ID is valid
+        return;
+    }
+
+    if (confirm("Are you sure you want to delete this announcement?")) {
+        fetch('delete_announcement.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'id=' + id // Ensure this is sending the ID correctly
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Announcement deleted successfully.');
+                location.reload(); // Reload the page to reflect changes
+            } else {
+                alert('Error: ' + data.message);
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the announcement.');
+        });
+    }
+}
+
 
             function hideViewAnnouncementPopup() {
                 document.getElementById('viewAnnouncementPopup').classList.remove('show');
                 document.getElementById('blurOverlay').classList.remove('show');
             }
 
-            function submitAnnouncement() {
-                const title = document.querySelector('#addAnnouncementForm input[placeholder="Enter title"]').value;
-                const who = document.querySelector('#addAnnouncementForm input[placeholder="Enter audience"]').value;
-                const what = document.querySelector('#addAnnouncementForm input[placeholder="Enter announcement title"]').value;
-                const when = document.querySelector('#addAnnouncementForm input[placeholder="Enter date and time"]').value;
-                const where = document.querySelector('#addAnnouncementForm input[placeholder="Enter location"]').value;
-                const attire = document.querySelector('#addAnnouncementForm textarea[placeholder="Enter attire details"]').value;
-                const note = document.querySelector('#addAnnouncementForm textarea[placeholder="Enter additional notes"]').value;
-                const imageUpload = document.getElementById('imageUpload');
-                const image = imageUpload.files.length > 0 ? URL.createObjectURL(imageUpload.files[0]) : '';
+            function handleSubmit(event) {
+    event.preventDefault(); // Prevent the default form submission
 
-                // Store announcement
-                announcements.push({
-                    title,
-                    who,
-                    what,
-                    when,
-                    where,
-                    attire,
-                    note,
-                    image
-                });
+    // Collect form data
+    const title = document.querySelector('input[name="title"]').value;
+    const who = document.querySelector('input[name="audience"]').value;
+    const what = document.querySelector('input[name="what"]').value;
+    const when = document.querySelector('input[name="date"]').value;
+    const where = document.querySelector('input[name="location"]').value;
+    const attire = document.querySelector('textarea[name="attire"]').value;
+    const note = document.querySelector('textarea[name="note"]').value;
+    const announced_by = document.querySelector('input[name="announced_by"]').value;
+    const imageUpload = document.getElementById('imageUpload');
+    const image = imageUpload.files.length > 0 ? imageUpload.files[0] : null;
 
-                // Optionally clear the form or hide the popup
-                hideAnnouncementPopup();
-                alert('Announcement added successfully.');
-            }
+    // Create FormData object to send data
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('audience', who);
+    formData.append('what', what);
+    formData.append('date', when);
+    formData.append('location', where);
+    formData.append('attire', attire);
+    formData.append('note', note);
+    formData.append('announced_by', announced_by);
+    if (image) {
+        formData.append('image', image);
+    }
 
-            function hideAnnouncementPopup() {
-                document.getElementById('announcementPopup').classList.remove('show');
-                document.getElementById('blurOverlay').classList.remove('show');
-            }
+    // Send AJAX request
+    fetch('submit_announcement.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Announcement added successfully.');
+            hideAnnouncementPopup(); // Hide the popup
+
+            // Reload the page after successful submission
+            location.reload(); // Reload the page
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the announcement.');
+    });
+}
 
             // Preloader script
         document.addEventListener('DOMContentLoaded', function() {
@@ -1417,6 +1540,9 @@ h5 {
                 }
             }, 20);
         });
+
+
+        
         </script>
 
         <!-- SLIDESHOW JS -->
