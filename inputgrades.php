@@ -30,12 +30,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($grades_id == 0) {
       $grades_id = $stmt->insert_id;
     }
+
+    // Calculate final grades
+    $finalGrades = null;
+    if ($prelim !== null && $midterm !== null && $finals !== null) {
+        $finalGrades = ($prelim + $midterm + $finals) / 3;
+        $finalGrades = round($finalGrades, 3); // Round to 3 decimal places
+
+        // Update final grades in the database
+        $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ? WHERE grades_id = ?");
+        $updateFinalsStmt->bind_param("di", $finalGrades, $grades_id);
+        
+        if (!$updateFinalsStmt->execute()) {
+            error_log("Failed to update final grades: " . $updateFinalsStmt->error);
+        }
+        $updateFinalsStmt->close();
+    }
+
     echo json_encode([
       'success' => true,
       'grades_id' => $grades_id,
       'prelim' => $prelim,
       'midterm' => $midterm,
-      'finals' => $finals
+      'finals' => $finals,
+      'final_grades' => $finalGrades // Include final grades in the response
     ]);
   } else {
     echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
@@ -63,27 +81,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 error_log("Received non-POST request: " . $_SERVER['REQUEST_METHOD']);
 
 // Fetch student data for displaying in the table
-$conn = connect_db();
-$sql = "SELECT 
-    c.school_id, 
-    c.first_name, 
-    c.last_name, 
-    c.gender,
-    c.nstp,
-    c.department,
-    c.course,
-    COALESCE(g.grades_id, 0) AS grades_id,
-    g.prelim, 
-    g.midterm, 
-    g.finals
-FROM 
-    tbl_cwts c
-LEFT JOIN 
-    tbl_students_grades g
-ON 
-    c.school_id = g.school_id";
-$results = $conn->query($sql);
-?>
+  $conn = connect_db();
+  $sql = "SELECT 
+      c.school_id, 
+      c.first_name, 
+      c.last_name, 
+      c.gender,
+      c.nstp,
+      c.department,
+      c.course,
+      COALESCE(g.grades_id, 0) AS grades_id,
+      g.prelim, 
+      g.midterm, 
+      g.finals,
+      -- Calculate final grades only if all grades are filled
+      CASE 
+          WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+          THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
+          ELSE NULL 
+      END AS final_grades
+  FROM 
+      tbl_cwts c
+  LEFT JOIN 
+      tbl_students_grades g
+  ON 
+      c.school_id = g.school_id";
+  $results = $conn->query($sql);
+  ?>
 
 <!-- #region -->
 <?php
@@ -172,7 +196,8 @@ $user_id = $_SESSION['user_id'] ?? null;
         <th>Course</th>
         <th>Prelims</th>
         <th>Midterms</th>
-        <th>Finals</th>
+        <th>Finals</th> 
+        <th>Final Grades</th> 
         <th>Actions</th>
       </tr>
     </thead>
@@ -190,6 +215,7 @@ $user_id = $_SESSION['user_id'] ?? null;
         echo "<td class='prelim'>{$rows["prelim"]}</td>";
         echo "<td class='midterm'>{$rows["midterm"]}</td>";
         echo "<td class='finals'>{$rows["finals"]}</td>";
+        echo "<td class='final_grades' style='font-weight: bold;'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
         echo "<td>";
         // Edit button
         echo "<button class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
@@ -556,28 +582,28 @@ label #cancel {
       addModal.showModal();
     }
 
-    // Edit grades modal functionality
-    function editGradesInfo(button) {
-      const row = button.closest('tr');
-      const gradesId = row.getAttribute('data-grades-id');
-      const schoolId = row.getAttribute('data-school-id');
-      const prelim = row.querySelector('.prelim').textContent;
-      const midterm = row.querySelector('.midterm').textContent;
-      const finals = row.querySelector('.finals').textContent;
+// Edit grades modal functionality
+function editGradesInfo(button) {
+    const row = button.closest('tr');
+    const gradesId = row.getAttribute('data-grades-id');
+    const schoolId = row.getAttribute('data-school-id');
+    const prelim = row.querySelector('.prelim').textContent;
+    const midterm = row.querySelector('.midterm').textContent;
+    const finals = row.querySelector('.finals').textContent;
 
-      const editForm = document.getElementById('editForm');
-      document.getElementById('editPrelim').value = prelim;
-      document.getElementById('editMidterm').value = midterm;
-      document.getElementById('editFinals').value = finals;
+    const editForm = document.getElementById('editForm');
+    document.getElementById('editPrelim').value = prelim;
+    document.getElementById('editMidterm').value = midterm;
+    document.getElementById('editFinals').value = finals;
 
-      editForm.setAttribute('data-grades-id', gradesId);
-      editForm.setAttribute('data-school-id', schoolId);
+    editForm.setAttribute('data-grades-id', gradesId);
+    editForm.setAttribute('data-school-id', schoolId);
 
-      const editModal = document.getElementById('editModal');
-      editModal.showModal();
-    }
+    const editModal = document.getElementById('editModal');
+    editModal.showModal();
+}
 
-    // Handle edit form submission
+// Handle edit form submission
 document.getElementById('editForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
@@ -612,6 +638,9 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
             row.querySelector('.midterm').textContent = midterm !== null ? midterm.toFixed(3) : '';
             row.querySelector('.finals').textContent = finals !== null ? finals.toFixed(3) : '';
 
+            // Recalculate and update final grades
+            updateFinalGrades(row, prelim, midterm, finals);
+
             // Close the modal
             const editModal = document.getElementById('editModal');
             editModal.close();
@@ -628,6 +657,77 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
         alert('An unexpected error occurred. Please check the console for details.');
     });
 });
+
+// Handle delete form submission
+document.getElementById('deleteForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    const gradesId = document.getElementById('gradesIdInput').value;
+
+    // Prepare the form data
+    const formData = new FormData();
+    formData.append('action', 'delete_grade');
+    formData.append('grades_id', gradesId);
+
+    // Send the request to the server
+    fetch('', { // The same PHP file to process form submissions
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the table row to clear the grades
+            const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
+            if (row) {
+                // Clear the grades from the row
+                row.querySelector('.prelim').textContent = '';
+                row.querySelector('.midterm').textContent = '';
+                row.querySelector('.finals').textContent = '';
+                // Clear the final grades as well
+                row.querySelector('.final_grades').textContent = '';
+            }
+
+            // Close the modal
+            const deleteModal = document.getElementById('deleteModal');
+            deleteModal.close();
+
+            // Show success message
+            alert('Grades deleted successfully!');
+        } else {
+            console.error('Error:', data.message);
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred. Please check the console for details.');
+    });
+});
+
+// Function to round final grades to specified values
+function roundToNearestGrade(value) {
+    const validGrades = [1.000, 1.250, 1.500, 1.750, 2.000, 2.250, 2.500, 2.750, 3.000, 4.000, 5.000];
+    let closestGrade = validGrades[0];
+
+    for (let i = 1; i < validGrades.length; i++) {
+        if (Math.abs(validGrades[i] - value) < Math.abs(closestGrade - value)) {
+            closestGrade = validGrades[i];
+        }
+    }
+
+    return closestGrade;
+}
+
+// Function to update final grades
+function updateFinalGrades(row, prelim, midterm, finals) {
+    let finalGrades = null;
+    if (prelim !== null && midterm !== null && finals !== null) {
+        finalGrades = (prelim + midterm + finals) / 3;
+        finalGrades = roundToNearestGrade(finalGrades); // Round to nearest valid grade
+    }
+    row.querySelector('.final_grades').textContent = finalGrades !== null ? finalGrades.toFixed(3) : '';
+}
 
 
 

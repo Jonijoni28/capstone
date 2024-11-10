@@ -13,7 +13,13 @@ c.course,
 COALESCE(g.grades_id, 0) AS grades_id,
 g.prelim, 
 g.midterm, 
-g.finals
+g.finals,
+-- Calculate final grades only if all grades are filled
+CASE 
+    WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+    THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
+    ELSE NULL 
+END AS final_grades
 FROM 
 tbl_cwts c
 LEFT JOIN 
@@ -73,6 +79,7 @@ $user_id = $_SESSION['user_id'] ?? null;
         <th>Prelims</th>
         <th>Midterms</th>
         <th>Finals</th>
+        <th>Final Grades</th>
       </tr>
     </thead>
     <tbody id="tableBody">
@@ -89,6 +96,7 @@ $user_id = $_SESSION['user_id'] ?? null;
         echo "<td>{$rows["prelim"]}</td>";
         echo "<td>{$rows["midterm"]}</td>";
         echo "<td>{$rows["finals"]}</td>";
+        echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
         echo "</tr>";
       }
       ?>

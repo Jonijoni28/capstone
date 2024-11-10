@@ -49,12 +49,12 @@ function editStudentInfo(button) {
   const dataId = row.getAttribute("data-id");
 
   document.getElementById('editSchoolId').value = dataId;
-  document.getElementById('editFirstName').value = row.children[1].textContent;
-  document.getElementById('editLastName').value = row.children[2].textContent;
-  document.getElementById('editGender').value = row.children[3].textContent;
-  document.getElementById('editNSTP').value = row.children[4].textContent;
-  document.getElementById('editDepartment').value = row.children[5].textContent;
-  document.getElementById('editCourse').value = row.children[6].textContent;
+  document.getElementById('editFirstName').value = row.children[2].textContent;
+  document.getElementById('editLastName').value = row.children[3].textContent;
+  document.getElementById('editGender').value = row.children[4].textContent;
+  document.getElementById('editNSTP').value = row.children[5].textContent;
+  document.getElementById('editDepartment').value = row.children[6].textContent;
+  document.getElementById('editCourse').value = row.children[7].textContent;
 
   const editModal = document.getElementById('editModal');
   editModal.showModal();
