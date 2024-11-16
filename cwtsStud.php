@@ -2,8 +2,9 @@
   require_once("db_conn.php");
 
   $conn = connect_db();
-  $sql = "SELECT * FROM tbl_cwts";
-  $results = $conn->query($sql);
+// Update the existing query that fetches students
+$sql = "SELECT * FROM tbl_cwts WHERE transferred = 0 OR transferred IS NULL";
+$results = $conn->query($sql);
   ?>
 
   <?php
@@ -729,16 +730,54 @@ function toggleSelectAll(selectAllCheckbox) {
         document.body.classList.add('blur');
       }
 
-      // Confirm instructor selection
-      function confirmInstructor() {
-        const instructor = document.getElementById('instructorSelect').value;
-        if (instructor) {
-          alert("Selected Instructor: " + instructor + "\nSelected Students: " + selectedStudentIds.join(", "));
-          closePopup('instructorPopup');
+// Replace the existing confirmInstructor() function with this:
+function confirmInstructor() {
+    const instructor = document.getElementById('instructorSelect').value;
+    if (!instructor) {
+        alert("Please select an instructor.");
+        return;
+    }
+
+    // Get all selected student IDs
+    const selectedStudents = Array.from(document.querySelectorAll('.selectStudentCheckbox:checked')).map(checkbox => {
+        return checkbox.closest('tr').dataset.id;
+    });
+
+    // Make the AJAX call to transfer students
+    fetch('transfer_students.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            instructor: instructor,
+            studentIds: selectedStudents
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remove transferred students from the table
+            selectedStudents.forEach(studentId => {
+                const row = document.querySelector(`tr[data-id="${studentId}"]`);
+                if (row) row.remove();
+            });
+            
+            // Close popups and reset checkboxes
+            closePopup('instructorPopup');
+            document.getElementById('selectAllCheckbox').checked = false;
+            document.getElementById('selectionActions').style.display = 'none';
+            
+            alert('Students successfully transferred to instructor.');
         } else {
-          alert("Please select an instructor.");
+            alert('Failed to transfer students: ' + data.message);
         }
-      }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while transferring students.');
+    });
+}
 
       // Cancel button functionality
       function cancelSelection() {

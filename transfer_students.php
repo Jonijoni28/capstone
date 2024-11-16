@@ -7,27 +7,49 @@ $data = json_decode(file_get_contents('php://input'), true);
 $instructor = $data['instructor'];
 $studentIds = $data['studentIds'];
 
-// Call the function to transfer students
-if (transferStudentsToInstructor($instructor, $studentIds)) {
-    echo json_encode(['success' => true]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Failed to transfer students.']);
-}
+// Begin transaction
+$conn->begin_transaction();
 
-// Function to transfer students to the selected instructor
-function transferStudentsToInstructor($instructor, $studentIds) {
-    global $conn; // Use the existing database connection
-    $studentIdsString = implode(',', array_map('intval', $studentIds)); // Convert IDs to a comma-separated string
-
-    // SQL query to update the instructor for the selected students
-    $sql = "UPDATE tbl_cwts SET instructor = ? WHERE school_id IN ($studentIdsString)";
+try {
+    // Create a prepared statement with placeholders for each student ID
+    $placeholders = str_repeat('?,', count($studentIds) - 1) . '?';
+    
+    // Update the instructor field and mark as transferred
+    $sql = "UPDATE tbl_cwts 
+            SET instructor = ?, 
+                transferred = 1 
+            WHERE school_id IN ($placeholders)";
+    
+    // Create array of parameters starting with instructor
+    $params = array_merge([$instructor], $studentIds);
+    
+    // Create type string for bind_param (s for instructor, s for each student ID)
+    $types = str_repeat('s', count($params));
+    
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('s', $instructor);
-
-    if ($stmt->execute()) {
-        return true; // Success
-    } else {
-        return false; // Failure
+    
+    // Bind parameters dynamically
+    $stmt->bind_param($types, ...$params);
+    
+    if (!$stmt->execute()) {
+        throw new Exception("Failed to update students: " . $stmt->error);
     }
+
+    // Check if any rows were affected
+    if ($stmt->affected_rows > 0) {
+        // Commit transaction
+        $conn->commit();
+        echo json_encode(['success' => true]);
+    } else {
+        throw new Exception("No students were updated. Please check the student IDs.");
+    }
+
+} catch (Exception $e) {
+    // Rollback transaction on error
+    $conn->rollback();
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
+
+$stmt->close();
+$conn->close();
 ?>

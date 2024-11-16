@@ -3,32 +3,36 @@ require_once ("db_conn.php");
 
 $conn = connect_db();
 $sql = "SELECT 
-c.school_id, 
-c.first_name, 
-c.last_name, 
-c.gender,
-c.nstp,
-c.department,
-c.course,
-COALESCE(g.grades_id, 0) AS grades_id,
-g.prelim, 
-g.midterm, 
-g.finals,
--- Calculate final grades only if all grades are filled
-CASE 
-    WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
-    THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
-    ELSE NULL 
-END AS final_grades
+    c.school_id, 
+    c.first_name, 
+    c.last_name, 
+    c.gender,
+    c.nstp,
+    c.department,
+    c.course,
+    c.instructor,
+    COALESCE(g.grades_id, 0) AS grades_id,
+    g.prelim, 
+    g.midterm, 
+    g.finals,
+    CASE 
+        WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+        THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
+        ELSE NULL 
+    END AS final_grades
 FROM 
-tbl_cwts c
+    tbl_cwts c
 LEFT JOIN 
-tbl_students_grades g
-ON 
-c.school_id = g.school_id";
-$results = $conn->query($sql);
-?>
+    tbl_students_grades g ON c.school_id = g.school_id";
 
+// Execute the query and store the result
+$results = $conn->query($sql);
+
+// Check if query was successful
+if (!$results) {
+    die("Query failed: " . $conn->error);
+}
+?>
 <?php
 require_once 'db_conn.php';
 session_start();
@@ -67,43 +71,45 @@ $user_id = $_SESSION['user_id'] ?? null;
   </div>
  
   <table id="editableTable" class="table">
-    <thead>
-      <tr>
-        <th>School ID</th>
-        <th>First Name</th>
-        <th>Last Name</th>
-        <th>Gender</th>
-        <th>NSTP</th>
-        <th>Department</th>
-        <th>Course</th>
-        <th>Prelims</th>
-        <th>Midterms</th>
-        <th>Finals</th>
-        <th>Final Grades</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      <?php
-      while ($rows = $results->fetch_assoc()) {
-        echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
-        echo "<td>{$rows["school_id"]}</td>";
-        echo "<td>{$rows["first_name"]}</td>";
-        echo "<td>{$rows["last_name"]}</td>";
-        echo "<td>{$rows["gender"]}</td>";
-        echo "<td>{$rows["nstp"]}</td>";
-        echo "<td>{$rows["department"]}</td>";
-        echo "<td>{$rows["course"]}</td>";
-        echo "<td>{$rows["prelim"]}</td>";
-        echo "<td>{$rows["midterm"]}</td>";
-        echo "<td>{$rows["finals"]}</td>";
-        echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
-        echo "</tr>";
-      }
-      ?>
-    <tr id="noResultsRow" style="display: none;">
-      <td colspan="8" style="text-align: center; color: red;">No Results Found</td>
+  <thead>
+    <tr>
+      <th>School ID</th>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Gender</th>
+      <th>NSTP</th>
+      <th>Department</th>
+      <th>Course</th>
+      <th>Instructor</th>  <!-- Add this line -->
+      <th>Prelims</th>
+      <th>Midterms</th>
+      <th>Finals</th>
+      <th>Final Grades</th>
     </tr>
-  </tbody>
+  </thead>
+  <tbody id="tableBody">
+  <?php
+  while ($rows = $results->fetch_assoc()) {
+    echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
+    echo "<td>{$rows["school_id"]}</td>";
+    echo "<td>{$rows["first_name"]}</td>";
+    echo "<td>{$rows["last_name"]}</td>";
+    echo "<td>{$rows["gender"]}</td>";
+    echo "<td>{$rows["nstp"]}</td>";
+    echo "<td>{$rows["department"]}</td>";
+    echo "<td>{$rows["course"]}</td>";
+    echo "<td>" . ($rows["instructor"] ? $rows["instructor"] : "Not Assigned") . "</td>"; // Add this line
+    echo "<td>{$rows["prelim"]}</td>";
+    echo "<td>{$rows["midterm"]}</td>";
+    echo "<td>{$rows["finals"]}</td>";
+    echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
+    echo "</tr>";
+  }
+  ?>
+  <tr id="noResultsRow" style="display: none;">
+    <td colspan="12" style="text-align: center; color: red;">No Results Found</td> <!-- Update colspan to 12 -->
+  </tr>
+</tbody>
 </table>
 
   <input type="checkbox" id="check">

@@ -1,5 +1,17 @@
 <?php
 require_once("db_conn.php");
+session_start();
+
+// Check if user is logged in as instructor
+if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && 
+    isset($_SESSION['user_type']) && $_SESSION["user_type"] == "instructor" && 
+    isset($_SESSION['username']))) {
+    // If no valid session or missing username, redirect to login page
+    header('Location: faculty.php');
+    exit();
+}
+
+$instructor = $_SESSION['username'];
 
 // Data processing logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -82,31 +94,36 @@ error_log("Received non-POST request: " . $_SERVER['REQUEST_METHOD']);
 
 // Fetch student data for displaying in the table
   $conn = connect_db();
-  $sql = "SELECT 
-      c.school_id, 
-      c.first_name, 
-      c.last_name, 
-      c.gender,
-      c.nstp,
-      c.department,
-      c.course,
-      COALESCE(g.grades_id, 0) AS grades_id,
-      g.prelim, 
-      g.midterm, 
-      g.finals,
-      -- Calculate final grades only if all grades are filled
-      CASE 
-          WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
-          THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
-          ELSE NULL 
-      END AS final_grades
-  FROM 
-      tbl_cwts c
-  LEFT JOIN 
-      tbl_students_grades g
-  ON 
-      c.school_id = g.school_id";
-  $results = $conn->query($sql);
+ // Near the top of the file, update the query that fetches students
+$instructor = $_SESSION['username']; // Assuming username is stored in session
+$sql = "SELECT 
+    c.school_id, 
+    c.first_name, 
+    c.last_name, 
+    c.gender,
+    c.nstp,
+    c.department,
+    c.course,
+    COALESCE(g.grades_id, 0) AS grades_id,
+    g.prelim, 
+    g.midterm, 
+    g.finals,
+    CASE 
+        WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+        THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
+        ELSE NULL 
+    END AS final_grades
+FROM 
+    tbl_cwts c
+LEFT JOIN 
+    tbl_students_grades g ON c.school_id = g.school_id
+WHERE 
+    c.instructor = ? AND c.transferred = 1";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('s', $instructor);
+$stmt->execute();
+$results = $stmt->get_result();
   ?>
 
 <!-- #region -->
@@ -145,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php
 require_once 'db_conn.php';
-session_start();
+
 
 // Check if the session ID stored in the cookie matches the current session
 if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type']) && $_SESSION["user_type"] == "instructor")) {
@@ -201,34 +218,39 @@ $user_id = $_SESSION['user_id'] ?? null;
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody id="tableBody">
-      <?php
-      while ($rows = $results->fetch_assoc()) {
-        echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
-        echo "<td>{$rows["school_id"]}</td>";
-        echo "<td>{$rows["first_name"]}</td>";
-        echo "<td>{$rows["last_name"]}</td>";
-        echo "<td>{$rows["gender"]}</td>";
-        echo "<td>{$rows["nstp"]}</td>";
-        echo "<td>{$rows["department"]}</td>";
-        echo "<td>{$rows["course"]}</td>";
-        echo "<td class='prelim'>{$rows["prelim"]}</td>";
-        echo "<td class='midterm'>{$rows["midterm"]}</td>";
-        echo "<td class='finals'>{$rows["finals"]}</td>";
-        echo "<td class='final_grades' style='font-weight: bold;'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
-        echo "<td>";
-        // Edit button
-        echo "<button class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
-        // Delete button
-        echo "<button class='deleteButton' onclick='openDeleteModal(this)'><i class='fa-solid fa-trash'></i></button>";
-        echo "</td>";
-        echo "</tr>";
-      }
-      ?>
-<tr id="noResultsRow" style="display: none;">
-      <td colspan="8" style="text-align: center; color: red;">No Results Found</td>
-    </tr>
-  </tbody>
+<tbody id="tableBody">
+  <?php
+  if ($results->num_rows > 0) {
+    while ($rows = $results->fetch_assoc()) {
+      echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
+      echo "<td>{$rows["school_id"]}</td>";
+      echo "<td>{$rows["first_name"]}</td>";
+      echo "<td>{$rows["last_name"]}</td>";
+      echo "<td>{$rows["gender"]}</td>";
+      echo "<td>{$rows["nstp"]}</td>";
+      echo "<td>{$rows["department"]}</td>";
+      echo "<td>{$rows["course"]}</td>";
+      echo "<td class='prelim'>{$rows["prelim"]}</td>";
+      echo "<td class='midterm'>{$rows["midterm"]}</td>";
+      echo "<td class='finals'>{$rows["finals"]}</td>";
+      echo "<td class='final_grades' style='font-weight: bold;'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
+      echo "<td>";
+      echo "<button class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
+      echo "<button class='deleteButton' onclick='openDeleteModal(this)'><i class='fa-solid fa-trash'></i></button>";
+      echo "</td>";
+      echo "</tr>";
+    }
+  } else {
+    // Show "No Student Assigned" message
+    echo "<tr>";
+    echo "<td colspan='12' style='text-align: center; padding: 20px; font-weight: bold; color: #666;'>No Student Assigned</td>";
+    echo "</tr>";
+  }
+  ?>
+  <tr id="noResultsRow" style="display: none;">
+    <td colspan="12" style="text-align: center; color: red;">No Results Found</td>
+  </tr>
+</tbody>
 </table>
 
   <input type="checkbox" id="check">
@@ -286,7 +308,7 @@ body {
 }
 
 h2{
-    margin-top: -30px;
+    margin-bottom: 10px;
 }
 
 h5 {
@@ -684,8 +706,6 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
                 row.querySelector('.prelim').textContent = '';
                 row.querySelector('.midterm').textContent = '';
                 row.querySelector('.finals').textContent = '';
-                // Clear the final grades as well
-                row.querySelector('.final_grades').textContent = '';
             }
 
             // Close the modal
