@@ -14,7 +14,7 @@
         }
 
         body {
-            background-color: #185519;
+            background-image: url(backgroundss.jpg);
             height: 100vh;
             display: flex;
             flex-direction: column;

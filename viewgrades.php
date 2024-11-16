@@ -156,9 +156,8 @@ $user_id = $_SESSION['user_id'] ?? null;
 
 <style>
   body {
-    background: url('greens.jpg') no-repeat;
+    background: url('backgroundss.jpg');
     background-position: center;
-    background-size: cover;
 
   }
   /* Sidebar */

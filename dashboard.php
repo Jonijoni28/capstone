@@ -115,9 +115,8 @@ $lineChartDataJson = json_encode($lineChartData);
         }
 
         body {
-            background: url('greens.jpg') no-repeat;
+            background: url('backgroundss.jpg');
             background-position: center;
-            background-size: cover;
         }
 
         .header p {
