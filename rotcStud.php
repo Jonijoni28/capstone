@@ -314,7 +314,7 @@ if ($result) {
   }
 
   h2{
-      margin-top: -30px;
+      margin-bottom: 10px;
   }
   h5 {
       margin-bottom: -1   0px;
