@@ -25,7 +25,6 @@ $user_id = $_SESSION['user_id'] ?? null;
     <title>Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
-    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" type="text/css" href="instructor.css">
 
     <div class="header">
@@ -80,15 +79,111 @@ $user_id = $_SESSION['user_id'] ?? null;
     </ul>
 </div>
 
+<div class="faculty-section">
+    <!-- CWTS Instructors Section -->
+
+
+    <!-- CWTS Instructors Section -->
+    <div class="cwts-instructors">
+        <h2>CWTS Instructors</h2>
+        <div class="cwts-grid">
+            <?php
+            // Query for CWTS instructors
+            $cwts_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, u.area_assignment, r.user_type 
+            FROM user_info u 
+            LEFT JOIN registration r ON u.email = r.username 
+            WHERE u.area_assignment = 'CWTS'";
+$cwts_result = mysqli_query($conn, $cwts_query);
+
+while ($instructor = mysqli_fetch_assoc($cwts_result)) {
+ echo '<div class="instructor">';
+ 
+ // Display instructor photo
+ if (empty($instructor['photo'])) {
+     echo '<img src="default/avatar.png" alt="Default Avatar">';
+ } else {
+     echo '<img src="' . $instructor['photo'] . '" alt="' . $instructor['first_name'] . '">';
+ }
+
+ // Display instructor details with bold name
+ echo '<p class="name"><strong>' . $instructor['title'] . ' ' . $instructor['first_name'] . ' ' . $instructor['last_name'] . '</strong></p>';
+ echo '<p class="designation">' . $instructor['department'] . '</p>';
+ // Add null check for user_type
+ echo '<p class="user-type">' . (isset($instructor['user_type']) ? ucfirst($instructor['user_type']) : 'Instructor') . '</p>';
+ echo '</div>';
+}
+            ?>
+        </div>
+    </div>
+
+    <!-- ROTC Instructors Section -->
+    <div class="rotc-instructors">
+        <h2>ROTC Instructors</h2>
+        <div class="rotc-grid">
+            <?php
+            // Query for ROTC instructors
+            $rotc_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, u.area_assignment, r.user_type 
+               FROM user_info u 
+               LEFT JOIN registration r ON u.email = r.username 
+               WHERE u.area_assignment = 'ROTC'";
+$rotc_result = mysqli_query($conn, $rotc_query);
+
+while ($instructor = mysqli_fetch_assoc($rotc_result)) {
+    echo '<div class="instructor">';
+    
+    // Display instructor photo
+    if (empty($instructor['photo'])) {
+        echo '<img src="default/avatar.png" alt="Default Avatar">';
+    } else {
+        echo '<img src="' . $instructor['photo'] . '" alt="' . $instructor['first_name'] . '">';
+    }
+
+    // Display instructor details with bold name
+    echo '<p class="name"><strong>' . $instructor['title'] . ' ' . $instructor['first_name'] . ' ' . $instructor['last_name'] . '</strong></p>';
+    echo '<p class="designation">' . $instructor['department'] . '</p>';
+    // Add null check for user_type
+    echo '<p class="user-type">' . (isset($instructor['user_type']) ? ucfirst($instructor['user_type']) : 'Instructor') . '</p>';
+    echo '</div>';
+}
+        ?>
+
+        
+    </div>
+</div>
+</div>
+
 
   <style>
 
 * {
-    margin: 0px;
-    padding: 0px;
-    list-style: none;
-    text-decoration: none;
-}
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .header {
+            overflow: hidden;
+            background-color: #0a3a20;
+            color: white;
+            padding: 10px;
+        }
+
+        .header h1 {
+            margin-left: 140px;
+            margin-top: 20px;
+        }
+
+        .header p {
+            margin-left: 140px;
+            font-size: 20px;
+        }
+
+        .headlogo {
+            width: 100px;
+            height: 100px;
+            float: left;
+            margin-left: 10px;
+        }
     /* Sidebar */
 .sidebar {
     position: fixed;
@@ -120,9 +215,9 @@ $user_id = $_SESSION['user_id'] ?? null;
     color: white;
     padding-left: 40px;
     box-sizing: border-box;
-    border-top: 1px solid rgba(255, 255, 255, .1);
-    border-bottom: 1px solid black;
     transition: .4s;
+    text-decoration: none; /* Remove underlines */
+    border-bottom: 1px solid black; 
 }
 
 /* Hover effect for sidebar links */
@@ -201,17 +296,6 @@ label #cancel {
 /* Ensure the content shifts when the sidebar is open */
 #check:checked~body {
     margin-left: 250px;
-}
-
-* {
-    margin: 0px;
-    padding: 0px;
-    list-style: none;
-    text-decoration: none;
-}
-
-    body {
-    background-color: #f0f0f0;
 }
 
 .faculty-section {
@@ -329,80 +413,61 @@ h2{
 h5 {
     margin-bottom: -1   0px;
     margin-top: -30px;
-    font-size: 20px;
+    font-size: 2    0px;
 }
+
+.instructor {
+    background: #fff;
+    padding: 15px; /* Reduced from 20px to 15px */
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+    margin: 5px; /* Added small margin */
+}
+
+.instructor .title .first_name .last_name{
+    font-weight: bold;
+}
+
+.instructor img {
+    width: 120px; /* Reduced from 150px to 120px */
+    height: 120px; /* Reduced from 150px to 120px */
+    border-radius: 50%;
+    margin-bottom: 10px; /* Reduced from 15px to 10px */
+    object-fit: cover;
+}
+
+.instructor p {
+    margin: 3px 0; /* Reduced margin between text elements */
+    font-size: 0.9em; /* Slightly smaller text */
+}
+
+.instructor .name {
+    font-weight: bold;
+    font-size: 1em;
+    margin: 8px 0 3px 0;
+}
+
+.instructor .designation {
+    color: #666;
+    margin: 3px 0;
+    font-size: 0.9em;
+}
+
+.cwts-grid, .rotc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Reduced from 250px to 200px */
+    gap: 15px; /* Reduced from 30px to 15px */
+    padding: 10px; /* Reduced from 20px to 10px */
+    max-width: 1000px; /* Add max-width to keep cards from spreading too far */
+    margin: 0 auto; /* Center the grid */
+    margin-bottom: 50px;
+    margin-top: 20px;
+}
+
     </style>
 
-    <div class="faculty-section">
-        <!-- CWTS Instructors Section -->
-        <div class="cwts-instructors">
-            <h2>CWTS Instructors</h2>
-            <div class="cwts-grid">
-                <div class="instructor">
-                    <img src="aimee.png" alt="Joyce Andrade">
-                    <p>JOYCE ANDRADE</p>
-                    <p>CTE</p>
-                </div>
-                <div class="instructor">
-                    <img src="hans.png" alt="Jerick Besalo">
-                    <p>JERICK A. BESALO</p>
-                    <p>CAS, CEN, CAG</p>
-                </div>
-                <div class="instructor">
-                    <img src="aimee.png" alt="Airra Cadid">
-                    <p>AIRRA JHANE D. CADID</p>
-                    <p>CAM & CEN</p>
-                </div>
-                <div class="instructor">
-                    <img src="aimee.png" alt="Joyce Malacad">
-                    <p>JOYCE MALACAD</p>
-                    <p>CIT, CAS & CABHA</p>
-                </div>
-                <div class="instructor">
-                    <img src="aimee.png" alt="Monica Orobia">
-                    <p>MONICA ELAINE R. OROBIA</p>
-                    <p>CABHA</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- ROTC Instructors Section -->
-        <div class="rotc-instructors">
-            <h2>ROTC Instructors</h2>
-            <div class="rotc-grid">
-                <div class="instructor">
-                    <img src="hans.png" alt="LTC DR. NILO H. DATOR">
-                    <p>LTC DR. NILO H. DATOR</p>
-                    <p>ROTC President</p>
-                </div>
-                <div class="instructor">
-                    <img src="hans.png" alt="P2LT JESRAEL G. LUCES">
-                    <p>P2LT JESRAEL G. LUCES P A</p>
-                    <p>Battalion Ex-O/S3</p>
-                </div>
-                <div class="instructor">
-                    <img src="aimee.png" alt="P2LT ANEJANE R. PERJES">
-                    <p>P2LT ANEJANE R. PERJES P A</p>
-                    <p>Battalion S7</p>
-                </div>
-                <div class="instructor">
-                    <img src="hans.png" alt="P2LT JOSHUA D. FELIPE">
-                    <p>P2LT JOSHUA D. FELIPE P A</p>
-                    <p>Battalion Commander</p>
-                </div>
-                <div class="instructor">
-                    <img src="aimee.png" alt="P2LT AIRA CHEEZCA A. DIVINAGRACIA">
-                    <p>P2LT AIRA CHEEZCA A. DIVINAGRACIA P A</p>
-                    <p>Battalion Adjutant/S1</p>
-                </div>
-                <div class="instructor">
-                    <img src="aimee.png" alt="P2LT RUBIE ROSE M. MOJICA">
-                    <p>P2LT RUBIE ROSE M. MOJICA P A</p>
-                    <p>Battalion S3</p>
-                </div>
-            </div>
-        </div>
-    </div>
+  
 
 </body>
     </head>

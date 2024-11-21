@@ -55,26 +55,28 @@ function submitAnnouncement() {
 
 // Function to fetch announcements
 function fetchAnnouncements() {
-    global $conn; // Use the global connection variable
+    global $conn;
 
-    $result = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+    // Modified query to order by ID in descending order (assuming ID increases with newer announcements)
+    $result = $conn->query("SELECT * FROM announcement ORDER BY id DESC");
     if (!$result) {
-        return []; // Return an empty array if there's an error
+        return [];
     }
 
     $announcements = [];
     while ($row = $result->fetch_assoc()) {
-        $announcements[] = $row; // Add each row to the announcements array
+        $announcements[] = $row;
     }
 
-    return $announcements; // Return the array of announcements
+    return $announcements;
 }
 
 // Function to fetch and display announcements
 function displayAnnouncements() {
-    global $conn; // Use the global connection variable
+    global $conn;
 
-    $result = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+    // Modified query to order by ID in descending order
+    $result = $conn->query("SELECT * FROM announcement ORDER BY id DESC");
     if (!$result) {
         echo '<p style="text-align:center; font-style:italic;">*Error fetching announcements*</p>';
         return;

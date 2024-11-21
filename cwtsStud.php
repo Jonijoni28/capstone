@@ -66,7 +66,7 @@ $results = $conn->query($sql);
     <!-- Select All / Confirm / Cancel buttons -->
     <!-- Select All / Confirm / Cancel buttons -->
     <div id="selectionActions" style="display: none; margin-bottom: 10px; position: fixed; top: 200px; left: 90px; z-index: 1000;">
-      <button id="confirmSelectionBtn" style="background-color: blue; color: white; font-size: 15px; padding: 10px 20px;" onclick="openConfirmPopup()">Confirm Students</button>
+      <button id="confirmSelectionBtn" style="background-color: white; color: black; font-size: 15px; padding: 10px 26px;" onclick="openConfirmPopup()">Assign Students</button>
     </div>
 
     <table id="editableTable" class="table">
@@ -78,8 +78,8 @@ $results = $conn->query($sql);
           <th>Last Name</th>
           <th>Gender</th>
           <th>NSTP</th>
-          <th>Department</th>
-          <th>Course</th>
+          <th>College</th>
+          <th>Program</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -115,7 +115,7 @@ $results = $conn->query($sql);
     <!-- Confirmation Popup -->
     <div id="confirmPopup" class="popup">
       <div class="popup-content">
-        <h3>Confirm Selection</h3>
+        <h3>Assign Selection</h3>
         <p id="studentList"></p>
         <button onclick="openInstructorPopup()">Proceed to Select Instructor</button>
         <button onclick="closePopup('confirmPopup')">Cancel</button>
@@ -374,39 +374,59 @@ $results = $conn->query($sql);
         color: white;
       }
 
-      .addModal {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        /* Background overlay */
-        z-index: 1050;
-        /* Ensure it's on top of other elements */
-      }
+    /* Common dialog styling for both edit and add modals */
+dialog {
+    width: 500px;  /* Increased width to match edit modal */
+    padding: 20px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+}
 
-      .addModal-content {
-        background: white;
-        padding: 20px;
-        border-radius: 5px;
-        text-align: left;
-        max-width: 500px;
-        /* Optional: Limit the modal width */
-        width: 90%;
-        /* Optional: Responsive width */
-        margin: auto;
-        /* Center the modal */
-        position: relative;
-        /* Ensure it is positioned relative to the modal */
-        top: 50%;
-        /* Center vertically */
-        transform: translateY(-50%);
-        /* Adjust for half its height */
-      }
+/* Common form styling for both edit and add forms */
+#editForm,
+#addForm {
+    display: flex;
+    flex-direction: column;
+}
+
+#editForm label,
+#addForm label {
+    margin: 0px 0 2px;
+}
+
+#editForm input,
+#editForm select,
+#addForm input,
+#addForm select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#editForm button,
+#addForm button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+/* Common backdrop blur for both modals */
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
 
       /* Styles for the popup */
       .popup {
@@ -429,6 +449,125 @@ $results = $conn->query($sql);
         text-align: center;
         width: 300px;
       }
+
+  /* Style for checkboxes */
+  input[type="checkbox"] {
+    accent-color: #096c37;
+    cursor: pointer;
+  }
+  .editButton {
+    background: none;  /* Remove any background */
+    border: none;
+    padding: 6px 10px;
+    text-align: center;
+    display: inline-block;
+    font-size: 16px;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.editButton i {
+    font-size: 18px;
+    color: black;  /* Make icon black */
+}
+
+.deleteButton {
+    background: none;  /* Remove any background */
+    border: none;
+    padding: 6px 17px;
+    text-align: center;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.deleteButton i {
+    font-size: 18px;
+    color: black;  /* Make icon black */
+}
+
+/* Update the popup styles in your <style> tag */
+.popup {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    width: 500px; /* Match the width of edit/add modals */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Style for popup headings */
+.popup-content h3 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* Style for the student list text */
+#studentList {
+    font-size: 16px;
+    margin: 20px 0;
+    line-height: 1.5;
+}
+
+/* Style for the instructor select dropdown */
+#instructorSelect {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    margin: 20px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Style for popup buttons */
+.popup-content button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.popup-content button:hover {
+    background-color: #f0f0f0;
+}
+
+/* Add spacing between buttons */
+.popup-content button + button {
+    margin-top: 10px;
+}
+
+/* Style for the student list text */
+#studentList {
+    font-size: 20px;  /* Increased from 16px */
+    margin: 20px 0;
+    line-height: 1.5;
+    color: #000;  /* Set to black */
+    font-weight: 500;  /* Added medium font weight for better readability */
+}
+
     </style>
     <div class="search-container">
       <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
