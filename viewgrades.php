@@ -7,6 +7,7 @@ $sql = "SELECT
     c.first_name, 
     c.last_name, 
     c.gender,
+    c.semester,
     c.nstp,
     c.department,
     c.course,
@@ -77,9 +78,10 @@ $user_id = $_SESSION['user_id'] ?? null;
       <th>First Name</th>
       <th>Last Name</th>
       <th>Gender</th>
+      <th>Semester</th>
       <th>NSTP</th>
-      <th>Department</th>
-      <th>Course</th>
+      <th>College</th>
+      <th>Program</th>
       <th>Instructor</th>  <!-- Add this line -->
       <th>Prelims</th>
       <th>Midterms</th>
@@ -95,6 +97,7 @@ $user_id = $_SESSION['user_id'] ?? null;
     echo "<td>{$rows["first_name"]}</td>";
     echo "<td>{$rows["last_name"]}</td>";
     echo "<td>{$rows["gender"]}</td>";
+    echo "<td>{$rows["semester"]}</td>";
     echo "<td>{$rows["nstp"]}</td>";
     echo "<td>{$rows["department"]}</td>";
     echo "<td>{$rows["course"]}</td>";
@@ -102,7 +105,7 @@ $user_id = $_SESSION['user_id'] ?? null;
     echo "<td>{$rows["prelim"]}</td>";
     echo "<td>{$rows["midterm"]}</td>";
     echo "<td>{$rows["finals"]}</td>";
-    echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
+    echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 2) : '') . "</td>";
     echo "</tr>";
   }
   ?>
@@ -150,6 +153,7 @@ $user_id = $_SESSION['user_id'] ?? null;
         <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</a></li>
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
+        <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
         <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
     </ul>
 </div>
@@ -175,10 +179,11 @@ $user_id = $_SESSION['user_id'] ?? null;
 
 /* Sidebar header */
 .sidebar header {
+    margin-top: -5px;
     font-size: 22px;
     color: white;
     text-align: center;
-    line-height: 70px;
+    line-height: 43.5px;
     background: #096c37;
     user-select: none;
 }
@@ -287,8 +292,8 @@ h2{
 }
 
 h5 {
-    margin-bottom: -1   0px;
-    margin-top: -30px;
+    margin-bottom: -10px;
+    margin-top: -15px;
     font-size: 20px;
 }
 

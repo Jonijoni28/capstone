@@ -140,13 +140,14 @@ $lineChartDataJson = json_encode($lineChartData);
 
         /* Sidebar header */
         .sidebar header {
-            font-size: 22px;
-            color: white;
-            text-align: center;
-            line-height: 70px;
-            background: #096c37;
-            user-select: none;
-        }
+    margin-top: -5px;
+    font-size: 22px;
+    color: white;
+    text-align: center;
+    line-height: 43.5px;
+    background: #096c37;
+    user-select: none;
+}
 
         /* Sidebar links styling */
         .sidebar ul a {
@@ -252,10 +253,10 @@ $lineChartDataJson = json_encode($lineChartData);
         }
 
         h5 {
-            margin-bottom: -10px;
-            margin-top: -30px;
-            font-size: 20px;
-        }
+    margin-bottom: -10px;
+    margin-top: -15px;
+    font-size: 20px;
+}
 
         .dashboard {
             display: flex;
@@ -385,6 +386,7 @@ $lineChartDataJson = json_encode($lineChartData);
             <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</a></li>
             <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
             <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
+            <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
             <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
         </ul>
     </div>

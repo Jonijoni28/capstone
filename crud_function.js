@@ -52,9 +52,10 @@ function editStudentInfo(button) {
   document.getElementById('editFirstName').value = row.children[2].textContent;
   document.getElementById('editLastName').value = row.children[3].textContent;
   document.getElementById('editGender').value = row.children[4].textContent;
-  document.getElementById('editNSTP').value = row.children[5].textContent;
-  document.getElementById('editDepartment').value = row.children[6].textContent;
-  document.getElementById('editCourse').value = row.children[7].textContent;
+  document.getElementById('editSemester').value = row.children[5].textContent;
+  document.getElementById('editNSTP').value = row.children[6].textContent;
+  document.getElementById('editDepartment').value = row.children[7].textContent;
+  document.getElementById('editCourse').value = row.children[8].textContent;
 
   const editModal = document.getElementById('editModal');
   editModal.showModal();
@@ -109,12 +110,14 @@ function saveEdit(dataId, row) {
  * @param {HTMLTableRowElement} row - The table row to be updated.
  */
 function updateTableRow(row) {
-  row.children[1].textContent = document.getElementById('editFirstName').value;
-  row.children[2].textContent = document.getElementById('editLastName').value;
-  row.children[3].textContent = document.getElementById('editGender').value;
-  row.children[4].textContent = document.getElementById('editNSTP').value;
-  row.children[5].textContent = document.getElementById('editDepartment').value;
-  row.children[6].textContent = document.getElementById('editCourse').value;
+  row.children[1].textContent = document.getElementById('editSchoolId').value;
+  row.children[2].textContent = document.getElementById('editFirstName').value;
+  row.children[3].textContent = document.getElementById('editLastName').value;
+  row.children[4].textContent = document.getElementById('editGender').value;
+  row.children[5].textContent = document.getElementById('editSemester').value;
+  row.children[6].textContent = document.getElementById('editNSTP').value;
+  row.children[7].textContent = document.getElementById('editDepartment').value;
+  row.children[8].textContent = document.getElementById('editCourse').value;
 }
 
 /**
@@ -127,7 +130,7 @@ function addTableRow(newData) {
   newRow.setAttribute('data-id', newData.school_id);
 
   // Create table data cells for each column
-  const columns = ['school_id', 'first_name', 'last_name', 'gender', 'nstp', 'department', 'course'];
+  const columns = ['school_id', 'first_name', 'last_name', 'gender', 'semester', 'nstp', 'department', 'course'];
   columns.forEach(column => {
     const cell = document.createElement('td');
     cell.textContent = newData[column];
@@ -163,8 +166,6 @@ function submitAddForm() {
   const addForm = document.getElementById('addForm');
   const formData = new URLSearchParams(new FormData(addForm)); // Serialize form data
 
-  console.log()
-
   fetch(addEndpoint, {
     method: "POST",
     headers: {
@@ -179,17 +180,11 @@ function submitAddForm() {
       return response.text();
     })
     .then(data => {
-      // Process the response data
-      if (data.includes("Success")) { // Check if response includes "Success"
-        // Close the add modal
+      if (data.includes("Success")) {
         closeAddModal();
-        // Show success message
         alert('Student added successfully');
-        // Reload the page or refresh table data if needed
-        // For example:
-        window.location.reload();
+        window.location.reload(); // Reload the page or refresh table data if needed
       } else {
-        // If response indicates an error
         alert(data); // Display the response from the server
       }
     })
@@ -199,7 +194,7 @@ function submitAddForm() {
     });
 }
 
-// Function to submit add student form data
+// Attach the submit event listener
 document.getElementById('addForm').addEventListener('submit', function (event) {
   event.preventDefault(); // Prevent form submission
   submitAddForm();

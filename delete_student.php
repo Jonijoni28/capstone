@@ -39,4 +39,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     http_response_code(405);
     echo "Method Not Allowed";
 }
+
+
+require_once 'db_conn.php';
+require_once 'audit_functions.php';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $conn = connect_db();
+    $user_id = $_SESSION['user_id'];
+    
+    // Your existing delete code
+    $stmt = $conn->prepare("DELETE FROM your_table WHERE id = ?");
+    if ($stmt->execute([$_POST['student_id']])) {
+        // Log the delete action
+        logDelete(
+            $user_id,
+            'students',
+            $_POST['student_id'],
+            "Deleted student record"
+        );
+        echo "success";
+    } else {
+        echo "error";
+    }
+}
 ?>

@@ -7,6 +7,7 @@ $sql = "SELECT * FROM tbl_cwts WHERE transferred = 0 OR transferred IS NULL";
 $results = $conn->query($sql);
   ?>
 
+
   <?php
   require_once 'db_conn.php';
   session_start();
@@ -77,6 +78,7 @@ $results = $conn->query($sql);
           <th>First Name</th>
           <th>Last Name</th>
           <th>Gender</th>
+          <th>Semester</th>
           <th>NSTP</th>
           <th>College</th>
           <th>Program</th>
@@ -93,6 +95,7 @@ $results = $conn->query($sql);
             echo "<td>" . $rows["first_name"] . "</td>";
             echo "<td>" . $rows["last_name"] . "</td>";
             echo "<td>" . $rows["gender"] . "</td>";
+            echo "<td>" . $rows["semester"] . "</td>";
             echo "<td>" . $rows["nstp"] . "</td>";
             echo "<td>" . $rows["department"] . "</td>";
             echo "<td>" . $rows["course"] . "</td>";
@@ -181,6 +184,7 @@ $results = $conn->query($sql);
         <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</a></li>
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
+        <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
         <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
       </ul>
     </div>
@@ -208,13 +212,14 @@ $results = $conn->query($sql);
 
       /* Sidebar header */
       .sidebar header {
-        font-size: 22px;
-        color: white;
-        text-align: center;
-        line-height: 70px;
-        background: #096c37;
-        user-select: none;
-      }
+    margin-top: -5px;
+    font-size: 22px;
+    color: white;
+    text-align: center;
+    line-height: 43.5px;
+    background: #096c37;
+    user-select: none;
+}
 
       /* Sidebar links styling */
       .sidebar ul a {
@@ -327,10 +332,10 @@ $results = $conn->query($sql);
       }
 
       h5 {
-        margin-bottom: -1 0px;
-        margin-top: -30px;
-        font-size: 20px;
-      }
+    margin-bottom: -10px;
+    margin-top: -15px;
+    font-size: 20px;
+}
 
       /*PAGINATION OF THE TABLE CSS*/
 
@@ -405,7 +410,7 @@ dialog {
 #addForm input,
 #addForm select {
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
     padding: 4px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -600,15 +605,21 @@ dialog::backdrop {
           <option value="Female">Female</option>
         </select><br>
 
+        <label for="editSemester">Semester:</label>
+        <select id="editSemester" name="semester" required>
+          <option value="1st">1st</option>
+          <option value="2nd">2nd</option>
+        </select><br>
+
         <label for="editNSTP">NSTP:</label>
         <select id="editNSTP" name="nstp">
           <option value="CWTS">CWTS</option>
         </select>
 
-        <label for="editDepartment">Department:</label>
+        <label for="editDepartment">College:</label>
         <input type="text" id="editDepartment" name="department" required><br>
 
-        <label for="editCourse">Course:</label>
+        <label for="editCourse">Program:</label>
         <input type="text" id="editCourse" name="course" required><br>
 
         <button type="submit">Save</button>
@@ -618,39 +629,45 @@ dialog::backdrop {
 
     <!-- Add this HTML for the modal dialog inside the <body> tag -->
     <dialog id="addModal">
-      <form method="dialog" id="addForm">
-        <h2>Add New Student</h2>
+  <form method="dialog" id="addForm">
+    <h2>Add New Student</h2>
 
-        <label for="addSchoolId">School ID:</label>
-        <input type="text" id="addSchoolId" name="school_id" required><br>
+    <label for="addSchoolId">School ID:</label>
+    <input type="text" id="addSchoolId" name="school_id" required><br>
 
-        <label for="addFirstName">First Name:</label>
-        <input type="text" id="addFirstName" name="first_name" required><br>
+    <label for="addFirstName">First Name:</label>
+    <input type="text" id="addFirstName" name="first_name" required><br>
 
-        <label for="addLastName">Last Name:</label>
-        <input type="text" id="addLastName" name="last_name" required><br>
+    <label for="addLastName">Last Name:</label>
+    <input type="text" id="addLastName" name="last_name" required><br>
 
-        <label for="addGender">Gender:</label>
-        <select id="addGender" name="gender" required>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select><br>
+    <label for="addGender">Gender:</label>
+    <select id="addGender" name="gender" required>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+    </select><br>
 
-        <label for="addNSTP">NSTP:</label>
-        <select id="addNSTP" name="nstp">
-          <option value="CWTS">CWTS</option>
-        </select><br>
+    <label for="addSemester">Semester:</label>
+    <select id="addSemester" name="semester" required>
+      <option value="1st">1st</option>
+      <option value="2nd">2nd</option>
+    </select><br>
 
-        <label for="addDepartment">Department:</label>
-        <input type="text" id="addDepartment" name="department" required><br>
+    <label for="addNSTP">NSTP:</label>
+    <select id="addNSTP" name="nstp">
+      <option value="CWTS">CWTS</option>
+    </select><br>
 
-        <label for="addCourse">Course:</label>
-        <input type="text" id="addCourse" name="course" required><br>
+    <label for="addDepartment">College:</label>
+    <input type="text" id="addDepartment" name="department" required><br>
 
-        <button type="submit">Save</button>
-        <button type="button" onclick="closeAddModal()">Cancel</button>
-      </form>
-    </dialog>
+    <label for="addCourse">Program:</label>
+    <input type="text" id="addCourse" name="course" required><br>
+
+    <button type="submit">Save</button>
+    <button type="button" onclick="closeAddModal()">Cancel</button>
+  </form>
+</dialog>
 
 
     <script>

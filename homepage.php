@@ -181,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</a></li>
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
+        <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
         <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
     </ul>
 </div>
@@ -360,10 +361,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* Sidebar header */
         .sidebar header {
+            margin-top: -5px;
             font-size: 22px;
             color: white;
             text-align: center;
-            line-height: 70px;
+            line-height: 43.5px;
             background: #096c37;
             user-select: none;
         }
@@ -420,7 +422,7 @@ h2{
 
 h5 {
     margin-bottom: -1   0px;
-    margin-top: -30px;
+    margin-top: -20px;
     font-size: 20px;
 }
 

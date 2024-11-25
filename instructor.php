@@ -75,13 +75,47 @@ $user_id = $_SESSION['user_id'] ?? null;
         <li><a href="cwtsStud.php"><i class="fa-solid fa-user"></i>CWTS Students</a></li>
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
+        <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
         <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
     </ul>
 </div>
 
 <div class="faculty-section">
-    <!-- CWTS Instructors Section -->
 
+<!-- Admin Instructors Section -->
+<div class="admin-instructors">
+        <h2>Administrators</h2>
+        <div class="admin-grid">
+            <?php
+           // Query for Admin instructors
+$admin_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, r.user_type 
+FROM user_info u 
+LEFT JOIN registration r ON u.email = r.username 
+WHERE r.user_type = 'admin'";
+$admin_result = mysqli_query($conn, $admin_query);  
+if (!$admin_result) {
+    error_log('Admin query failed: ' . mysqli_error($conn));
+}
+
+while ($admin = mysqli_fetch_assoc($admin_result)) {
+    echo '<div class="instructor" data-id="' . $admin['id'] . '">';
+    
+    // Display admin photo
+    if (empty($admin['photo'])) {
+        echo '<img src="default/avatar.png" alt="Default Avatar">';
+    } else {
+        echo '<img src="' . $admin['photo'] . '" alt="' . $admin['first_name'] . '">';
+    }
+
+    // Display admin details with bold name
+    echo '<p class="name"><strong>' . $admin['title'] . ' ' . $admin['first_name'] . ' ' . $admin['last_name'] . '</strong></p>';
+    echo '<p class="designation">' . $admin['department'] . '</p>';
+    echo '<p class="user-type">' . (isset($admin['user_type']) ? ucfirst($admin['user_type']) : 'Admin') . '</p>';
+    echo '</div>';
+}
+?>
+        </div>
+    </div>
 
     <!-- CWTS Instructors Section -->
     <div class="cwts-instructors">
@@ -96,7 +130,7 @@ $user_id = $_SESSION['user_id'] ?? null;
 $cwts_result = mysqli_query($conn, $cwts_query);
 
 while ($instructor = mysqli_fetch_assoc($cwts_result)) {
- echo '<div class="instructor">';
+ echo '<div class="instructor" data-id="' . $instructor['id'] . '">';
  
  // Display instructor photo
  if (empty($instructor['photo'])) {
@@ -129,7 +163,7 @@ while ($instructor = mysqli_fetch_assoc($cwts_result)) {
 $rotc_result = mysqli_query($conn, $rotc_query);
 
 while ($instructor = mysqli_fetch_assoc($rotc_result)) {
-    echo '<div class="instructor">';
+    echo '<div class="instructor" data-id="' . $instructor['id'] . '">';
     
     // Display instructor photo
     if (empty($instructor['photo'])) {
@@ -151,6 +185,28 @@ while ($instructor = mysqli_fetch_assoc($rotc_result)) {
     </div>
 </div>
 </div>
+
+
+
+<!-- Add this modal structure at the end of your body -->
+<div id="userTypeModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Change User Type</h2>
+        <form id="userTypeForm">
+            <input type="hidden" id="instructorId" name="instructorId">
+            <label for="userType">User Type:</label>
+            <select id="userType" name="userType">
+                <option value="instructor">Instructor</option>
+                <option value="admin">Admin</option>
+            </select>
+            <button type="submit">Update</button>
+        </form>
+    </div>
+</div>
+</div>
+
+
 
 
   <style>
@@ -199,10 +255,11 @@ while ($instructor = mysqli_fetch_assoc($rotc_result)) {
 
 /* Sidebar header */
 .sidebar header {
+    margin-top: -5px;
     font-size: 22px;
     color: white;
     text-align: center;
-    line-height: 70px;
+    line-height: 43.5px;
     background: #096c37;
     user-select: none;
 }
@@ -411,9 +468,9 @@ h2{
 }
 
 h5 {
-    margin-bottom: -1   0px;
-    margin-top: -30px;
-    font-size: 2    0px;
+    margin-bottom: -10px;
+    margin-top: -15px;
+    font-size: 20px;
 }
 
 .instructor {
@@ -465,7 +522,178 @@ h5 {
     margin-top: 20px;
 }
 
+/* Styles for the popup */
+.modal {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    backdrop-filter: blur(10px); /* Blur effect */ 
+}
+
+.modal-content {
+    background: white;
+    padding: 30px; /* Increased padding for a larger modal */
+    border-radius: 8px;
+    text-align: center;
+    width: 400px; /* Increased width for consistency */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative; /* Added for centering */
+    top: 50%; /* Move down 50% */
+    left: 37%;
+    transform: translateY(-50%); /* Adjust to center vertically */
+}
+
+/* Style for popup headings */
+.modal-content h3 {
+    font-size: 24px; /* Increased font size for headings */
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.modal-content h2 {
+    margin-top: 5px;
+
+}
+
+/* Style for popup buttons */
+.modal-content button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white; /* Consistent background color */
+    color: black; /* White text for buttons */
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* Style for the User Type label */
+.modal-content label {
+    font-size: 18px; /* Increase font size */
+    margin-bottom: 10px; /* Add some space below the label */
+    display: block; /* Ensure the label takes the full width */
+}
+
+/* Style for the dropdown */
+#userType {
+    width: 100%; /* Make the dropdown take the full width */
+    padding: 10px; /* Increase padding for a larger clickable area */
+    font-size: 16px; /* Increase font size */
+    border: 1px solid #ccc; /* Border styling */
+    border-radius: 4px; /* Rounded corners */
+    margin-bottom: 20px; /* Space below the dropdown */
+}
+
+
+
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.admin-instructors {
+    padding: 20px;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.admin-instructors h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
     </style>
+
+    <script>
+document.querySelectorAll('.instructor').forEach(item => {
+    item.addEventListener('click', event => {
+        const instructorId = item.getAttribute('data-id');
+        const userType = item.querySelector('.user-type').textContent.trim().toLowerCase();
+
+        document.getElementById('instructorId').value = instructorId;
+        document.getElementById('userType').value = userType;
+
+        document.getElementById('userTypeModal').style.display = 'block';
+    });
+});
+
+// Close the modal
+document.querySelector('.close').onclick = function() {
+    document.getElementById('userTypeModal').style.display = 'none';
+}
+
+// Handle form submission
+document.getElementById('userTypeForm').onsubmit = function(e) {
+    e.preventDefault();
+    const instructorId = document.getElementById('instructorId').value;
+    const userType = document.getElementById('userType').value;
+
+    // AJAX request to update user type
+    fetch('update_user_type.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ instructorId, userType }),
+    })
+    .then(response => response.json())
+    .then(data => {
+       console.log(data); // Log the response
+       if (data.success) {
+    const instructorDiv = document.querySelector(`.instructor[data-id="${instructorId}"]`);
+    const userTypeText = userType.charAt(0).toUpperCase() + userType.slice(1);
+    instructorDiv.querySelector('.user-type').textContent = userTypeText;
+
+    // Move the instructor to the appropriate section
+    if (userType === 'admin') {
+        document.querySelector('.admin-grid').appendChild(instructorDiv);
+    } else {
+        // Check if the userType is 'cwts' or 'rotc' and append accordingly
+        if (instructorDiv.classList.contains('cwts-instructor')) {
+            document.querySelector('.cwts-grid').appendChild(instructorDiv);
+        } else {
+            document.querySelector('.rotc-grid').appendChild(instructorDiv);
+        }
+    }
+
+    document.getElementById('userTypeModal').style.display = 'none'; // Close the modal
+} else {
+            alert('Error updating user type: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.log('Sending:', { instructorId, userType });
+        alert('An error occurred while updating user type.');
+    });
+};
+    </script>
 
   
 

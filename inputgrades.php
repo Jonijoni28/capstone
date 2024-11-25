@@ -47,33 +47,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $finalGrades = null;
     if ($prelim !== null && $midterm !== null && $finals !== null) {
         $finalGrades = ($prelim + $midterm + $finals) / 3;
-        $finalGrades = round($finalGrades, 3); // Round to 3 decimal places
+        $finalGrades = roundToNearestGrade($finalGrades); // Round to nearest valid grade
 
-        // Update final grades in the database
-        $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ? WHERE grades_id = ?");
-        $updateFinalsStmt->bind_param("di", $finalGrades, $grades_id);
+        // Determine status based on final grades
+        $status = ($finalGrades >= 1 && $finalGrades <= 3) ? 'PASSED' : 'FAILED';
+
+        // Update final grades and status in the database
+        $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ?, status = ? WHERE grades_id = ?");
+        $updateFinalsStmt->bind_param("ssi", $finalGrades, $status, $grades_id);
         
-        if (!$updateFinalsStmt->execute()) {
-            error_log("Failed to update final grades: " . $updateFinalsStmt->error);
+        if ($updateFinalsStmt->execute()) {
+            // Return the updated values in the response
+            echo json_encode([
+                'success' => true,
+                'final_grades' => $finalGrades,
+                'status' => $status,
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
         }
         $updateFinalsStmt->close();
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid grades data.']);
     }
+    $conn->close();
+    exit;
+}
 
-    echo json_encode([
-      'success' => true,
-      'grades_id' => $grades_id,
-      'prelim' => $prelim,
-      'midterm' => $midterm,
-      'finals' => $finals,
-      'final_grades' => $finalGrades // Include final grades in the response
-    ]);
-  } else {
-    echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
-  }
-
-  $stmt->close();
-  $conn->close();
-  exit;
 
 
   if ($grades_id > 0) {
@@ -101,6 +101,7 @@ $sql = "SELECT
     c.first_name, 
     c.last_name, 
     c.gender,
+    c.semester,
     c.nstp,
     c.department,
     c.course,
@@ -108,11 +109,12 @@ $sql = "SELECT
     g.prelim, 
     g.midterm, 
     g.finals,
+    g.status,
     CASE 
         WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
         THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
         ELSE NULL 
-    END AS final_grades
+    END AS calculated_final_grades
 FROM 
     tbl_cwts c
 LEFT JOIN 
@@ -132,30 +134,43 @@ require_once("db_conn.php");
 
 // Data processing logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  // Existing code...
+  // Check if the action is to delete grades
+if (isset($_POST['action']) && $_POST['action'] === 'delete_grade') {
+  $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
 
-  // Handling delete requests
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'delete_grade') {
-    $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
+  if ($grades_id > 0) {
+      // Prepare the SQL to delete the record for the specific grades_id
+      $sql = "DELETE FROM tbl_students_grades WHERE grades_id = ?";
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param('i', $grades_id);
 
-    if ($grades_id > 0) {
-        // Prepare the SQL to set the grades to NULL for the specific grades_id
-        $sql = "UPDATE tbl_students_grades SET prelim = NULL, midterm = NULL, finals = NULL WHERE grades_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $grades_id);
-
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Grades deleted successfully.']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
-        }
-        
-        $stmt->close();
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Invalid grades ID.']);
-    }
+      if ($stmt->execute()) {
+          // Only return success if the deletion was successful
+          echo json_encode(['success' => true, 'message' => 'Grades deleted successfully.']);
+      } else {
+          // Return error message if deletion fails
+          echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
+      }
+      
+      $stmt->close();
+  } else {
+      echo json_encode(['success' => false, 'message' => 'Invalid grades ID.']);
+  }
+}
 }
 
+// Function to round final grades to specified values
+function roundToNearestGrade($value) {
+    $validGrades = [1.000, 1.250, 1.500, 1.750, 2.000, 2.250, 2.500, 2.750, 3.000, 4.000, 5.000];
+    $closestGrade = $validGrades[0];
+
+    foreach ($validGrades as $grade) {
+        if (abs($grade - $value) < abs($closestGrade - $value)) {
+            $closestGrade = $grade;
+        }
+    }
+
+    return $closestGrade;
 }
 
 ?>
@@ -208,6 +223,7 @@ $user_id = $_SESSION['user_id'] ?? null;
         <th>First Name</th>
         <th>Last Name</th>
         <th>Gender</th>
+        <th>Semester</th>
         <th>NSTP</th>
         <th>Department</th>
         <th>Course</th>
@@ -215,31 +231,37 @@ $user_id = $_SESSION['user_id'] ?? null;
         <th>Midterms</th>
         <th>Finals</th> 
         <th>Final Grades</th> 
+        <th>Status</th>
         <th>Actions</th>
       </tr>
     </thead>
 <tbody id="tableBody">
   <?php
-  if ($results->num_rows > 0) {
-    while ($rows = $results->fetch_assoc()) {
+if ($results->num_rows > 0) {
+  while ($rows = $results->fetch_assoc()) {
+      // Round the calculated final grades
+      $finalGrades = roundToNearestGrade($rows['calculated_final_grades']);
+      
       echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
       echo "<td>{$rows["school_id"]}</td>";
       echo "<td>{$rows["first_name"]}</td>";
       echo "<td>{$rows["last_name"]}</td>";
       echo "<td>{$rows["gender"]}</td>";
+      echo "<td>{$rows["semester"]}</td>";
       echo "<td>{$rows["nstp"]}</td>";
       echo "<td>{$rows["department"]}</td>";
       echo "<td>{$rows["course"]}</td>";
       echo "<td class='prelim'>{$rows["prelim"]}</td>";
       echo "<td class='midterm'>{$rows["midterm"]}</td>";
       echo "<td class='finals'>{$rows["finals"]}</td>";
-      echo "<td class='final_grades' style='font-weight: bold;'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 3) : '') . "</td>";
+      echo "<td class='final_grades' style='font-weight: bold;'>" . ($finalGrades !== null ? number_format($finalGrades, 2) : '') . "</td>";
+      echo "<td class='status'>{$rows["status"]}</td>";
       echo "<td>";
       echo "<button class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
       echo "<button class='deleteButton' onclick='openDeleteModal(this)'><i class='fa-solid fa-trash'></i></button>";
       echo "</td>";
       echo "</tr>";
-    }
+  }
   } else {
     // Show "No Student Assigned" message
     echo "<tr>";
@@ -468,6 +490,40 @@ label #cancel {
     color: white;
 }
 
+.editButton {
+    background: none;  /* Remove any background */
+    border: none;
+    padding: 6px 10px;
+    text-align: center;
+    display: inline-block;
+    font-size: 16px;
+    margin: 0px 5px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.editButton i {
+    font-size: 18px;
+    color: black;  /* Make icon black */
+}
+
+.deleteButton {
+    background: none;  /* Remove any background */
+    border: none;
+    padding: 6px 17px;
+    text-align: center;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.deleteButton i {
+    font-size: 18px;
+    color: black;  /* Make icon black */
+}
+
 
   </style>
 
@@ -487,13 +543,19 @@ label #cancel {
     <form method="dialog" id="editForm">
       <h2>Edit Student Grades</h2>
       <label for="editPrelims">Prelims:</label>
-      <input type="number" id="editPrelim" name="prelim" min="1.000" max="5.000" step="0.250"><br>
+      <input type="number" id="editPrelim" name="prelim" min="1.00" max="5.00" step="0.25"><br>
 
       <label for="editMidterm">Midterms:</label>
-      <input type="number" id="editMidterm" name="midterm" min="1.000" max="5.000" step="0.250"><br>
+      <input type="number" id="editMidterm" name="midterm" min="1.00" max="5.00" step="0.25"><br>
 
       <label for="editFinals">Finals:</label>
-      <input type="number" id="editFinals" name="finals" min="1.000" max="5.000" step="0.250"><br>
+      <input type="number" id="editFinals" name="finals" min="1.00" max="5.00" step="0.25"><br>
+
+      <label for="editStatus">Status:</label>
+        <select id="editStatus" name="status">
+            <option value="INCOMPLETE">INCOMPLETE</option>
+            <option value="DROP">DROP</option>
+        </select><br>
 
       <button type="submit">Save</button>
       <button type="button" onclick="editModal.close()">Cancel</button>
@@ -533,7 +595,7 @@ label #cancel {
   </dialog>
 
  <!-- Delete Modal -->
-<dialog id="deleteModal">
+ <dialog id="deleteModal">
     <form id="deleteForm">
         <h2>Delete Student Grades</h2>
         <p>Are you sure you want to delete all grades for this student?</p>
@@ -647,21 +709,20 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
     formData.append('finals', finals);
 
     // Send the request to the server
-    fetch('', { // The same PHP file to process form submissions
+    fetch('', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update the table row with the new grades formatted to three decimal places
+            // Update the table row with the new grades and status
             const row = document.querySelector(`tr[data-school-id="${schoolId}"]`);
-            row.querySelector('.prelim').textContent = prelim !== null ? prelim.toFixed(3) : '';
-            row.querySelector('.midterm').textContent = midterm !== null ? midterm.toFixed(3) : '';
-            row.querySelector('.finals').textContent = finals !== null ? finals.toFixed(3) : '';
-
-            // Recalculate and update final grades
-            updateFinalGrades(row, prelim, midterm, finals);
+            row.querySelector('.prelim').textContent = prelim !== null ? prelim.toFixed(2) : '';
+            row.querySelector('.midterm').textContent = midterm !== null ? midterm.toFixed(2) : '';
+            row.querySelector('.finals').textContent = finals !== null ? finals.toFixed(2) : '';
+            row.querySelector('.final_grades').textContent = data.final_grades !== null ? data.final_grades.toFixed(2) : '';
+            row.querySelector('.status').textContent = data.status; // Update status in the table
 
             // Close the modal
             const editModal = document.getElementById('editModal');
@@ -680,50 +741,24 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
     });
 });
 
-// Handle delete form submission
-document.getElementById('deleteForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+// Function to update final grades and status
+function updateFinalGrades(row, prelim, midterm, finals) {
+    let finalGrades = null;
+    if (prelim !== null && midterm !== null && finals !== null) {
+        finalGrades = (prelim + midterm + finals) / 3;
+        finalGrades = roundToNearestGrade(finalGrades); // Round to nearest valid grade
+    }
+    row.querySelector('.final_grades').textContent = finalGrades !== null ? finalGrades.toFixed(2) : '';
 
-    const gradesId = document.getElementById('gradesIdInput').value;
-
-    // Prepare the form data
-    const formData = new FormData();
-    formData.append('action', 'delete_grade');
-    formData.append('grades_id', gradesId);
-
-    // Send the request to the server
-    fetch('', { // The same PHP file to process form submissions
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the table row to clear the grades
-            const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
-            if (row) {
-                // Clear the grades from the row
-                row.querySelector('.prelim').textContent = '';
-                row.querySelector('.midterm').textContent = '';
-                row.querySelector('.finals').textContent = '';
-            }
-
-            // Close the modal
-            const deleteModal = document.getElementById('deleteModal');
-            deleteModal.close();
-
-            // Show success message
-            alert('Grades deleted successfully!');
-        } else {
-            console.error('Error:', data.message);
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An unexpected error occurred. Please check the console for details.');
-    });
-});
+    // Update status based on final grades
+    const statusCell = row.querySelector('.status');
+    if (finalGrades !== null) {
+        const status = (finalGrades >= 1 && finalGrades <= 3) ? 'PASSED' : 'FAILED';
+        statusCell.textContent = status; // Update status in the table
+    } else {
+        statusCell.textContent = ''; // Clear status if final grades are null
+    }
+}
 
 // Function to round final grades to specified values
 function roundToNearestGrade(value) {
@@ -746,7 +781,7 @@ function updateFinalGrades(row, prelim, midterm, finals) {
         finalGrades = (prelim + midterm + finals) / 3;
         finalGrades = roundToNearestGrade(finalGrades); // Round to nearest valid grade
     }
-    row.querySelector('.final_grades').textContent = finalGrades !== null ? finalGrades.toFixed(3) : '';
+    row.querySelector('.final_grades').textContent = finalGrades !== null ? finalGrades.toFixed(2) : '';
 }
 
 
@@ -755,7 +790,7 @@ function updateFinalGrades(row, prelim, midterm, finals) {
     //DELETE BUTTON
 
     // Open delete modal and populate with grades ID
-function openDeleteModal(button) {
+    function openDeleteModal(button) {
     const row = button.closest('tr');
     const gradesId = row.getAttribute('data-grades-id');
 
@@ -768,10 +803,8 @@ function openDeleteModal(button) {
 }
 
 // Handle delete form submission
-// Handle delete form submission
 document.getElementById('deleteForm').addEventListener('submit', function(event) {
     event.preventDefault();
-
     const gradesId = document.getElementById('gradesIdInput').value;
 
     // Prepare the form data
@@ -780,27 +813,18 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
     formData.append('grades_id', gradesId);
 
     // Send the request to the server
-    fetch('', { // The same PHP file to process form submissions
+    fetch('inputgrades.php', { // Ensure this points to the correct PHP file
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Update the table row to clear the grades
+            // Remove the row from the table only if deletion was successful
             const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
             if (row) {
-                // Clear the grades from the row
-                row.querySelector('.prelim').textContent = '';
-                row.querySelector('.midterm').textContent = '';
-                row.querySelector('.finals').textContent = '';
+                row.remove();
             }
-
-            // Close the modal
-            const deleteModal = document.getElementById('deleteModal');
-            deleteModal.close();
-
-            // Show success message
             alert('Grades deleted successfully!');
         } else {
             console.error('Error:', data.message);
@@ -812,7 +836,6 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
         alert('An unexpected error occurred. Please check the console for details.');
     });
 });
-
 
 
  /* PAGINATION OF THE TABLE JS */

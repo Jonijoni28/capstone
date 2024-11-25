@@ -1,55 +1,35 @@
 <?php
-require_once ("db_conn.php");
+require_once("db_conn.php");
 
-// Check if form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Fetch form data
-    $first_name = $_POST["first_name"];
-    $last_name = $_POST["last_name"];
-    $department = $_POST["department"];
-    $school_id = $_POST["school_id"];
+$conn = connect_db();
 
-    // Check for duplicates
-    $conn = connect_db();
-    $sql_check_duplicate = "SELECT COUNT(*) FROM tbl_cwts WHERE first_name = ? AND last_name = ? AND department = ? AND school_id = ?";
-    $stmt_check_duplicate = $conn->prepare($sql_check_duplicate);
-    $stmt_check_duplicate->bind_param("ssss", $first_name, $last_name, $department, $school_id);
-    $stmt_check_duplicate->execute();
-    $stmt_check_duplicate->bind_result($count);
-    $stmt_check_duplicate->fetch();
-    $stmt_check_duplicate->close();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Retrieve form data
+    $school_id = $_POST['school_id'];
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $gender = $_POST['gender'];
+    $semester = $_POST['semester'];
+    $nstp = $_POST['nstp'];
+    $department = $_POST['department'];
+    $course = $_POST['course'];
 
-    if ($count > 0) {
-        // If duplicate found, return error
-        http_response_code(400);
-        echo "Error: Student with the same first name, last name, department and School ID already exists";
-        exit(); // Terminate script
-    }
+    // Prepare and execute the INSERT statement
+    $statement = $conn->prepare("INSERT INTO tbl_cwts (school_id, first_name, last_name, gender, semester, nstp, department, course) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $statement->bind_param("ssssssss", $school_id, $first_name, $last_name, $gender, $semester, $nstp, $department, $course);
 
-    // If no duplicate found, proceed with insertion
-    $gender = $_POST["gender"];
-    $nstp = $_POST["nstp"];
-    $course = $_POST["course"];
-
-    // Insert into database
-    $sql_insert = "INSERT INTO tbl_cwts (school_id, first_name, last_name, gender, nstp, department, course) VALUES (?, ?, ?, ?, ?, ?, ?)";
-    $stmt_insert = $conn->prepare($sql_insert);
-    $stmt_insert->bind_param("sssssss", $school_id, $first_name, $last_name, $gender, $nstp, $department, $course);
-
-
-    if ($stmt_insert->execute()) {
-        // If insertion is successful
-        http_response_code(200);
-        echo "Success: Data added successfully";
+    if ($statement->execute()) {
+        echo "Success: Student added successfully.";
     } else {
-        // If insertion fails
         http_response_code(500);
-        echo "Error: " . $conn->error;
+        echo "Error adding student: " . $conn->error;
     }
 
-
-    $stmt_insert->close();
+    // Close the connection
+    $statement->close();
     $conn->close();
 } else {
-    echo "Invalid request";
+    http_response_code(405);
+    echo "Method Not Allowed";
 }
+?>

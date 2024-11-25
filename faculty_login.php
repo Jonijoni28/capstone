@@ -77,3 +77,49 @@ if ($stmt_results->num_rows > 0) {
     http_response_code(401);
     echo "Invalid username or password.";
 }
+
+
+
+require_once 'db_conn.php';
+session_start();
+
+// Keep all the function definitions but remove the direct calls at the bottom
+
+function logActivity($user_id, $action, $table_name, $record_id = null, $description = '') {
+    global $conn;
+    
+    $ip_address = $_SERVER['REMOTE_ADDR'];
+    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+    
+    $stmt = $conn->prepare("INSERT INTO audit_log (user_id, action, table_name, record_id, description, ip_address, user_agent) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?)");
+    
+    if (!$stmt) {
+        error_log("Prepare failed: " . $conn->error);
+        return false;
+    }
+    
+    $stmt->bind_param("issssss", $user_id, $action, $table_name, $record_id, $description, $ip_address, $user_agent);
+    
+    $success = $stmt->execute();
+    if (!$success) {
+        error_log("Execute failed: " . $stmt->error);
+    }
+    
+    $stmt->close();
+    return $success;
+}
+
+require_once 'db_conn.php';
+require_once 'audit_functions.php';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Your existing login verification
+    if ($login_successful) {
+        $_SESSION['user_id'] = $user_id;
+        // Log the login
+        logLogin($user_id);
+        // Rest of your login code
+    }
+}
+?>

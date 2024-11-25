@@ -1,47 +1,40 @@
 <?php
-  require_once("db_conn.php");
+require_once 'db_conn.php';
+require_once 'audit_functions.php';
 
-  $conn = connect_db();
-// Update the existing query that fetches students
-$sql = "SELECT * FROM tbl_cwts WHERE transferred = 0 OR transferred IS NULL";
-$results = $conn->query($sql);
-  ?>
-
-
-  <?php
-  require_once 'db_conn.php';
-  session_start();
-
-  // Check if the session ID stored in the cookie matches the current session
-  if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type']) && $_SESSION["user_type"] == "admin")) {
-    // If no valid session, redirect to login page
+// Check authentication
+if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type']) && $_SESSION["user_type"] == "admin")) {
     header('Location: faculty.php');
     exit();
-  }
+}
 
-  $conn = connect_db();
-  $user_id = $_SESSION['user_id'] ?? null;
-  ?>
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$records_per_page = 10;
+$offset = ($page - 1) * $records_per_page;
 
-  <?php
-  require_once("db_conn.php");
+// Use a prepared statement for the main query
+$sql = "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ii", $records_per_page, $offset);
+$stmt->execute();
+$results = $stmt->get_result();
 
-  $conn = connect_db();
+// Get total records for pagination
+$total_records_sql = "SELECT COUNT(*) as count FROM audit_log";
+$total_records_result = $conn->query($total_records_sql);
+$total_records = $total_records_result->fetch_assoc()['count'];
 
-  // Fetch all instructors from the database
-  $instructors = [];
-  $sql = "SELECT * FROM registration WHERE user_type = 'instructor'";
-  $result = $conn->query($sql);
+$conn = connect_db();
+$user_id = $_SESSION['user_id'] ?? null;
 
-  if ($result) {
-    while ($row = $result->fetch_assoc()) {
-      $instructors[] = $row['username'];
-    }
-  } else {
-    // Handle query error
-    echo "Error: " . $conn->error;
-  }
-  ?>
+// Fetch audit logs
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$records_per_page = 10;
+$results = getAuditLogs($page, $records_per_page);
+?>
+
+
+
 
   <!DOCTYPE html>
   <html lang="en">
@@ -64,83 +57,102 @@ $results = $conn->query($sql);
       <p>National Service Training Program</p>
     </div>
 
-    <!-- Select All / Confirm / Cancel buttons -->
-    <!-- Select All / Confirm / Cancel buttons -->
-    <div id="selectionActions" style="display: none; margin-bottom: 10px; position: fixed; top: 200px; left: 90px; z-index: 1000;">
-      <button id="confirmSelectionBtn" style="background-color: white; color: black; font-size: 15px; padding: 10px 26px;" onclick="openConfirmPopup()">Assign Students</button>
-    </div>
 
     <table id="editableTable" class="table">
       <thead>
         <tr>
-          <th><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)"></th>
-          <th>School ID</th>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Gender</th>
-          <th>Semester</th>
-          <th>NSTP</th>
-          <th>College</th>
-          <th>Program</th>
-          <th>Actions</th>
+            <th>Audit ID</th>
+            <th>User ID</th>
+            <th>Action</th>
+            <th>Table Name</th>
+            <th>Record ID</th>
+            <th>Description</th>
+            <th>IP Address</th>
+            <th>User Agent</th>
+            <th>Timestamp</th>
         </tr>
       </thead>
       <tbody id="tableBody">
         <?php
-        while ($rows = $results->fetch_assoc()) {
-          if ($rows["nstp"] === "ROTC") {
-            echo "<tr data-id='" . $rows["school_id"] . "'>";
-            echo "<td><input type='checkbox' class='selectStudentCheckbox' onclick='toggleSelectionActions()'></td>";
-            echo "<td>" . $rows["school_id"] . "</td>";
-            echo "<td>" . $rows["first_name"] . "</td>";
-            echo "<td>" . $rows["last_name"] . "</td>";
-            echo "<td>" . $rows["gender"] . "</td>";
-            echo "<td>" . $rows["semester"] . "</td>";
-            echo "<td>" . $rows["nstp"] . "</td>";
-            echo "<td>" . $rows["department"] . "</td>";
-            echo "<td>" . $rows["course"] . "</td>";
-            echo "<td>";
-            echo "<button id='editBtn' class='editButton' onclick='editStudentInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
-            echo "<button id='deleteBtn' class='deleteButton' onclick='deleteStudent(this)'><i class='fa-solid fa-trash'></i></button>";
-            echo "</td>";
-            echo "</tr>";
-          }
+        if ($results->num_rows > 0) {
+            while ($row = $results->fetch_assoc()) {
+                echo "<tr>";
+                if (isset($row['id'])) {
+                    $id = $row['id'];
+                } else {
+                    $id = 'N/A'; // or handle the case as needed
+                }
+
+                if (isset($row['user_id'])) {
+                    $user_id = $row['user_id'];
+                } else {
+                    $user_id = 'NULL'; // or handle the case as needed
+                }
+
+                if (isset($row['action'])) {
+                    $action = $row['action'];
+                } else {
+                    $action = 'No Action'; // or handle the case as needed
+                }
+
+                if (isset($row['table_name'])) {
+                    $table_name = $row['table_name'];
+                } else {
+                    $table_name = 'NULL'; // or handle the case as needed
+                }
+
+                if (isset($row['record_id'])) {
+                    $record_id = $row['record_id'];
+                } else {
+                    $record_id = 'NULL'; // or handle the case as needed
+                }
+
+                if (isset($row['description'])) {
+                    $description = $row['description'];
+                } else {
+                    $description = 'No Description'; // or handle the case as needed
+                }
+
+                if (isset($row['ip_address'])) {
+                    $ip_address = $row['ip_address'];
+                } else {
+                    $ip_address = 'No IP'; // or handle the case as needed
+                }
+
+                if (isset($row['user_agent'])) {
+                    $user_agent = $row['user_agent'];
+                } else {
+                    $user_agent = 'No User Agent'; // or handle the case as needed
+                }
+
+                if (isset($row['created_at'])) {
+                    $created_at = $row['created_at'];
+                } else {
+                    $created_at = 'No Date'; // or handle the case as needed
+                }
+
+                echo "<td>" . $id . "</td>";
+                echo "<td>" . $user_id . "</td>";
+                echo "<td>" . $action . "</td>";
+                echo "<td>" . $table_name . "</td>";
+                echo "<td>" . $record_id . "</td>";
+                echo "<td>" . $description . "</td>";
+                echo "<td>" . $ip_address . "</td>";
+                echo "<td>" . $user_agent . "</td>";
+                echo "<td>" . $created_at . "</td>";
+                echo "</tr>";
+            }
+        } else {
+            echo "<tr><td colspan='9'>No audit log records found</td></tr>";
         }
         ?>
 
-        <tr id="noResultsRow" style="display: none;">
-          <td colspan="8" style="text-align: center; color: red;">No Results Found</td>
         </tr>
       </tbody>
     </table>
 
 
-    <!-- Confirmation Popup -->
-    <div id="confirmPopup" class="popup">
-      <div class="popup-content">
-        <h3>Assign Selection</h3>
-        <p id="studentList"></p>
-        <button onclick="openInstructorPopup()">Proceed to Select Instructor</button>
-        <button onclick="closePopup('confirmPopup')">Cancel</button>
-      </div>
-    </div>
 
-
-    <!-- Instructor Selection Popup -->
-    <div id="instructorPopup" class="popup" style="display: none;">
-      <div class="popup-content">
-        <h3>Select Instructor</h3>
-        <select id="instructorSelect">
-          <option value="">--Select Instructor--</option>
-          <?php foreach ($instructors as $instructor): ?>
-            <option value="<?php echo $instructor; ?>"><?php echo $instructor; ?></option>
-          <?php endforeach; ?>
-        </select>
-        <br><br>
-        <button onclick="confirmInstructor()">Confirm Instructor</button>
-        <button onclick="closePopup('instructorPopup')">Cancel</button>
-      </div>
-    </div>
 
 
 
@@ -410,7 +422,7 @@ dialog {
 #addForm input,
 #addForm select {
     width: 100%;
-    margin-bottom: 0px;
+    margin-bottom: 10px;
     padding: 4px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -576,98 +588,9 @@ dialog::backdrop {
     </style>
     <div class="search-container">
       <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
-      <button id="addBtn" class="addButton" onclick="openAddModal()"><i class="fa-solid fa-plus"></i></button>
-    </div>
-    <div class="pagination-container">
-      <button id="prevPage" onclick="prevPage()">Previous</button>
-      <span id="pagination"></span>
-      <button id="nextPage" onclick="nextPage()">Next</button>
-    </div>
-    <div class="button-container">
     </div>
 
-    <!-- Add this HTML for the modal dialog inside the <body> tag -->
-    <dialog id="editModal">
-      <form method="dialog" id="editForm">
-        <h2>Edit Student Information</h2>
-        <label for="editSchoolId">School ID:</label>
-        <input type="text" id="editSchoolId" name="school_id" readonly><br>
-
-        <label for="editFirstName">First Name:</label>
-        <input type="text" id="editFirstName" name="first_name" required><br>
-
-        <label for="editLastName">Last Name:</label>
-        <input type="text" id="editLastName" name="last_name" required><br>
-
-        <label for="editGender">Gender:</label>
-        <select id="editGender" name="gender" required>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select><br>
-
-        <label for="editSemester">Semester:</label>
-        <select id="editSemester" name="semester" required>
-          <option value="1st">1st</option>
-          <option value="2nd">2nd</option>
-        </select><br>
-
-        <label for="editNSTP">NSTP:</label>
-        <select id="editNSTP" name="nstp">
-          <option value="ROTC">ROTC</option>
-        </select>
-
-        <label for="editDepartment">College:</label>
-        <input type="text" id="editDepartment" name="department" required><br>
-
-        <label for="editCourse">Program:</label>
-        <input type="text" id="editCourse" name="course" required><br>
-
-        <button type="submit">Save</button>
-        <button type="button" onclick="closeModal()">Cancel</button>
-      </form>
-    </dialog>
-
-    <!-- Add this HTML for the modal dialog inside the <body> tag -->
-    <dialog id="addModal">
-      <form method="dialog" id="addForm">
-        <h2>Add New Student</h2>
-
-        <label for="addSchoolId">School ID:</label>
-        <input type="text" id="addSchoolId" name="school_id" required><br>
-
-        <label for="addFirstName">First Name:</label>
-        <input type="text" id="addFirstName" name="first_name" required><br>
-
-        <label for="addLastName">Last Name:</label>
-        <input type="text" id="addLastName" name="last_name" required><br>
-
-        <label for="addGender">Gender:</label>
-        <select id="addGender" name="gender" required>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select><br>
-
-        <label for="editSemester">Semester:</label>
-        <select id="editSemester" name="semester" required>
-          <option value="1st">1st</option>
-          <option value="2nd">2nd</option>
-        </select><br>
-
-        <label for="addNSTP">NSTP:</label>
-        <select id="addNSTP" name="nstp">
-          <option value="ROTC">ROTC</option>
-        </select><br>
-
-        <label for="addDepartment">College:</label>
-        <input type="text" id="addDepartment" name="department" required><br>
-
-        <label for="addCourse">Program:</label>
-        <input type="text" id="addCourse" name="course" required><br>
-
-        <button type="submit">Save</button>
-        <button type="button" onclick="closeAddModal()">Cancel</button>
-      </form>
-    </dialog>
+    
 
 
     <script>
