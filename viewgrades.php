@@ -16,6 +16,7 @@ $sql = "SELECT
     g.prelim, 
     g.midterm, 
     g.finals,
+    g.status,
     CASE 
         WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
         THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
@@ -35,19 +36,19 @@ if (!$results) {
 }
 ?>
 <?php
-require_once 'db_conn.php';
-session_start();
+// ... existing PHP code ...
 
-// Check if the session ID stored in the cookie matches the current session
-if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type']) && $_SESSION["user_type"] == "admin")) {
-    // If no valid session, redirect to login page
-    header('Location: faculty.php');
-    exit();
-}
-
-$conn = connect_db();
-$user_id = $_SESSION['user_id'] ?? null;
+// Fetch distinct School IDs and Semesters for the filters
+$schoolIds = $conn->query("SELECT DISTINCT SUBSTRING(school_id, 1, 3) AS school_prefix FROM tbl_cwts");
+$semesters = $conn->query("SELECT DISTINCT semester FROM tbl_cwts");
+$genders = $conn->query("SELECT DISTINCT gender FROM tbl_cwts");
+$nstps = $conn->query("SELECT DISTINCT nstp FROM tbl_cwts");
+$colleges = $conn->query("SELECT DISTINCT department FROM tbl_cwts");
+$programs = $conn->query("SELECT DISTINCT course FROM tbl_cwts");
+$instructors = $conn->query("SELECT DISTINCT instructor FROM tbl_cwts");
+$statuses = $conn->query("SELECT DISTINCT status FROM tbl_students_grades");
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -65,13 +66,94 @@ $user_id = $_SESSION['user_id'] ?? null;
 
 <body>
 
+
+
   <div class="header">
     <a href="professor.php"><img src="slsulogo.png" class="headlogo"></a>
     <h1>Southern Luzon State University</h1>
     <p>National Service Training Program</p>
   </div>
- 
-  <table id="editableTable" class="table">
+
+    <!-- Filter Button -->
+    <button class="filter-button" onclick="openFilterModal()">
+    <i class="fa-solid fa-filter"></i> <!-- Assuming you're using Font Awesome for the icon -->
+</button>
+
+<!-- Filter Modal -->
+<dialog id="filterModal">
+  <form method="dialog" id="filterForm">
+    <h2>Filter Options</h2>
+
+    <label for="schoolIdFilter">School Year:</label>
+    <select id="schoolIdFilter">
+      <option value="">All</option>
+      <?php while ($row = $schoolIds->fetch_assoc()): ?>
+        <option value="<?php echo $row['school_prefix']; ?>"><?php echo $row['school_prefix']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="semesterFilter">Semester:</label>
+    <select id="semesterFilter">
+      <option value="">All</option>
+      <?php while ($row = $semesters->fetch_assoc()): ?>
+        <option value="<?php echo $row['semester']; ?>"><?php echo $row['semester']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="genderFilter">Gender:</label>
+    <select id="genderFilter">
+      <option value="">All</option>
+      <?php while ($row = $genders->fetch_assoc()): ?>
+        <option value="<?php echo $row['gender']; ?>"><?php echo $row['gender']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="nstpFilter">NSTP:</label>
+    <select id="nstpFilter">
+      <option value="">All</option>
+      <?php while ($row = $nstps->fetch_assoc()): ?>
+        <option value="<?php echo $row['nstp']; ?>"><?php echo $row['nstp']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="collegeFilter">College:</label>
+    <select id="collegeFilter">
+      <option value="">All</option>
+      <?php while ($row = $colleges->fetch_assoc()): ?>
+        <option value="<?php echo $row['department']; ?>"><?php echo $row['department']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="programFilter">Program:</label>
+    <select id="programFilter">
+      <option value="">All</option>
+      <?php while ($row = $programs->fetch_assoc()): ?>
+        <option value="<?php echo $row['course']; ?>"><?php echo $row['course']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="instructorFilter">Instructor:</label>
+    <select id="instructorFilter">
+      <option value="">All</option>
+      <?php while ($row = $instructors->fetch_assoc()): ?>
+        <option value="<?php echo $row['instructor']; ?>"><?php echo $row['instructor']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <label for="statusFilter">Status:</label>
+    <select id="statusFilter">
+      <option value="">All</option>
+      <?php while ($row = $statuses->fetch_assoc()): ?>
+        <option value="<?php echo $row['status']; ?>"><?php echo $row['status']; ?></option>
+      <?php endwhile; ?>
+    </select>
+
+    <button type="button" onclick="applyFilters()">Apply Filters</button>
+    <button type="button" onclick="closeFilterModal()">Cancel</button>
+  </form>
+</dialog>
+
+<table id="editableTable" class="table">
   <thead>
     <tr>
       <th>School ID</th>
@@ -82,44 +164,62 @@ $user_id = $_SESSION['user_id'] ?? null;
       <th>NSTP</th>
       <th>College</th>
       <th>Program</th>
-      <th>Instructor</th>  <!-- Add this line -->
+      <th>Instructor</th>
       <th>Prelims</th>
       <th>Midterms</th>
       <th>Finals</th>
       <th>Final Grades</th>
+      <th>Status</th>
     </tr>
   </thead>
   <tbody id="tableBody">
-  <?php
-  while ($rows = $results->fetch_assoc()) {
-    echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
-    echo "<td>{$rows["school_id"]}</td>";
-    echo "<td>{$rows["first_name"]}</td>";
-    echo "<td>{$rows["last_name"]}</td>";
-    echo "<td>{$rows["gender"]}</td>";
-    echo "<td>{$rows["semester"]}</td>";
-    echo "<td>{$rows["nstp"]}</td>";
-    echo "<td>{$rows["department"]}</td>";
-    echo "<td>{$rows["course"]}</td>";
-    echo "<td>" . ($rows["instructor"] ? $rows["instructor"] : "Not Assigned") . "</td>"; // Add this line
-    echo "<td>{$rows["prelim"]}</td>";
-    echo "<td>{$rows["midterm"]}</td>";
-    echo "<td>{$rows["finals"]}</td>";
-    echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 2) : '') . "</td>";
-    echo "</tr>";
-  }
-  ?>
-  <tr id="noResultsRow" style="display: none;">
-    <td colspan="12" style="text-align: center; color: red;">No Results Found</td> <!-- Update colspan to 12 -->
-  </tr>
-</tbody>
+    <?php
+    while ($rows = $results->fetch_assoc()) {
+      echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}' data-semester='{$rows["semester"]}' data-gender='{$rows["gender"]}' data-nstp='{$rows["nstp"]}' data-college='{$rows["department"]}' data-program='{$rows["course"]}' data-instructor='{$rows["instructor"]}' data-status='{$rows["status"]}'>";
+      echo "<td>{$rows["school_id"]}</td>";
+      echo "<td>{$rows["first_name"]}</td>";
+      echo "<td>{$rows["last_name"]}</td>";
+      echo "<td>{$rows["gender"]}</td>";
+      echo "<td>{$rows["semester"]}</td>";
+      echo "<td>{$rows["nstp"]}</td>";
+      echo "<td>{$rows["department"]}</td>";
+      echo "<td>{$rows["course"]}</td>";
+      echo "<td>" . ($rows["instructor"] ? $rows["instructor"] : "Not Assigned") . "</td>";
+      echo "<td>{$rows["prelim"]}</td>";
+      echo "<td>{$rows["midterm"]}</td>";
+      echo "<td>{$rows["finals"]}</td>";
+      echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 2) : '') . "</td>";
+      echo "<td>{$rows["status"]}</td>";
+      echo "</tr>";
+    }
+    ?>
+  </tbody>
 </table>
+
+<!-- Export Data Button -->
+<div class="export-container">
+    <button id="exportButton" onclick="openExportModal()">Export Data</button>
+</div>
+
+<!-- Export Modal -->
+<dialog id="exportModal">
+    <form method="dialog" id="exportForm">
+        <h2>Select Export Format</h2>
+        <button type="button" onclick="exportData('csv')">Export as CSV</button>
+        <button type="button" onclick="exportData('word')">Export as Word</button>
+        <button type="button" onclick="closeExportModal()">Cancel</button>
+    </form>
+</dialog>
+
 
   <input type="checkbox" id="check">
   <label for="check">
     <i class="fas fa-bars" id="btn"></i>
     <i class="fas fa-times" id="cancel"></i>
   </label>
+
+
+
   <div class="sidebar">
     <header>
         <!-- Move the avatar and name above the "Administrator" text -->
@@ -157,6 +257,8 @@ $user_id = $_SESSION['user_id'] ?? null;
         <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
     </ul>
 </div>
+
+
 
 <style>
   body {
@@ -335,6 +437,115 @@ h5 {
 }
 
 
+
+.filter-button {
+    position: absolute; /* Use absolute positioning */
+    top: 200px; /* Adjust the top position */
+    left: 217px; /* Adjust the right position */
+    /* You can also use left, bottom, etc. */
+}
+
+/* Style for the filter button */
+.filter-button {
+    font-size: 18px; /* Increase font size for the icon */
+    padding: 18px; /* Add padding to increase the button size */
+    width: 30px; /* Set a specific width */
+    height: 20px; /* Set a specific height */
+
+    background-color: white; /* Background color */
+    color: black; /* Text/icon color */
+    border: none; /* Remove border */
+    cursor: pointer; /* Change cursor on hover */
+    display: flex; /* Use flexbox for centering */
+    align-items: center; /* Center icon vertically */
+    justify-content: center; /* Center icon horizontally */
+}
+
+/* Modal Styles */
+dialog {
+    border: none; /* Remove default border */
+    border-radius: 8px; /* Rounded corners */
+    padding: 20px; /* Padding inside the modal */
+    width: 400px; /* Set a fixed width */
+    background-color: white; /* Background color */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Shadow effect */
+}
+
+/* Modal Header */
+dialog h2 {
+    margin: 0 0 15px; /* Margin for the header */
+    font-size: 24px; /* Font size for the header */
+    text-align: center; /* Center the header text */
+}
+
+/* Form Elements */
+dialog label {
+    display: block; /* Block display for labels */
+    margin-bottom: 5px; /* Space below labels */
+    font-weight: bold; /* Bold labels */
+}
+
+dialog select {
+    width: 100%; /* Full width for select elements */
+    padding: 8px; /* Padding inside select */
+    margin-bottom: 10px; /* Space below select */
+    border: 1px solid #ccc; /* Border for select */
+    border-radius: 4px; /* Rounded corners */
+}
+
+/* Buttons */
+dialog button {
+    
+    background-color: #096c37; /* Button background color */
+    color: white; /* Button text color */
+    border: none; /* Remove border */
+    border-radius: 4px; /* Rounded corners */
+    padding: 10px 15px; /* Padding for buttons */
+    cursor: pointer; /* Pointer cursor on hover */
+    margin-right: 10px; /* Space between buttons */
+}
+
+dialog button:hover {
+    background-color: #0a3a20; /* Darker shade on hover */
+}
+
+/* Cancel Button */
+dialog button[type="button"] {
+    background-color: #ccc; /* Light gray for cancel button */
+    color: black; /* Black text for cancel button */
+}
+
+dialog button[type="button"]:hover {
+    background-color: #bbb; /* Darker gray on hover */
+}
+
+
+.table-container {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    align-items: center; /* Center align children */
+}
+
+.export-container {
+  position:absolute;
+    margin-top: 10px; /* Space between the table and the button */
+    top: 230px; /* Adjust the top position */
+    left: 134px; /* Adjust the right position */
+}
+
+#exportButton {
+    padding: 10px 20px; /* Button padding */
+    font-size: 14px; /* Button font size */
+    background-color: white; /* Button background color */
+    color: black; /* Button text color */
+    border: none; /* Remove border */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-weight: bold;
+}
+
+
+
 </style>
 
   <div class="search-container">
@@ -501,7 +712,176 @@ function nextPage() {
 window.onload = function() {
     paginateTable();
 };
-</script>
+
+
+function openFilterModal() {
+      document.getElementById('filterModal').showModal();
+    }
+
+    function closeFilterModal() {
+      document.getElementById('filterModal').close();
+    }
+
+    function applyFilters() {
+      const schoolIdFilter = document.getElementById('schoolIdFilter').value;
+      const semesterFilter = document.getElementById('semesterFilter').value;
+      const genderFilter = document.getElementById('genderFilter').value;
+      const nstpFilter = document.getElementById('nstpFilter').value;
+      const collegeFilter = document.getElementById('collegeFilter').value;
+      const programFilter = document.getElementById('programFilter').value;
+      const instructorFilter = document.getElementById('instructorFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+
+      const table = document.getElementById("editableTable");
+      const tr = table.getElementsByTagName("tr");
+
+      for (let i = 1; i < tr.length; i++) {
+        const row = tr[i];
+        const schoolId = row.getAttribute('data-school-id');
+        const semester = row.getAttribute('data-semester');
+        const gender = row.getAttribute('data-gender');
+        const nstp = row.getAttribute('data-nstp');
+        const college = row.getAttribute('data-college');
+        const program = row.getAttribute('data-program');
+        const instructor = row.getAttribute('data-instructor');
+        const status = row.getAttribute('data-status');
+
+        const schoolIdMatch = schoolIdFilter ? schoolId.startsWith(schoolIdFilter) : true;
+        const semesterMatch = semesterFilter ? semester === semesterFilter : true;
+        const genderMatch = genderFilter ? gender === genderFilter : true;
+        const nstpMatch = nstpFilter ? nstp === nstpFilter : true;
+        const collegeMatch = collegeFilter ? college === collegeFilter : true;
+        const programMatch = programFilter ? program === programFilter : true;
+        const instructorMatch = instructorFilter ? instructor === instructorFilter : true;
+        const statusMatch = statusFilter ? status === statusFilter : true;
+
+        if (schoolIdMatch && semesterMatch && genderMatch && nstpMatch && collegeMatch && programMatch && instructorMatch && statusMatch) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      }
+
+      closeFilterModal(); // Close the modal after applying filters
+    } 
+
+
+    function openExportModal() {
+    document.getElementById('exportModal').showModal();
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').close();
+}
+
+function exportData(format) {
+    if (format === 'csv') {
+        exportToCSV();
+    } else if (format === 'word') {
+        exportToWord();
+    }
+    closeExportModal(); // Close the modal after selection
+}
+
+function exportToCSV() {
+    const table = document.getElementById("editableTable");
+    const rows = table.getElementsByTagName("tr");
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    // Add header row
+    csvContent += "School ID,Last Name,First Name,Program\n";
+
+    // Loop through table rows
+    for (let i = 1; i < rows.length; i++) { // Start from 1 to skip header
+        const row = rows[i];
+        if (row.style.display !== "none") { // Check if the row is visible
+            const cells = row.getElementsByTagName("td");
+            if (cells.length > 0) {
+                const schoolId = cells[0].textContent; // School ID
+                const lastName = cells[2].textContent; // Last Name
+                const firstName = cells[1].textContent; // First Name
+                const program = cells[7].textContent; // Program
+
+                // Create a CSV row
+                const csvRow = `${schoolId},${lastName},${firstName},${program}`;
+                csvContent += csvRow + "\n";
+            }
+        }
+    }
+
+    // Create a link to download the CSV file
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "students_data.csv");
+    document.body.appendChild(link); // Required for Firefox
+    link.click(); // This will download the data file
+    document.body.removeChild(link); // Clean up
+}
+
+
+
+function exportToWord() {
+    const table = document.getElementById("editableTable");
+    const rows = table.getElementsByTagName("tr");
+
+    // Create the header content
+    let header = `
+        <h1 style="text-align: center; font-size: 16px; font-weight: normal;">Republic of the Philippines</h1>
+<h1 style="text-align: center; font-size: 22px; font-weight: bold;">SOUTHERN LUZON STATE UNIVERSITY</h1>
+<h2 style="text-align: center; font-size: 16px; font-weight: bold;">MASTERS LIST</h2>
+        <p style="text-align: left;">SUBJECT: The National Service Training Program</p>
+        <br>
+        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+            <tr>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NO.</i></th>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NAME</i></th>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>COURSE</i></th>
+            </tr>
+    `;
+
+    // Start the table HTML
+    let html = header;
+
+    // Loop through table rows
+    for (let i = 1; i < rows.length; i++) { // Start from 1 to skip header
+        const row = rows[i];
+        if (row.style.display !== "none") { // Check if the row is visible
+            const cells = row.getElementsByTagName("td");
+            if (cells.length > 0) {
+                const schoolId = cells[0].textContent; // School ID
+                const lastName = cells[2].textContent; // Last Name
+                const firstName = cells[1].textContent; // First Name
+                const program = cells[7].textContent; // Program
+
+                // Create a row for the Word document
+                html += `
+                    <tr>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${schoolId}</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${lastName}, ${firstName}</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${program}</td>
+                    </tr>
+                `;
+            }
+        }
+    }
+    html += "</table>";
+
+    // Create a new Blob with the HTML content
+    const blob = new Blob([html], {
+        type: 'application/msword'
+    });
+
+    // Create a link to download the Blob
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "students_data.doc"; // Name of the downloaded file
+    document.body.appendChild(link);
+    link.click(); // Trigger the download
+    document.body.removeChild(link); // Clean up
+}
+
+  </script>
   <script src="./crud_input_grades.js"></script>
 </body>
 

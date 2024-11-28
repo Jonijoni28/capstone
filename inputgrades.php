@@ -133,30 +133,28 @@ $results = $stmt->get_result();
 require_once("db_conn.php");
 
 // Data processing logic
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  // Check if the action is to delete grades
 if (isset($_POST['action']) && $_POST['action'] === 'delete_grade') {
-  $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
+    $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
 
-  if ($grades_id > 0) {
-      // Prepare the SQL to delete the record for the specific grades_id
-      $sql = "DELETE FROM tbl_students_grades WHERE grades_id = ?";
-      $stmt = $conn->prepare($sql);
-      $stmt->bind_param('i', $grades_id);
+    // Log the received grades_id for debugging
+    error_log("Received grades_id for deletion: " . $grades_id);
 
-      if ($stmt->execute()) {
-          // Only return success if the deletion was successful
-          echo json_encode(['success' => true, 'message' => 'Grades deleted successfully.']);
-      } else {
-          // Return error message if deletion fails
-          echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
-      }
-      
-      $stmt->close();
-  } else {
-      echo json_encode(['success' => false, 'message' => 'Invalid grades ID.']);
-  }
-}
+    if ($grades_id > 0) {
+        // Prepare the SQL to delete the record for the specific grades_id
+        $sql = "DELETE FROM tbl_students_grades WHERE grades_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $grades_id);
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'message' => 'Grades deleted successfully.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
+        }
+        
+        $stmt->close();
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid grades ID.']);
+    }
 }
 
 // Function to round final grades to specified values
@@ -790,7 +788,7 @@ function updateFinalGrades(row, prelim, midterm, finals) {
     //DELETE BUTTON
 
     // Open delete modal and populate with grades ID
-    function openDeleteModal(button) {
+function openDeleteModal(button) {
     const row = button.closest('tr');
     const gradesId = row.getAttribute('data-grades-id');
 
@@ -807,23 +805,30 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
     event.preventDefault();
     const gradesId = document.getElementById('gradesIdInput').value;
 
+    // Check if gradesId is valid
+    if (!gradesId || isNaN(gradesId)) {
+        alert('Invalid grades ID.');
+        return;
+    }
+
     // Prepare the form data
     const formData = new FormData();
     formData.append('action', 'delete_grade');
     formData.append('grades_id', gradesId);
 
     // Send the request to the server
-    fetch('inputgrades.php', { // Ensure this points to the correct PHP file
+    fetch('inputgrades.php', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Remove the row from the table only if deletion was successful
+            // Clear the final grades and status in the UI
             const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
             if (row) {
-                row.remove();
+                row.querySelector('.final_grades').textContent = '';
+                row.querySelector('.status').textContent = '';
             }
             alert('Grades deleted successfully!');
         } else {
