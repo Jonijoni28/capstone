@@ -50,6 +50,34 @@ $statuses = $conn->query("SELECT DISTINCT status FROM tbl_students_grades");
 ?>
 
 
+<?php
+session_start(); // Start the session
+
+// Check if the user is logged in and set the user_id
+if (isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
+} else {
+    $user_id = null; // or handle the case when the user is not logged in
+}
+
+// Fetch user info only if user_id is set
+if ($user_id) {
+    $select = mysqli_query($conn, "SELECT * FROM `user_info` WHERE id = '$user_id'") or die('query failed');
+    $fetch = mysqli_fetch_assoc($select);
+
+    // Check if fetch returned a valid result
+    if ($fetch) {
+        // Use $fetch['photo'], $fetch['first_name'], etc.
+    } else {
+        // Handle case where no user info is found
+    }
+} else {
+    // Handle case where user is not logged in
+    echo "User not logged in.";
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -193,6 +221,9 @@ $statuses = $conn->query("SELECT DISTINCT status FROM tbl_students_grades");
       echo "</tr>";
     }
     ?>
+    <tr id="noResultsRow" style="display: none;">
+        <td colspan="14" style="text-align: center;">No Results Found</td>
+    </tr>
   </tbody>
 </table>
 
@@ -719,23 +750,25 @@ function openFilterModal() {
     }
 
     function closeFilterModal() {
-      document.getElementById('filterModal').close();
+        console.log("Closing filter modal");
+        document.getElementById('filterModal').close();
     }
 
     function applyFilters() {
-      const schoolIdFilter = document.getElementById('schoolIdFilter').value;
-      const semesterFilter = document.getElementById('semesterFilter').value;
-      const genderFilter = document.getElementById('genderFilter').value;
-      const nstpFilter = document.getElementById('nstpFilter').value;
-      const collegeFilter = document.getElementById('collegeFilter').value;
-      const programFilter = document.getElementById('programFilter').value;
-      const instructorFilter = document.getElementById('instructorFilter').value;
-      const statusFilter = document.getElementById('statusFilter').value;
+    const schoolIdFilter = document.getElementById('schoolIdFilter').value;
+    const semesterFilter = document.getElementById('semesterFilter').value;
+    const genderFilter = document.getElementById('genderFilter').value;
+    const nstpFilter = document.getElementById('nstpFilter').value;
+    const collegeFilter = document.getElementById('collegeFilter').value;
+    const programFilter = document.getElementById('programFilter').value;
+    const instructorFilter = document.getElementById('instructorFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
 
-      const table = document.getElementById("editableTable");
-      const tr = table.getElementsByTagName("tr");
+    const table = document.getElementById("editableTable");
+    const tr = table.getElementsByTagName("tr");
+    let hasVisibleRows = false; // Track if any rows are visible
 
-      for (let i = 1; i < tr.length; i++) {
+    for (let i = 1; i < tr.length; i++) {
         const row = tr[i];
         const schoolId = row.getAttribute('data-school-id');
         const semester = row.getAttribute('data-semester');
@@ -756,14 +789,24 @@ function openFilterModal() {
         const statusMatch = statusFilter ? status === statusFilter : true;
 
         if (schoolIdMatch && semesterMatch && genderMatch && nstpMatch && collegeMatch && programMatch && instructorMatch && statusMatch) {
-          row.style.display = "";
+            row.style.display = "";
+            hasVisibleRows = true; // Mark as having visible rows
         } else {
-          row.style.display = "none";
+            row.style.display = "none";
         }
-      }
+    }
 
-      closeFilterModal(); // Close the modal after applying filters
-    } 
+    // Show or hide the "No Results Found" row
+    const noResultsRow = document.getElementById('noResultsRow');
+    if (!hasVisibleRows) {
+        noResultsRow.style.display = 'table-row';
+    } else {
+        noResultsRow.style.display = 'none';
+    }
+
+    // Close the filter modal after applying filters
+    closeFilterModal();
+}
 
 
     function openExportModal() {

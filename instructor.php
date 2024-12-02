@@ -88,10 +88,11 @@ $user_id = $_SESSION['user_id'] ?? null;
         <div class="admin-grid">
             <?php
            // Query for Admin instructors
-$admin_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, r.user_type 
+// Query for Admin instructors
+$admin_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, r.user_type, u.designation 
 FROM user_info u 
 LEFT JOIN registration r ON u.email = r.username 
-WHERE r.user_type = 'admin'";
+WHERE u.designation = 'Admin'";
 $admin_result = mysqli_query($conn, $admin_query);  
 if (!$admin_result) {
     error_log('Admin query failed: ' . mysqli_error($conn));
@@ -110,7 +111,7 @@ while ($admin = mysqli_fetch_assoc($admin_result)) {
     // Display admin details with bold name
     echo '<p class="name"><strong>' . $admin['title'] . ' ' . $admin['first_name'] . ' ' . $admin['last_name'] . '</strong></p>';
     echo '<p class="designation">' . $admin['department'] . '</p>';
-    echo '<p class="user-type">' . (isset($admin['user_type']) ? ucfirst($admin['user_type']) : 'Admin') . '</p>';
+    echo '<p class="user-type">' . ucfirst($admin['designation']) . '</p>';
     echo '</div>';
 }
 ?>
@@ -123,28 +124,28 @@ while ($admin = mysqli_fetch_assoc($admin_result)) {
         <div class="cwts-grid">
             <?php
             // Query for CWTS instructors
-            $cwts_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, u.area_assignment, r.user_type 
-            FROM user_info u 
-            LEFT JOIN registration r ON u.email = r.username 
-            WHERE u.area_assignment = 'CWTS'";
+// Query for CWTS instructors
+$cwts_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, u.area_assignment, r.user_type, u.designation 
+FROM user_info u 
+LEFT JOIN registration r ON u.email = r.username 
+WHERE u.area_assignment = 'CWTS' AND u.designation != 'Admin'";
 $cwts_result = mysqli_query($conn, $cwts_query);
 
 while ($instructor = mysqli_fetch_assoc($cwts_result)) {
- echo '<div class="instructor" data-id="' . $instructor['id'] . '">';
- 
- // Display instructor photo
- if (empty($instructor['photo'])) {
-     echo '<img src="default/avatar.png" alt="Default Avatar">';
- } else {
-     echo '<img src="' . $instructor['photo'] . '" alt="' . $instructor['first_name'] . '">';
- }
+    echo '<div class="instructor" data-id="' . $instructor['id'] . '">';
+    
+    // Display instructor photo
+    if (empty($instructor['photo'])) {
+        echo '<img src="default/avatar.png" alt="Default Avatar">';
+    } else {
+        echo '<img src="' . $instructor['photo'] . '" alt="' . $instructor['first_name'] . '">';
+    }
 
- // Display instructor details with bold name
- echo '<p class="name"><strong>' . $instructor['title'] . ' ' . $instructor['first_name'] . ' ' . $instructor['last_name'] . '</strong></p>';
- echo '<p class="designation">' . $instructor['department'] . '</p>';
- // Add null check for user_type
- echo '<p class="user-type">' . (isset($instructor['user_type']) ? ucfirst($instructor['user_type']) : 'Instructor') . '</p>';
- echo '</div>';
+    // Display instructor details with bold name
+    echo '<p class="name"><strong>' . $instructor['title'] . ' ' . $instructor['first_name'] . ' ' . $instructor['last_name'] . '</strong></p>';
+    echo '<p class="designation">' . $instructor['department'] . '</p>';
+    echo '<p class="user-type">' . ucfirst($instructor['designation']) . '</p>';
+    echo '</div>';
 }
             ?>
         </div>
@@ -156,10 +157,11 @@ while ($instructor = mysqli_fetch_assoc($cwts_result)) {
         <div class="rotc-grid">
             <?php
             // Query for ROTC instructors
-            $rotc_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, u.area_assignment, r.user_type 
-               FROM user_info u 
-               LEFT JOIN registration r ON u.email = r.username 
-               WHERE u.area_assignment = 'ROTC'";
+// Query for ROTC instructors
+$rotc_query = "SELECT u.id, u.photo, u.title, u.first_name, u.last_name, u.department, u.area_assignment, r.user_type, u.designation 
+FROM user_info u 
+LEFT JOIN registration r ON u.email = r.username 
+WHERE u.area_assignment = 'ROTC' AND u.designation != 'Admin'";
 $rotc_result = mysqli_query($conn, $rotc_query);
 
 while ($instructor = mysqli_fetch_assoc($rotc_result)) {
@@ -175,8 +177,7 @@ while ($instructor = mysqli_fetch_assoc($rotc_result)) {
     // Display instructor details with bold name
     echo '<p class="name"><strong>' . $instructor['title'] . ' ' . $instructor['first_name'] . ' ' . $instructor['last_name'] . '</strong></p>';
     echo '<p class="designation">' . $instructor['department'] . '</p>';
-    // Add null check for user_type
-    echo '<p class="user-type">' . (isset($instructor['user_type']) ? ucfirst($instructor['user_type']) : 'Instructor') . '</p>';
+    echo '<p class="user-type">' . ucfirst($instructor['designation']) . '</p>';
     echo '</div>';
 }
         ?>
@@ -216,6 +217,11 @@ while ($instructor = mysqli_fetch_assoc($rotc_result)) {
             padding: 0;
             box-sizing: border-box;
         }
+
+        body {
+    background: url('backgroundss.jpg');
+    background-position: center;
+  }
 
         .header {
             overflow: hidden;
@@ -404,8 +410,9 @@ h2 {
         .faculty-section h2 {
             text-align: center;
             font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
+            margin-bottom: 30px;
+            margin-top: 20px;
+            color: black;
         }
 
         .cwts-grid, .rotc-grid {
@@ -511,16 +518,7 @@ h5 {
     font-size: 0.9em;
 }
 
-.cwts-grid, .rotc-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Reduced from 250px to 200px */
-    gap: 15px; /* Reduced from 30px to 15px */
-    padding: 10px; /* Reduced from 20px to 10px */
-    max-width: 1000px; /* Add max-width to keep cards from spreading too far */
-    margin: 0 auto; /* Center the grid */
-    margin-bottom: 50px;
-    margin-top: 20px;
-}
+
 
 /* Styles for the popup */
 .modal {
@@ -611,6 +609,30 @@ h5 {
     cursor: pointer;
 }
 
+.admin-instructors, .cwts-instructors .rotc-instructors {
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center items horizontally */
+    margin: 20px; /* Add margin for spacing */
+}
+
+.admin-grid, .cwts-grid .rotc-grid {
+    display: flex;
+    flex-wrap: wrap; /* Allows items to wrap to the next line */
+    justify-content: center; /* Centers items horizontally */
+    gap: 20px; /* Space between items */
+}
+
+.instructor {
+    flex: 0 1 200px; /* Adjusts the width of each instructor card */
+    margin: 10px; /* Adds margin around each card */
+    text-align: center; /* Center text inside the card */
+    border: 1px solid #ccc; /* Optional: Add border for better visibility */
+    border-radius: 8px; /* Optional: Rounded corners */
+    padding: 10px; /* Optional: Padding inside the card */
+    background-color: #fff; /* Optional: Background color */
+}
+
 .admin-instructors {
     padding: 20px;
 }
@@ -653,7 +675,7 @@ document.querySelector('.close').onclick = function() {
 document.getElementById('userTypeForm').onsubmit = function(e) {
     e.preventDefault();
     const instructorId = document.getElementById('instructorId').value;
-    const userType = document.getElementById('userType').value;
+    const designation = document.getElementById('userType').value;
 
     // AJAX request to update user type
     fetch('update_user_type.php', {
@@ -661,38 +683,24 @@ document.getElementById('userTypeForm').onsubmit = function(e) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ instructorId, userType }),
+        body: JSON.stringify({ instructorId, designation }),
     })
     .then(response => response.json())
     .then(data => {
-       console.log(data); // Log the response
-       if (data.success) {
-    const instructorDiv = document.querySelector(`.instructor[data-id="${instructorId}"]`);
-    const userTypeText = userType.charAt(0).toUpperCase() + userType.slice(1);
-    instructorDiv.querySelector('.user-type').textContent = userTypeText;
-
-    // Move the instructor to the appropriate section
-    if (userType === 'admin') {
-        document.querySelector('.admin-grid').appendChild(instructorDiv);
-    } else {
-        // Check if the userType is 'cwts' or 'rotc' and append accordingly
-        if (instructorDiv.classList.contains('cwts-instructor')) {
-            document.querySelector('.cwts-grid').appendChild(instructorDiv);
+        if (data.success) {
+            // Update the UI accordingly
+            alert('User type updated successfully!');
+            // Refresh the instructor section to reflect changes
+            location.reload(); // Reload the page to see the updated data
         } else {
-            document.querySelector('.rotc-grid').appendChild(instructorDiv);
-        }
-    }
-
-    document.getElementById('userTypeModal').style.display = 'none'; // Close the modal
-} else {
             alert('Error updating user type: ' + data.error);
         }
     })
     .catch(error => {
-        console.log('Sending:', { instructorId, userType });
+        console.error('Error:', error);
         alert('An error occurred while updating user type.');
     });
-};
+};  
     </script>
 
   

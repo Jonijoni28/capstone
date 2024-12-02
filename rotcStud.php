@@ -192,9 +192,8 @@ $results = $conn->query($sql);
 
     <style>
       body {
-        background: url('greens.jpg') no-repeat;
+        background: url('backgroundss.jpg') no-repeat;
         background-position: center;
-        background-size: cover;
       }
 
       /* Sidebar */
@@ -427,6 +426,11 @@ dialog {
     cursor: pointer;
 }
 
+.addButton {
+    background-color: #0a3a20; /* Match the sidebar color */
+    color: white; /* Set text color to white for better contrast */
+
+}
 /* Common backdrop blur for both modals */
 dialog::backdrop {
     background: rgba(0, 0, 0, 0.5);

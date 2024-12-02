@@ -314,9 +314,8 @@ if ($results->num_rows > 0) {
   <style>
 
 body {
-    background: url('greens.jpg');
+    background: url('backgroundss.jpg');
     background-position: center;
-    background-size: cover; 
   }
 
   .user-avatar {
