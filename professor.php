@@ -11,6 +11,7 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
 
 $conn = connect_db();
 $user_id = $_SESSION['user_id'] ?? null;
+
 // Function to submit an announcement
 function submitAnnouncement() {
     global $conn;
@@ -54,26 +55,28 @@ function submitAnnouncement() {
 
 // Function to fetch announcements
 function fetchAnnouncements() {
-    global $conn; // Use the global connection variable
+    global $conn;
 
-    $result = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+    // Modified query to order by ID in descending order (assuming ID increases with newer announcements)
+    $result = $conn->query("SELECT * FROM announcement ORDER BY id DESC");
     if (!$result) {
-        return []; // Return an empty array if there's an error
+        return [];
     }
 
     $announcements = [];
     while ($row = $result->fetch_assoc()) {
-        $announcements[] = $row; // Add each row to the announcements array
+        $announcements[] = $row;
     }
 
-    return $announcements; // Return the array of announcements
+    return $announcements;
 }
 
 // Function to fetch and display announcements
 function displayAnnouncements() {
-    global $conn; // Use the global connection variable
+    global $conn;
 
-    $result = $conn->query("SELECT * FROM announcement ORDER BY date DESC");
+    // Modified query to order by ID in descending order
+    $result = $conn->query("SELECT * FROM announcement ORDER BY id DESC");
     if (!$result) {
         echo '<p style="text-align:center; font-style:italic;">*Error fetching announcements*</p>';
         return;
@@ -109,8 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -133,8 +134,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="progress-bar"></div>
         </div>
     </div>
+
     <div class="header">
-        <a href="prof.php"><img src="slsulogo.png" class="headlogo"></a>
+        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
         <h1>Southern Luzon State University</h1>
         <p>National Service Training Program</p>
     </div>
@@ -145,8 +147,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <i class="fas fa-bars" id="btn"></i>
         <i class="fas fa-times" id="cancel"></i>
     </label>
+
     <div class="sidebar">
-    <header>
+    <header>    
     <?php
             $select = mysqli_query($conn, "SELECT * FROM `user_info` WHERE id = '$user_id'") or die('query failed');
             $fetch = mysqli_fetch_assoc($select);
@@ -176,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
         </ul>
     </div>
+
 
     <div class="top-right-buttons">
         <button onclick="viewAnnouncement()"><i class="fa-solid fa-book fa-xl"></i></button>
@@ -250,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
     <style>
-        body {
+ body {
             background-color: white;
             /* Set background to white */
             background-image: none;
@@ -1256,7 +1260,7 @@ h2{
             <div class="line"></div> <!-- Vertical line between logo and content -->
             <div class="socials-campuses">
                 <div class="socials">
-                    <h4>Socials</h4>
+                    <h4>Facebook Pages</h4>
                     <a href="https://www.facebook.com/slsuMain">SLSU Main Campus</a>
                     <a href="https://www.facebook.com/slsuOSR">SLSU Student Regent</a>
                     <a href="https://www.facebook.com/slsulucbanrotcu">ROTC Main Campus</a>
@@ -1500,6 +1504,8 @@ h2{
             }, 20);
         });
 
+
+        
         </script>
 
         <!-- SLIDESHOW JS -->
