@@ -1,5 +1,7 @@
 <?php
 require_once "db_conn.php";
+require_once 'audit_logger.php';
+
 $sql_statement = "SELECT id, username, password, user_type FROM registration WHERE username = ?";
 $sql_statement_user_info = "SELECT * FROM user_info WHERE registration_id = ?";
 session_start();
@@ -122,4 +124,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Rest of your login code
     }
 }
+?>
+
+<?php
+
+// In login.php
+if ($login_successful) {
+    logUserAuth($username, 'LOGIN');
+}
+
+// In logout.php
+logUserAuth($_SESSION['username'], 'LOGOUT');
+
+// In announcement management
+// When adding announcement
+logAnnouncementActivity($_SESSION['username'], 'ADD', $announcement_title);
+
+// When updating announcement
+logAnnouncementActivity($_SESSION['username'], 'EDIT', $announcement_title);
+
+// When deleting announcement
+logAnnouncementActivity($_SESSION['username'], 'DELETE', $announcement_title);
+
+// In grade management
+// When adding grades
+logGradeActivity($_SESSION['username'], 'ADD', "Student ID: $student_id, Grade: $grade");
+
+// When updating grades
+logGradeActivity($_SESSION['username'], 'EDIT', "Student ID: $student_id, New Grade: $new_grade");
+
+// When transferring students
+logTransferActivity($_SESSION['username'], "From: $from_instructor To: $to_instructor, Students: $student_ids");
 ?>

@@ -1,5 +1,7 @@
   <?php
   require_once("db_conn.php");
+  require_once 'audit_logger.php';
+
 
   $conn = connect_db();
 // Update the existing query that fetches students
@@ -41,6 +43,26 @@ $results = $conn->query($sql);
     // Handle query error
     echo "Error: " . $conn->error;
   }
+
+  ?>
+
+  <?php
+// In transfer_students.php
+if (isset($_POST['transfer_students'])) {
+  $student_ids = $_POST['student_ids'];
+  $new_instructor = $_POST['new_instructor'];
+  $old_instructor = $_POST['old_instructor'];
+  
+  // Your existing transfer logic here
+  
+  if ($transfer_successful) {
+      logTransferActivity(
+          $_SESSION['username'],
+          "From: $old_instructor To: $new_instructor, Students: " . implode(', ', $student_ids)
+      );
+  }
+}
+
   ?>
 
   <!DOCTYPE html>

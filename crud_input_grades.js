@@ -27,10 +27,9 @@ const editModal = {
   element: document.getElementById("editModal"),
   open: function () {
     this.element.show();
-    // Focus on the first input element inside the modal
     const prelimInput = document.getElementById("editPrelim");
     prelimInput.focus();
-    prelimInput.dispatchEvent(new Event("input")); // Trigger input event to validate immediately
+    prelimInput.dispatchEvent(new Event("input"));
   },
   close: function () {
     this.element.close();
@@ -38,9 +37,59 @@ const editModal = {
 };
 
 /**
- * Edits the details of a row from the table based on the button clicked.
- * @param {HTMLButtonElement} button - The button element clicked.
+ * Simple delete function that directly handles the deletion
+ * @param {HTMLButtonElement} button 
  */
+function openDeleteModal(button) {
+    const row = button.closest('tr');
+    const gradesId = row.getAttribute('data-grades-id');
+    
+    if (!gradesId || gradesId === "0") {
+        alert("No grades found to delete");
+        return;
+    }
+
+    if (confirm("Are you sure you want to delete these grades?")) {
+        // Create form data
+        const formData = new FormData();
+        formData.append('grades_id', gradesId);
+        formData.append('action', 'delete_grades'); // Changed to match PHP
+
+        // Send delete request
+        fetch('inputgrades.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Clear all grade fields
+                row.querySelector('td:nth-child(9)').textContent = '';  // Prelim
+                row.querySelector('td:nth-child(10)').textContent = '';  // Midterm
+                row.querySelector('td:nth-child(11)').textContent = ''; // Finals
+                row.querySelector('td:nth-child(12)').textContent = ''; // Final Grade
+                row.querySelector('td:nth-child(13)').textContent = ''; // Status
+                
+                // Reset grades_id
+                row.setAttribute('data-grades-id', '0');
+                
+                alert('Grades deleted successfully');
+            } else {
+                throw new Error(data.message || 'Failed to delete grades');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting grades: ' + error.message);
+        });
+    }
+}
+
 function editGradesInfo(button) {
   /** @type {HTMLTableRowElement} */
   const row = button.parentElement.parentElement;
@@ -104,4 +153,53 @@ function updateTableRow(row) {
   row.children[7].textContent = grades.prelim.value;
   row.children[8].textContent = grades.midterm.value;
   row.children[9].textContent = grades.finals.value;
+}
+
+/**
+ * Handles the deletion of student grades
+ * @param {HTMLButtonElement} button - The delete button clicked
+ */
+function deleteGrades(button) {
+  const row = button.closest('tr');
+  const gradesId = row.getAttribute('data-grades-id');
+  const schoolId = row.getAttribute('data-school-id');
+
+  if (!gradesId || gradesId === "0") {
+    alert("No grades found to delete");
+    return;
+  }
+
+  if (confirm("Are you sure you want to delete these grades?")) {
+    const formData = new FormData();
+    formData.append('action', 'delete_grade');
+    formData.append('grades_id', gradesId);
+    formData.append('school_id', schoolId);
+
+    fetch('inputgrades.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Clear all grade-related fields in the row
+        row.children[7].textContent = ''; // Prelim
+        row.children[8].textContent = ''; // Midterm
+        row.children[9].textContent = ''; // Finals
+        row.children[10].textContent = ''; // Final Grades
+        row.children[11].textContent = ''; // Status
+        
+        // Reset the grades_id attribute
+        row.setAttribute('data-grades-id', '0');
+        
+        alert('Grades deleted successfully');
+      } else {
+        alert(data.message || 'Error deleting grades');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while deleting grades');
+    });
+  }
 }

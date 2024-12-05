@@ -2,6 +2,58 @@
 require_once("db_conn.php");
 session_start();
 
+// Handle grade deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_grade') {
+    header('Content-Type: application/json');
+    
+    try {
+        $gradesId = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
+        
+        if ($gradesId <= 0) {
+            throw new Exception('Invalid grades ID');
+        }
+
+        // Connect to database
+        $conn = connect_db();
+
+        // Update query to set ALL grade-related fields to NULL
+        $sql = "UPDATE tbl_students_grades 
+                SET prelim = NULL, 
+                    midterm = NULL, 
+                    finals = NULL, 
+                    final_grades = NULL, 
+                    status = NULL 
+                WHERE grades_id = ?";
+        
+        $stmt = $conn->prepare($sql);
+        
+        if ($stmt->execute([$gradesId])) {
+            // Check if the update was successful
+            if ($stmt->affected_rows > 0) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Grades deleted successfully'
+                ]);
+            } else {
+                throw new Exception('No records were updated');
+            }
+        } else {
+            throw new Exception('Failed to execute update query');
+        }
+        
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+    }
+    exit;
+}
+
+
+
+
+
 // Check if user is logged in as instructor
 if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && 
     isset($_SESSION['user_type']) && $_SESSION["user_type"] == "instructor" && 
@@ -109,12 +161,8 @@ $sql = "SELECT
     g.prelim, 
     g.midterm, 
     g.finals,
-    g.status,
-    CASE 
-        WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
-        THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
-        ELSE NULL 
-    END AS calculated_final_grades
+    g.final_grades,  -- Change this line to directly use final_grades from database
+    g.status
 FROM 
     tbl_cwts c
 LEFT JOIN 
@@ -122,40 +170,13 @@ LEFT JOIN
 WHERE 
     c.instructor = ? AND c.transferred = 1";
 
+
 $stmt = $conn->prepare($sql);
 $stmt->bind_param('s', $instructor);
 $stmt->execute();
 $results = $stmt->get_result();
-  ?>
 
-<!-- #region -->
-<?php
-require_once("db_conn.php");
 
-// Data processing logic
-if (isset($_POST['action']) && $_POST['action'] === 'delete_grade') {
-    $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
-
-    // Log the received grades_id for debugging
-    error_log("Received grades_id for deletion: " . $grades_id);
-
-    if ($grades_id > 0) {
-        // Prepare the SQL to delete the record for the specific grades_id
-        $sql = "DELETE FROM tbl_students_grades WHERE grades_id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('i', $grades_id);
-
-        if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Grades deleted successfully.']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to delete grades: ' . $conn->error]);
-        }
-        
-        $stmt->close();
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Invalid grades ID.']);
-    }
-}
 
 // Function to round final grades to specified values
 function roundToNearestGrade($value) {
@@ -236,30 +257,28 @@ $user_id = $_SESSION['user_id'] ?? null;
 <tbody id="tableBody">
   <?php
 if ($results->num_rows > 0) {
-  while ($rows = $results->fetch_assoc()) {
-      // Round the calculated final grades
-      $finalGrades = roundToNearestGrade($rows['calculated_final_grades']);
-      
-      echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
-      echo "<td>{$rows["school_id"]}</td>";
-      echo "<td>{$rows["first_name"]}</td>";
-      echo "<td>{$rows["last_name"]}</td>";
-      echo "<td>{$rows["gender"]}</td>";
-      echo "<td>{$rows["semester"]}</td>";
-      echo "<td>{$rows["nstp"]}</td>";
-      echo "<td>{$rows["department"]}</td>";
-      echo "<td>{$rows["course"]}</td>";
-      echo "<td class='prelim'>{$rows["prelim"]}</td>";
-      echo "<td class='midterm'>{$rows["midterm"]}</td>";
-      echo "<td class='finals'>{$rows["finals"]}</td>";
-      echo "<td class='final_grades' style='font-weight: bold;'>" . ($finalGrades !== null ? number_format($finalGrades, 2) : '') . "</td>";
-      echo "<td class='status'>{$rows["status"]}</td>";
-      echo "<td>";
-      echo "<button class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
-      echo "<button class='deleteButton' onclick='openDeleteModal(this)'><i class='fa-solid fa-trash'></i></button>";
-      echo "</td>";
-      echo "</tr>";
-  }
+    while ($rows = $results->fetch_assoc()) {
+        echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}'>";
+        echo "<td>{$rows["school_id"]}</td>";
+        echo "<td>{$rows["first_name"]}</td>";
+        echo "<td>{$rows["last_name"]}</td>";
+        echo "<td>{$rows["gender"]}</td>";
+        echo "<td>{$rows["semester"]}</td>";
+        echo "<td>{$rows["nstp"]}</td>";
+        echo "<td>{$rows["department"]}</td>";
+        echo "<td>{$rows["course"]}</td>";
+        echo "<td class='prelim'>{$rows["prelim"]}</td>";
+        echo "<td class='midterm'>{$rows["midterm"]}</td>";
+        echo "<td class='finals'>{$rows["finals"]}</td>";
+        // Changed this line to use final_grades directly from database
+        echo "<td class='final_grades' style='font-weight: bold;'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 2) : '') . "</td>";
+        echo "<td class='status'>{$rows["status"]}</td>";
+        echo "<td>";
+        echo "<button class='editButton' onclick='editGradesInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
+        echo "<button class='deleteButton' onclick='openDeleteModal(this)'><i class='fa-solid fa-trash'></i></button>";
+        echo "</td>";
+        echo "</tr>";
+    }  
   } else {
     // Show "No Student Assigned" message
     echo "<tr>";
@@ -548,11 +567,13 @@ label #cancel {
       <label for="editFinals">Finals:</label>
       <input type="number" id="editFinals" name="finals" min="1.00" max="5.00" step="0.25"><br>
 
-      <label for="editStatus">Status:</label>
-        <select id="editStatus" name="status">
-            <option value="INCOMPLETE">INCOMPLETE</option>
-            <option value="DROP">DROP</option>
-        </select><br>
+<label for="editStatus">Status:</label>
+<select id="editStatus" name="status">
+    <option value="">-- Select Status --</option>
+    <option value="INCOMPLETE">INCOMPLETE</option>
+    <option value="DROP">DROP</option>
+</select><br>
+
 
       <button type="submit">Save</button>
       <button type="button" onclick="editModal.close()">Cancel</button>
@@ -591,22 +612,18 @@ label #cancel {
     </form>
   </dialog>
 
- <!-- Delete Modal -->
- <dialog id="deleteModal">
+  <dialog id="deleteModal">
     <form id="deleteForm">
         <h2>Delete Student Grades</h2>
         <p>Are you sure you want to delete all grades for this student?</p>
-
-        <!-- Hidden Action Field -->
         <input type="hidden" name="action" value="delete_grade">
-
-        <!-- This field will hold the grades_id for submission -->
         <input type="hidden" name="grades_id" id="gradesIdInput">
-
         <button type="submit">Delete All Grades</button>
         <button type="button" onclick="document.getElementById('deleteModal').close()">Cancel</button>
     </form>
 </dialog>
+
+
 
 
 
@@ -786,14 +803,14 @@ function updateFinalGrades(row, prelim, midterm, finals) {
 
     //DELETE BUTTON
 
-    // Open delete modal and populate with grades ID
+// Function to open delete modal
 function openDeleteModal(button) {
     const row = button.closest('tr');
     const gradesId = row.getAttribute('data-grades-id');
-
+    
     // Set the grades_id in the hidden input for submission
     document.getElementById('gradesIdInput').value = gradesId;
-
+    
     // Show the modal
     const deleteModal = document.getElementById('deleteModal');
     deleteModal.showModal();
@@ -803,18 +820,18 @@ function openDeleteModal(button) {
 document.getElementById('deleteForm').addEventListener('submit', function(event) {
     event.preventDefault();
     const gradesId = document.getElementById('gradesIdInput').value;
-
+    
     // Check if gradesId is valid
-    if (!gradesId || isNaN(gradesId)) {
+    if (!gradesId || gradesId === "0") {
         alert('Invalid grades ID.');
         return;
     }
-
+    
     // Prepare the form data
     const formData = new FormData();
     formData.append('action', 'delete_grade');
     formData.append('grades_id', gradesId);
-
+    
     // Send the request to the server
     fetch('inputgrades.php', {
         method: 'POST',
@@ -823,12 +840,23 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Clear the final grades and status in the UI
+            // Find the row and clear all grade-related fields
             const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
             if (row) {
+                // Clear all grade fields
+                row.querySelector('.prelim').textContent = '';
+                row.querySelector('.midterm').textContent = '';
+                row.querySelector('.finals').textContent = '';
                 row.querySelector('.final_grades').textContent = '';
                 row.querySelector('.status').textContent = '';
+                
+                // Reset the grades_id attribute
+                row.setAttribute('data-grades-id', '0');
             }
+            
+            // Close the modal
+            document.getElementById('deleteModal').close();
+            
             alert('Grades deleted successfully!');
         } else {
             console.error('Error:', data.message);
@@ -840,6 +868,7 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
         alert('An unexpected error occurred. Please check the console for details.');
     });
 });
+
 
 
  /* PAGINATION OF THE TABLE JS */

@@ -12,8 +12,8 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $records_per_page = 10;
 $offset = ($page - 1) * $records_per_page;
 
-// Use a prepared statement for the main query
-$sql = "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ? OFFSET ?";
+// Update the ORDER BY clause to use 'Timestamp' instead of 'created_at'
+$sql = "SELECT * FROM audit_log ORDER BY Timestamp DESC LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("ii", $records_per_page, $offset);
 $stmt->execute();
@@ -32,6 +32,7 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $records_per_page = 10;
 $results = getAuditLogs($page, $records_per_page);
 ?>
+
 
 
 
@@ -58,98 +59,39 @@ $results = getAuditLogs($page, $records_per_page);
     </div>
 
 
-    <table id="editableTable" class="table">
-      <thead>
+  
+<table id="editableTable" class="table">
+    <thead>
         <tr>
             <th>Audit ID</th>
-            <th>User ID</th>
-            <th>Action</th>
-            <th>Table Name</th>
-            <th>Record ID</th>
-            <th>Description</th>
-            <th>IP Address</th>
-            <th>User Agent</th>
             <th>Timestamp</th>
+            <th>Actions</th>
+            <th>Description</th>
+            <th>User Account</th>
+            <th>Table Affected</th>
+            <th>Record ID</th>
         </tr>
-      </thead>
-      <tbody id="tableBody">
+    </thead>
+    <tbody id="tableBody">
         <?php
         if ($results->num_rows > 0) {
             while ($row = $results->fetch_assoc()) {
                 echo "<tr>";
-                if (isset($row['id'])) {
-                    $id = $row['id'];
-                } else {
-                    $id = 'N/A'; // or handle the case as needed
-                }
-
-                if (isset($row['user_id'])) {
-                    $user_id = $row['user_id'];
-                } else {
-                    $user_id = 'NULL'; // or handle the case as needed
-                }
-
-                if (isset($row['action'])) {
-                    $action = $row['action'];
-                } else {
-                    $action = 'No Action'; // or handle the case as needed
-                }
-
-                if (isset($row['table_name'])) {
-                    $table_name = $row['table_name'];
-                } else {
-                    $table_name = 'NULL'; // or handle the case as needed
-                }
-
-                if (isset($row['record_id'])) {
-                    $record_id = $row['record_id'];
-                } else {
-                    $record_id = 'NULL'; // or handle the case as needed
-                }
-
-                if (isset($row['description'])) {
-                    $description = $row['description'];
-                } else {
-                    $description = 'No Description'; // or handle the case as needed
-                }
-
-                if (isset($row['ip_address'])) {
-                    $ip_address = $row['ip_address'];
-                } else {
-                    $ip_address = 'No IP'; // or handle the case as needed
-                }
-
-                if (isset($row['user_agent'])) {
-                    $user_agent = $row['user_agent'];
-                } else {
-                    $user_agent = 'No User Agent'; // or handle the case as needed
-                }
-
-                if (isset($row['created_at'])) {
-                    $created_at = $row['created_at'];
-                } else {
-                    $created_at = 'No Date'; // or handle the case as needed
-                }
-
-                echo "<td>" . $id . "</td>";
-                echo "<td>" . $user_id . "</td>";
-                echo "<td>" . $action . "</td>";
-                echo "<td>" . $table_name . "</td>";
-                echo "<td>" . $record_id . "</td>";
-                echo "<td>" . $description . "</td>";
-                echo "<td>" . $ip_address . "</td>";
-                echo "<td>" . $user_agent . "</td>";
-                echo "<td>" . $created_at . "</td>";
+                echo "<td>" . htmlspecialchars($row['Audit_ID'] ?? 'N/A') . "</td>";
+                echo "<td>" . htmlspecialchars($row['Timestamp'] ?? 'N/A') . "</td>";
+                echo "<td>" . htmlspecialchars($row['Actions'] ?? 'N/A') . "</td>";
+                echo "<td>" . htmlspecialchars($row['Description'] ?? 'N/A') . "</td>";
+                echo "<td>" . htmlspecialchars($row['User_Account'] ?? 'N/A') . "</td>";
+                echo "<td>" . htmlspecialchars($row['table_affected'] ?? 'N/A') . "</td>";
+                echo "<td>" . htmlspecialchars($row['record_id'] ?? 'N/A') . "</td>";
                 echo "</tr>";
             }
         } else {
-            echo "<tr><td colspan='9'>No audit log records found</td></tr>";
+            echo "<tr><td colspan='7'>No audit log records found</td></tr>";
         }
         ?>
-
-        </tr>
-      </tbody>
-    </table>
+    </tbody>
+</table>
 
 
 

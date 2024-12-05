@@ -147,6 +147,8 @@
             opacity: 1;
         }
 
+        /* PRELOADER CSS */
+
         body {
             background-color: white;
             background-image: none;

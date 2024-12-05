@@ -1,5 +1,7 @@
 <?php
 require_once 'db_conn.php';
+require_once 'audit_logger.php';
+
 session_start();
 
 // Check if the session ID stored in the cookie matches the current session
@@ -110,6 +112,25 @@ function displayAnnouncements() {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     submitAnnouncement();
 }
+?>
+
+<?php
+// In announcement_management.php
+if (isset($_POST['add_announcement'])) {
+    $title = $_POST['title'];
+    $content = $_POST['content'];
+    
+    // Your existing announcement addition logic here
+    
+    if ($announcement_added) {
+        logAnnouncementActivity(
+            $_SESSION['username'],
+            'ADD',
+            "Title: $title"
+        );
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
