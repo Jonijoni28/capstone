@@ -9,6 +9,13 @@ $_SESSION = array();
 // Destroy the session
 session_destroy();
 
+require_once 'audit_logger.php';
+
+if (isset($_SESSION['username'])) {
+    logUserActivity($_SESSION['username'], 'LOGOUT', "User logged out");
+}
+
+
 // Remove the authentication cookie
 if (isset($_COOKIE['auth'])) {
     setcookie('auth', '', time() - 3600, '/'); // Expire the cookie

@@ -2,6 +2,16 @@
 require_once("db_conn.php");
 session_start();
 
+// At the top of your file after session_start()
+if (isset($_SESSION['username'])) {
+    $current_instructor = $_SESSION['username'];
+} else {
+    // Redirect to login if not logged in
+    header("Location: faculty.php");
+    exit();
+}
+
+
 // Handle grade deletion
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_grade') {
     header('Content-Type: application/json');
@@ -168,11 +178,16 @@ FROM
 LEFT JOIN 
     tbl_students_grades g ON c.school_id = g.school_id
 WHERE 
-    c.instructor = ? AND c.transferred = 1";
+    c.instructor = '$current_instructor'";
+
+ 
+
+
+$results = $conn->query($sql);
 
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('s', $instructor);
+
 $stmt->execute();
 $results = $stmt->get_result();
 
@@ -209,6 +224,40 @@ $conn = connect_db();
 $user_id = $_SESSION['user_id'] ?? null;
 ?>
 
+
+<?php
+// ... existing PHP code ...
+
+// Fetch distinct School IDs and Semesters for the filters
+// First, get the instructor's ID or identifier from the session
+$instructor_id = $_SESSION['user_id']; // or however you store the current user's ID
+
+// Modify the filter queries
+$schoolIds = $conn->query("SELECT DISTINCT SUBSTRING(c.school_id, 1, 3) AS school_prefix 
+    FROM tbl_cwts c 
+    WHERE c.instructor = '$current_instructor'");
+
+$semesters = $conn->query("SELECT DISTINCT c.semester 
+    FROM tbl_cwts c 
+    WHERE c.instructor = '$current_instructor'");
+
+$genders = $conn->query("SELECT DISTINCT c.gender 
+    FROM tbl_cwts c 
+    WHERE c.instructor = '$current_instructor'");
+
+$colleges = $conn->query("SELECT DISTINCT c.department 
+    FROM tbl_cwts c 
+    WHERE c.instructor = '$current_instructor'");
+
+$programs = $conn->query("SELECT DISTINCT c.course 
+    FROM tbl_cwts c 
+    WHERE c.instructor = '$current_instructor'");
+
+$statuses = $conn->query("SELECT DISTINCT g.status 
+    FROM tbl_cwts c 
+    JOIN tbl_students_grades g ON c.school_id = g.school_id 
+    WHERE c.instructor = '$current_instructor'");
+?>
 
 
 <!DOCTYPE html>
@@ -471,40 +520,121 @@ label #cancel {
 
 .pagination-container {
     display: flex;
-    justify-content: center; /* Align to the left */
+    justify-content: center;
     align-items: center;
-    margin-bottom: 20px; /* Space between pagination and table */
-    margin-top: -30px;  /* Adjust to align with the search bar and add button */
+    margin: -35px 0;
+    gap: 10px;
 }
 
 .pagination-container button {
-    margin: 0 5px;
-    padding: 5px 10px;
-    border: none;
+    padding: 8px 12px;
+    margin: 0 2px;
+    border: 1px solid #096c37;
+    background-color: white;
+    color: #096c37;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.pagination-container button:hover {
     background-color: #096c37;
     color: white;
-    cursor: pointer;
 }
 
 .pagination-container button.active {
-    background-color: #0a3a20;
+    background-color: #096c37;
+    color: white;
 }
 
 .pagination-container button[disabled] {
-    background-color: grey;
+    background-color: #cccccc;
+    border-color: #cccccc;
+    color: #666666;
     cursor: not-allowed;
 }
 
 .page-button {
-    padding: 5px 10px;
-    margin: 0 5px;
-    cursor: pointer;
+    min-width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+#prevPage, #nextPage {
+    font-weight: bold;
 }
 
 .page-button.active {
     background-color: #0a3a20;
     color: white;
 }
+
+.rows-per-page {
+    position: absolute;
+    top: 160px;
+    left: 245px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.entries-input-container {
+    position: relative;
+    display: inline-block;
+}
+
+#rowsPerPageInput {
+    width: 70px;
+    padding: 5px 10px;
+    border: 1px solid #096c37;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+}
+
+.preset-buttons {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    border: 1px solid #096c37;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.entries-input-container:focus-within .preset-buttons {
+    display: block;
+}
+
+.preset-btn {
+    width: 100%;
+    padding: 5px 10px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.preset-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.entries-info {
+    position: relative;
+    top: -35px;
+    margin-left: -110px;
+    color: white;
+    font-size: 14px;
+}
+
 
 .editButton {
     background: none;  /* Remove any background */
@@ -540,6 +670,94 @@ label #cancel {
     color: black;  /* Make icon black */
 }
 
+.filter-button {
+    position: absolute;
+    top: 200px;
+    left: 217px;
+    font-size: 18px;
+    padding: 18px;
+    width: 30px;
+    height: 20px;
+    background-color: white;
+    color: black;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+dialog {
+    border: none;
+    border-radius: 8px;
+    padding: 20px;
+    width: 400px;
+    background-color: white;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+dialog h2 {
+    margin: 0 0 15px;
+    font-size: 24px;
+    text-align: center;
+}
+
+dialog label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+dialog select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+dialog button {
+    background-color: #096c37;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 15px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+dialog button:hover {
+    background-color: #0a3a20;
+}
+
+dialog button[type="button"] {
+    background-color: #ccc;
+    color: black;
+}
+
+dialog button[type="button"]:hover {
+    background-color: #bbb;
+}
+
+.export-container {
+    position: absolute;
+    margin-top: 10px;
+    top: 230px;
+    left: 134px;
+}
+
+#exportButton {
+    padding: 10px 20px;
+    font-size: 14px;
+    background-color: white;
+    color: black;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+
 
   </style>
 
@@ -553,7 +771,19 @@ label #cancel {
     <span id="pagination"></span>
     <button id="nextPage" onclick="nextPage()">Next</button>
 </div>
-
+<div class="rows-per-page">
+    <label for="rowsPerPageInput"></label>
+    <div class="entries-input-container">
+        <input type="number" id="rowsPerPageInput" min="1" value="10">
+        <div class="preset-buttons">
+            <button class="preset-btn" data-value="10">10</button>
+            <button class="preset-btn" data-value="25">25</button>
+            <button class="preset-btn" data-value="50">50</button>
+            <button class="preset-btn" data-value="100">100</button>
+        </div>
+    </div>
+    <label></label>
+</div>
   <!-- Modal dialogs -->
   <dialog id="editModal">
     <form method="dialog" id="editForm">
@@ -620,6 +850,85 @@ label #cancel {
         <input type="hidden" name="grades_id" id="gradesIdInput">
         <button type="submit">Delete All Grades</button>
         <button type="button" onclick="document.getElementById('deleteModal').close()">Cancel</button>
+    </form>
+</dialog>
+
+
+<!-- Filter Button -->
+<button class="filter-button" onclick="openFilterModal()">
+    <i class="fa-solid fa-filter"></i>
+</button>
+
+<!-- Filter Modal -->
+<dialog id="filterModal">
+    <form method="dialog" id="filterForm">
+        <h2>Filter Options</h2>
+
+        <label for="schoolIdFilter">School Year:</label>
+        <select id="schoolIdFilter">
+            <option value="">All</option>
+            <?php while ($row = $schoolIds->fetch_assoc()): ?>
+                <option value="<?php echo $row['school_prefix']; ?>"><?php echo $row['school_prefix']; ?></option>
+            <?php endwhile; ?>
+        </select>
+
+        <label for="semesterFilter">Semester:</label>
+        <select id="semesterFilter">
+            <option value="">All</option>
+            <?php while ($row = $semesters->fetch_assoc()): ?>
+                <option value="<?php echo $row['semester']; ?>"><?php echo $row['semester']; ?></option>
+            <?php endwhile; ?>
+        </select>
+
+        <label for="genderFilter">Gender:</label>
+        <select id="genderFilter">
+            <option value="">All</option>
+            <?php while ($row = $genders->fetch_assoc()): ?>
+                <option value="<?php echo $row['gender']; ?>"><?php echo $row['gender']; ?></option>
+            <?php endwhile; ?>
+        </select>
+
+        <label for="collegeFilter">College:</label>
+        <select id="collegeFilter">
+            <option value="">All</option>
+            <?php while ($row = $colleges->fetch_assoc()): ?>
+                <option value="<?php echo $row['department']; ?>"><?php echo $row['department']; ?></option>
+            <?php endwhile; ?>
+        </select>
+
+        <label for="programFilter">Program:</label>
+        <select id="programFilter">
+            <option value="">All</option>
+            <?php while ($row = $programs->fetch_assoc()): ?>
+                <option value="<?php echo $row['course']; ?>"><?php echo $row['course']; ?></option>
+            <?php endwhile; ?>
+        </select>
+
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter">
+            <option value="">All</option>
+            <?php while ($row = $statuses->fetch_assoc()): ?>
+                <option value="<?php echo $row['status']; ?>"><?php echo $row['status']; ?></option>
+            <?php endwhile; ?>
+        </select>
+
+        <button type="button" onclick="applyFilters()">Apply Filters</button>
+        <button type="button" onclick="closeFilterModal()">Cancel</button>
+    </form>
+</dialog>
+
+<!-- Export Data Button -->
+<div class="export-container">
+    <button id="exportButton" onclick="openExportModal()">Export Data</button>
+</div>
+
+<!-- Export Modal -->
+<dialog id="exportModal">
+    <form method="dialog" id="exportForm">
+        <h2>Select Export Format</h2>
+        <button type="button" onclick="exportData('csv')">Export as CSV</button>
+        <button type="button" onclick="exportData('word')">Export as Word</button>
+        <button type="button" onclick="closeExportModal()">Cancel</button>
     </form>
 </dialog>
 
@@ -872,32 +1181,102 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
 
 
  /* PAGINATION OF THE TABLE JS */
-let currentPage = 1;
-let rowsPerPage = 2;
+ let currentPage = 1;
+let rowsPerPage = 10; // Default value
+
+function initializeRowsPerPage() {
+    const input = document.getElementById('rowsPerPageInput');
+    const presetButtons = document.querySelectorAll('.preset-btn');
+
+    // Set up input event handler
+    input.addEventListener('change', function() {
+        let value = parseInt(this.value);
+        if (isNaN(value) || value < 1) {
+            this.value = 1;
+            value = 1;
+        }
+        rowsPerPage = value;
+        currentPage = 1; // Reset to first page when changing entries
+        paginateTable();
+    });
+
+    // Set up input validation
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this.blur();
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                this.value = 1;
+                value = 1;
+            }
+            rowsPerPage = value;
+            currentPage = 1;
+            paginateTable();
+        }
+    });
+
+    // Set up preset buttons
+    presetButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const value = parseInt(this.dataset.value);
+            input.value = value;
+            rowsPerPage = value;
+            currentPage = 1;
+            paginateTable();
+        });
+    });
+
+    // Set initial value
+    input.value = rowsPerPage;
+}
 
 function paginateTable() {
     let table = document.getElementById("editableTable");
-    let tr = table.getElementsByTagName("tr");
-    let totalRows = tr.length - 2; // excluding the header row and "No Results Found" row
-    let totalPages = Math.ceil(totalRows / rowsPerPage);
+    let tbody = table.getElementsByTagName("tbody")[0];
+    let tr = tbody.getElementsByTagName("tr");
+    let totalRows = 0;
 
-    let start = (currentPage - 1) * rowsPerPage + 1; // skip the header row
-    let end = start + rowsPerPage - 1;
-
-    // Show only the rows for the current page
-    for (let i = 1; i < tr.length - 1; i++) {
-        if (i >= start && i <= end) {
-            tr[i].style.display = "";
-        } else {
-            tr[i].style.display = "none";
+    // Count only visible rows (excluding the "No Results Found" row)
+    for (let i = 0; i < tr.length; i++) {
+        if (tr[i] !== document.getElementById('noResultsRow') && 
+            !tr[i].classList.contains('filtered-out')) {
+            totalRows++;
         }
     }
 
-    // Disable/Enable Previous and Next buttons
-    document.getElementById('prevPage').disabled = (currentPage === 1);
-    document.getElementById('nextPage').disabled = (currentPage === totalPages);
+    let totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
 
-    // Update the pagination display
+    // Ensure currentPage stays within valid range
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    let start = (currentPage - 1) * rowsPerPage;
+    let end = Math.min(start + rowsPerPage, totalRows);
+    let visibleIndex = 0;
+
+    // Hide all rows first
+    for (let i = 0; i < tr.length; i++) {
+        if (tr[i] !== document.getElementById('noResultsRow')) {
+            if (!tr[i].classList.contains('filtered-out')) {
+                if (visibleIndex >= start && visibleIndex < end) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+                visibleIndex++;
+            }
+        }
+    }
+
+    // Update buttons state
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage === totalPages;
+
+    // Show total entries information
+    updateEntriesInfo(Math.min(start + 1, totalRows), end, totalRows);
+
+    // Update pagination display
     updatePagination(totalPages);
 }
 
@@ -905,19 +1284,69 @@ function updatePagination(totalPages) {
     let paginationElement = document.getElementById('pagination');
     paginationElement.innerHTML = "";
 
-    // Create pagination buttons
-    for (let i = 1; i <= totalPages; i++) {
-        let pageButton = document.createElement("button");
-        pageButton.innerHTML = i;
-        pageButton.classList.add('page-button');
-        if (i === currentPage) {
-            pageButton.classList.add('active');
+    // Maximum number of page buttons to show
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+    // Adjust startPage if we're near the end
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    // Add first page button if not visible
+    if (startPage > 1) {
+        addPageButton(1, paginationElement);
+        if (startPage > 2) {
+            let ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.className = 'ellipsis';
+            paginationElement.appendChild(ellipsis);
         }
-        pageButton.onclick = function () {
-            currentPage = i;
-            paginateTable();
-        };
-        paginationElement.appendChild(pageButton);
+    }
+
+    // Add numbered page buttons
+    for (let i = startPage; i <= endPage; i++) {
+        addPageButton(i, paginationElement);
+    }
+
+    // Add last page button if not visible
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            let ellipsis = document.createElement('span');
+            ellipsis.textContent = '...';
+            ellipsis.className = 'ellipsis';
+            paginationElement.appendChild(ellipsis);
+        }
+        addPageButton(totalPages, paginationElement);
+    }
+}
+
+function addPageButton(pageNum, container) {
+    let pageButton = document.createElement("button");
+    pageButton.innerHTML = pageNum;
+    pageButton.classList.add('page-button');
+    if (pageNum === currentPage) {
+        pageButton.classList.add('active');
+    }
+    pageButton.onclick = function() {
+        currentPage = pageNum;
+        paginateTable();
+    };
+    container.appendChild(pageButton);
+}
+
+function updateEntriesInfo(start, end, total) {
+    const entriesInfo = document.createElement('div');
+    entriesInfo.className = 'entries-info';
+    entriesInfo.textContent = `Showing ${start} to ${end} of ${total} entries`;
+    
+    // Find the existing entries info and replace it, or append it if it doesn't exist
+    let existing = document.querySelector('.entries-info');
+    if (existing) {
+        existing.replaceWith(entriesInfo);
+    } else {
+        document.querySelector('.rows-per-page').appendChild(entriesInfo);
     }
 }
 
@@ -930,18 +1359,183 @@ function prevPage() {
 
 function nextPage() {
     let table = document.getElementById("editableTable");
-    let totalRows = table.getElementsByTagName("tr").length - 2;
+    let tbody = table.getElementsByTagName("tbody")[0];
+    let tr = tbody.getElementsByTagName("tr");
+    let totalRows = tr.length - 1; // Subtract "No Results" row
     let totalPages = Math.ceil(totalRows / rowsPerPage);
+    
     if (currentPage < totalPages) {
         currentPage++;
         paginateTable();
     }
 }
 
-// Initialize pagination on page load
-window.onload = function() {
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeRowsPerPage();
     paginateTable();
-};
+});
+
+function openFilterModal() {
+    document.getElementById('filterModal').showModal();
+}
+
+function closeFilterModal() {
+    document.getElementById('filterModal').close();
+}
+
+function applyFilters() {
+    const schoolIdFilter = document.getElementById('schoolIdFilter').value;
+    const semesterFilter = document.getElementById('semesterFilter').value;
+    const genderFilter = document.getElementById('genderFilter').value;
+    const collegeFilter = document.getElementById('collegeFilter').value;
+    const programFilter = document.getElementById('programFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    const table = document.getElementById("editableTable");
+    const tr = table.getElementsByTagName("tr");
+    let hasVisibleRows = false;
+
+    for (let i = 1; i < tr.length; i++) {
+        const row = tr[i];
+        const schoolId = row.getAttribute('data-school-id');
+        const semester = row.getAttribute('data-semester');
+        const gender = row.getAttribute('data-gender');
+        const college = row.getAttribute('data-college');
+        const program = row.getAttribute('data-program');
+        const status = row.getAttribute('data-status');
+
+        const schoolIdMatch = schoolIdFilter ? schoolId.startsWith(schoolIdFilter) : true;
+        const semesterMatch = semesterFilter ? semester === semesterFilter : true;
+        const genderMatch = genderFilter ? gender === genderFilter : true;
+        const collegeMatch = collegeFilter ? college === collegeFilter : true;
+        const programMatch = programFilter ? program === programFilter : true;
+        const statusMatch = statusFilter ? status === statusFilter : true;
+
+        if (schoolIdMatch && semesterMatch && genderMatch &&  
+            collegeMatch && programMatch && statusMatch) {
+            row.style.display = "";
+            hasVisibleRows = true;
+        } else {
+            row.style.display = "none";
+        }
+    }
+
+    const noResultsRow = document.getElementById('noResultsRow');
+    if (!hasVisibleRows) {
+        noResultsRow.style.display = 'table-row';
+    } else {
+        noResultsRow.style.display = 'none';
+    }
+
+    closeFilterModal();
+}
+
+function openExportModal() {
+    document.getElementById('exportModal').showModal();
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').close();
+}
+
+function exportData(format) {
+    if (format === 'csv') {
+        exportToCSV();
+    } else if (format === 'word') {
+        exportToWord();
+    }
+    closeExportModal();
+}
+
+
+function exportToCSV() {
+    const table = document.getElementById("editableTable");
+    const rows = table.getElementsByTagName("tr");
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    csvContent += "School ID,Last Name,First Name,Program\n";
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.style.display !== "none") {
+            const cells = row.getElementsByTagName("td");
+            if (cells.length > 0) {
+                const schoolId = cells[0].textContent;
+                const lastName = cells[2].textContent;
+                const firstName = cells[1].textContent;
+                const program = cells[7].textContent;
+
+                const csvRow = `${schoolId},${lastName},${firstName},${program}`;
+                csvContent += csvRow + "\n";
+            }
+        }
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "students_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportToWord() {
+    const table = document.getElementById("editableTable");
+    const rows = table.getElementsByTagName("tr");
+
+    let header = `
+        <h1 style="text-align: center; font-size: 16px; font-weight: normal;">Republic of the Philippines</h1>
+        <h1 style="text-align: center; font-size: 22px; font-weight: bold;">SOUTHERN LUZON STATE UNIVERSITY</h1>
+        <h2 style="text-align: center; font-size: 16px; font-weight: bold;">MASTERS LIST</h2>
+        <p style="text-align: left;">SUBJECT: The National Service Training Program</p>
+        <br>
+        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+            <tr>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NO.</i></th>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NAME</i></th>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>COURSE</i></th>
+            </tr>
+    `;
+
+    let html = header;
+
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.style.display !== "none") {
+            const cells = row.getElementsByTagName("td");
+            if (cells.length > 0) {
+                const schoolId = cells[0].textContent;
+                const lastName = cells[2].textContent;
+                const firstName = cells[1].textContent;
+                const program = cells[7].textContent;
+
+                html += `
+                    <tr>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${schoolId}</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${lastName}, ${firstName}</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${program}</td>
+                    </tr>
+                `;
+            }
+        }
+    }
+    html += "</table>";
+
+    const blob = new Blob([html], {
+        type: 'application/msword'
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "students_data.doc";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
 
   </script>
 

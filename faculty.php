@@ -168,19 +168,46 @@
         }
 
         .form-group {
-            position: relative;
-            margin-bottom: 20px;
-        }
+    position: relative;
+    margin-bottom: 20px;
+}
 
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            padding-left: 40px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-        }
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    padding-left: 40px;
+    padding-right: 40px; /* Added padding-right for the show/hide icon */
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.form-group #lockIcon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 20px;
+}
+
+.togglePassword {
+    position: absolute;
+    right: -230px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+
+
+#togglePassword:hover {
+    color: #555;
+}
 
         .form-group i {
             position: absolute;
@@ -249,9 +276,15 @@
                     <i class='bx bxs-user'></i>
                 </div>
                 <div class="form-group">
-                    <input type="password" id="password" name="password" placeholder="Password" required />
-                    <i class='bx bxs-lock-alt'></i>
-                </div>
+    <input type="password" id="password" name="password" placeholder="Password" required />
+    <i class='bx bx-show-alt' id="togglePassword"></i>
+</div>
+                <?php
+    if (isset($_SESSION['login_error'])) {
+        echo '<div style="color: white; margin-bottom: 10px;">' . $_SESSION['login_error'] . '</div>';
+        unset($_SESSION['login_error']);
+    }
+?>
                 <div class="remember-forgot">
                     <label><input type="checkbox"> Remember me</label>
                 </div>
@@ -285,6 +318,21 @@
             }
         }, 20);
     });
+
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+
+    togglePassword.addEventListener('click', function(e) {
+        e.stopPropagation(); // Prevent event from bubbling
+        // toggle the type attribute
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        
+        // toggle the icon
+        this.classList.toggle('bx-show-alt');
+        this.classList.toggle('bx-hide');
+    });
+
     </script>
 </body>
 </html>

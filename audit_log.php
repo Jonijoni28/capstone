@@ -2,6 +2,13 @@
 require_once 'db_conn.php';
 require_once 'audit_functions.php';
 
+if (!$conn) {
+  die("Database connection failed: " . mysqli_connect_error());
+}
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+
 // Check authentication
 if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type']) && $_SESSION["user_type"] == "admin")) {
     header('Location: faculty.php');
@@ -74,7 +81,17 @@ $results = getAuditLogs($page, $records_per_page);
     </thead>
     <tbody id="tableBody">
         <?php
-        if ($results->num_rows > 0) {
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $records_per_page = 10;
+        
+        // Get the results with error handling
+        $results = getAuditLogs($page, $records_per_page);
+        
+        if ($results === false) {
+            echo "<tr><td colspan='7'>Error fetching audit logs</td></tr>";
+        } else if ($results->num_rows === 0) {
+            echo "<tr><td colspan='7'>No audit log records found</td></tr>";
+        } else {
             while ($row = $results->fetch_assoc()) {
                 echo "<tr>";
                 echo "<td>" . htmlspecialchars($row['Audit_ID'] ?? 'N/A') . "</td>";
@@ -86,8 +103,6 @@ $results = getAuditLogs($page, $records_per_page);
                 echo "<td>" . htmlspecialchars($row['record_id'] ?? 'N/A') . "</td>";
                 echo "</tr>";
             }
-        } else {
-            echo "<tr><td colspan='7'>No audit log records found</td></tr>";
         }
         ?>
     </tbody>
@@ -146,9 +161,9 @@ $results = getAuditLogs($page, $records_per_page);
 
     <style>
       body {
-        background: url('greens.jpg') no-repeat;
+        background: url('backgroundss.jpg');
         background-position: center;
-        background-size: cover;
+
       }
 
       /* Sidebar */
@@ -294,44 +309,59 @@ $results = getAuditLogs($page, $records_per_page);
       /*PAGINATION OF THE TABLE CSS*/
 
       .pagination-container {
-        display: flex;
-        justify-content: center;
-        /* Align to the left */
-        align-items: center;
-        margin-bottom: 20px;
-        /* Space between pagination and table */
-        margin-top: -30px;
-        /* Adjust to align with the search bar and add button */
-      }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: -35px 0;
+    gap: 10px;
+}
 
-      .pagination-container button {
-        margin: 0 5px;
-        padding: 5px 10px;
-        border: none;
-        background-color: #096c37;
-        color: white;
-        cursor: pointer;
-      }
+.pagination-container button {
+    padding: 8px 12px;
+    margin: 0 2px;
+    border: 1px solid #096c37;
+    background-color: white;
+    color: #096c37;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
 
-      .pagination-container button.active {
-        background-color: #0a3a20;
-      }
+.pagination-container button:hover {
+    background-color: #096c37;
+    color: white;
+}
 
-      .pagination-container button[disabled] {
-        background-color: grey;
-        cursor: not-allowed;
-      }
+.pagination-container button.active {
+    background-color: #096c37;
+    color: white;
+}
 
-      .page-button {
-        padding: 5px 10px;
-        margin: 0 5px;
-        cursor: pointer;
-      }
+.pagination-container button[disabled] {
+    background-color: #cccccc;
+    border-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
 
-      .page-button.active {
-        background-color: #0a3a20;
-        color: white;
-      }
+.page-button {
+    min-width: 35px;
+    height: 35px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+#prevPage, #nextPage {
+    font-weight: bold;
+}
+
+
+.page-button.active {
+    background-color: #0a3a20;
+    color: white;
+}
 
     /* Common dialog styling for both edit and add modals */
 dialog {
@@ -531,11 +561,17 @@ dialog::backdrop {
     <div class="search-container">
       <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
     </div>
+    <div class="pagination-container">
+    <button id="prevPage" onclick="prevPage()">Previous</button>
+    <span id="pagination"></span>
+    <button id="nextPage" onclick="nextPage()">Next</button>
+</div>
 
-    
+
 
 
     <script>
+
       function searchRecords() {
     let input = document.getElementById('searchInput');
     let filter = input.value.toUpperCase();
@@ -580,77 +616,113 @@ dialog::backdrop {
     }
   }
 
-      /* PAGINATION OF THE TABLE JS */
-      let currentPage = 1;
-      let rowsPerPage = 2;
+ /* PAGINATION OF THE TABLE JS */
+let currentPage = 1;
+let rowsPerPage = 1;
 
-      function paginateTable() {
-        let table = document.getElementById("editableTable");
-        let tr = table.getElementsByTagName("tr");
-        let totalRows = tr.length - 2; // excluding the header row and "No Results Found" row
-        let totalPages = Math.ceil(totalRows / rowsPerPage);
+function paginateTable() {
+    let table = document.getElementById("editableTable");
+    let tr = table.getElementsByTagName("tr");
+    let totalRows = tr.length - 2; // excluding the header row and "No Results Found" row
+    let totalPages = Math.ceil((totalRows) / rowsPerPage);
 
-        let start = (currentPage - 1) * rowsPerPage + 1; // skip the header row
-        let end = start + rowsPerPage - 1;
+    // Ensure currentPage stays within valid range
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
 
-        // Show only the rows for the current page
-        for (let i = 1; i < tr.length - 1; i++) {
-          if (i >= start && i <= end) {
-            tr[i].style.display = "";
-          } else {
-            tr[i].style.display = "none";
-          }
-        }
+    let start = ((currentPage - 1) * rowsPerPage) + 1; // skip header row
+    let end = start + rowsPerPage - 1;
 
-        // Disable/Enable Previous and Next buttons
-        document.getElementById('prevPage').disabled = (currentPage === 1);
-        document.getElementById('nextPage').disabled = (currentPage === totalPages);
+    // Hide all rows first
+    for (let i = 1; i < tr.length - 1; i++) {
+        tr[i].style.display = "none";
+    }
 
-        // Update the pagination display
-        updatePagination(totalPages);
-      }
+    // Show rows for current page
+    for (let i = start; i <= Math.min(end, tr.length - 2); i++) {
+        tr[i].style.display = "";
+    }
 
-      function updatePagination(totalPages) {
-        let paginationElement = document.getElementById('pagination');
-        paginationElement.innerHTML = "";
+    // Update buttons state
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage === totalPages;
 
-        // Create pagination buttons
-        for (let i = 1; i <= totalPages; i++) {
-          let pageButton = document.createElement("button");
-          pageButton.innerHTML = i;
-          pageButton.classList.add('page-button');
-          if (i === currentPage) {
-            pageButton.classList.add('active');
-          }
-          pageButton.onclick = function() {
-            currentPage = i;
-            paginateTable();
-          };
-          paginationElement.appendChild(pageButton);
-        }
-      }
+    // Update pagination display
+    updatePagination(totalPages);
+}
 
-      function prevPage() {
-        if (currentPage > 1) {
-          currentPage--;
-          paginateTable();
-        }
-      }
-
-      function nextPage() {
-        let table = document.getElementById("editableTable");
-        let totalRows = table.getElementsByTagName("tr").length - 2;
-        let totalPages = Math.ceil(totalRows / rowsPerPage);
-        if (currentPage < totalPages) {
-          currentPage++;
-          paginateTable();
-        }
-      }
-
-      // Initialize pagination on page load
-      window.onload = function() {
+function prevPage() {
+    if (currentPage > 1) {
+        currentPage--;
         paginateTable();
-      };
+    }
+}
+
+function nextPage() {
+    let table = document.getElementById("editableTable");
+    let totalRows = table.getElementsByTagName("tr").length - 2; // Subtract header and "No Results" row
+    let totalPages = Math.ceil(totalRows / rowsPerPage);
+    
+    if (currentPage < totalPages) {
+        currentPage++;
+        paginateTable();
+    }
+}
+
+function updatePagination(totalPages) {
+    let paginationElement = document.getElementById('pagination');
+    paginationElement.innerHTML = "";
+
+    // Maximum number of page buttons to show
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+    // Adjust startPage if we're near the end
+    if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    // Add first page button if not visible
+    if (startPage > 1) {
+        addPageButton(1, paginationElement);
+        if (startPage > 2) {
+            paginationElement.appendChild(document.createTextNode('...'));
+        }
+    }
+
+    // Add numbered page buttons
+    for (let i = startPage; i <= endPage; i++) {
+        addPageButton(i, paginationElement);
+    }
+
+    // Add last page button if not visible
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationElement.appendChild(document.createTextNode('...'));
+        }
+        addPageButton(totalPages, paginationElement);
+    }
+}
+
+function addPageButton(pageNum, container) {
+    let pageButton = document.createElement("button");
+    pageButton.innerHTML = pageNum;
+    pageButton.classList.add('page-button');
+    if (pageNum === currentPage) {
+        pageButton.classList.add('active');
+    }
+    pageButton.onclick = function() {
+        currentPage = pageNum;
+        paginateTable();
+    };
+    container.appendChild(pageButton);
+}
+
+// Initialize pagination when the page loads
+window.onload = function() {
+    paginateTable();
+};
 
       function openModal() {
         let modal = document.getElementById('myModal');

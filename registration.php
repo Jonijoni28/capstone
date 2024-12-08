@@ -181,6 +181,40 @@
             font-size: 20px;
         }
 
+        .form-group i.bxs-lock-alt {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 20px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 40%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    cursor: pointer;
+}
+
+.password-toggle i {
+    color: #888;
+    font-size: 20px;
+}
+
+.password-toggle:hover i {
+    color: #555;
+}
+
         .btn {
             width: 100%;
             padding: 10px;
@@ -304,6 +338,36 @@
         padding: 15px 0;
         border-top: 1px solid #ddd;
     }
+
+    .agree-btn, .disagree-btn {
+    padding: 10px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 10px;
+}
+
+.agree-btn {
+    background-color: #0a3a20; /* SLSU green color */
+    color: white;
+}
+
+.agree-btn:hover {
+    background-color: #0c4526;
+}
+
+.disagree-btn {
+    background-color: #dc3545; /* Red color */
+    color: white;
+}
+
+.disagree-btn:hover {
+    background-color: #c82333;
+}
+
+
     </style>
 </head>
 
@@ -374,7 +438,7 @@
                         <input type="tel" name="mobile" placeholder="Mobile Number" required />
                     </div>
                     <div class="form-group">
-                        <label for="photo">2x2 ID Picture:</label>
+                        <label for="photo">2x2 Formal ID Picture:</label>
                         <input type="file" id="photo" name="photo" accept="image/*" required />
                     </div>
             </div>
@@ -414,11 +478,19 @@
                     <input type="text" name="username" placeholder="Username" required />
                 </div>
                 <div class="form-group">
-                    <input type="password" name="password" placeholder="Password" required />
-                </div>
-                <div class="form-group">
-                    <input type="password" name="confirm_password" placeholder="Confirm Password" required />
-                </div>
+                 <input type="password" id="password" name="password" placeholder="Password" required>
+                <span class="password-toggle">
+                  <i class='bx bx-show-alt' id="togglePassword"></i>
+             </span>
+</div>
+
+            <div class="form-group">
+             <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+            <span class="password-toggle">
+          <i class='bx bx-show-alt' id="toggleConfirmPassword"></i>
+    </span>
+</div>
+
                 <div class="checkbox-group">
                     <input type="checkbox" name="terms" required />
                     <label for="terms">I agree to the terms and conditions</label>
@@ -592,6 +664,31 @@
             termsCheckbox.checked = false;
         }
     });
+
+       // Function to toggle password visibility
+       function setupPasswordToggle(toggleElement, passwordInput) {
+        const toggleIcon = toggleElement.querySelector('i');
+        
+        toggleElement.addEventListener('click', function() {
+            // toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // toggle the icon
+            toggleIcon.classList.toggle('bx-show-alt');
+            toggleIcon.classList.toggle('bx-hide');
+        });
+    }
+
+    // Setup toggle for password field
+    const passwordToggle = document.querySelector('#togglePassword').parentElement;
+    const passwordInput = document.querySelector('#password');
+    setupPasswordToggle(passwordToggle, passwordInput);
+
+    // Setup toggle for confirm password field
+    const confirmPasswordToggle = document.querySelector('#toggleConfirmPassword').parentElement;
+    const confirmPasswordInput = document.querySelector('#confirm_password');
+    setupPasswordToggle(confirmPasswordToggle, confirmPasswordInput);
     </script>
 </body>
 
