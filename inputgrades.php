@@ -77,77 +77,97 @@ $instructor = $_SESSION['username'];
 
 // Data processing logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  error_log("Received POST request: " . print_r($_POST, true));
-
-  $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
-  $school_id = isset($_POST['school_id']) ? $_POST['school_id'] : '';
-
-  // Use null if the field is empty, not set, or zero
-  $prelim = (isset($_POST['prelim']) && $_POST['prelim'] !== '' && floatval($_POST['prelim']) !== 0.0) ? floatval($_POST['prelim']) : null;
-  $midterm = (isset($_POST['midterm']) && $_POST['midterm'] !== '' && floatval($_POST['midterm']) !== 0.0) ? floatval($_POST['midterm']) : null;
-  $finals = (isset($_POST['finals']) && $_POST['finals'] !== '' && floatval($_POST['finals']) !== 0.0) ? floatval($_POST['finals']) : null;
-
-  $conn = connect_db();
-
-  // Prepare the statement
-  if ($grades_id > 0) {
-    // Update existing grades
-    $stmt = $conn->prepare("UPDATE tbl_students_grades SET prelim = ?, midterm = ?, finals = ? WHERE grades_id = ?");
-    $stmt->bind_param("dddi", $prelim, $midterm, $finals, $grades_id);
-  } else {
-    // Insert new grades
-    $stmt = $conn->prepare("INSERT INTO tbl_students_grades (school_id, prelim, midterm, finals) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("sddd", $school_id, $prelim, $midterm, $finals);
-  }
-
-  if ($stmt->execute()) {
-    if ($grades_id == 0) {
-      $grades_id = $stmt->insert_id;
+    error_log("Received POST request: " . print_r($_POST, true));
+  
+    $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
+    $school_id = isset($_POST['school_id']) ? $_POST['school_id'] : '';
+  
+    // Use null if the field is empty, not set, or zero
+    $prelim = (isset($_POST['prelim']) && $_POST['prelim'] !== '' && floatval($_POST['prelim']) !== 0.0) ? floatval($_POST['prelim']) : null;
+    $midterm = (isset($_POST['midterm']) && $_POST['midterm'] !== '' && floatval($_POST['midterm']) !== 0.0) ? floatval($_POST['midterm']) : null;
+    $finals = (isset($_POST['finals']) && $_POST['finals'] !== '' && floatval($_POST['finals']) !== 0.0) ? floatval($_POST['finals']) : null;
+    
+    // Get status if it's being set manually
+    $manualStatus = isset($_POST['status']) ? $_POST['status'] : null;
+  
+    $conn = connect_db();
+  
+    // Check if we're only updating status (no grades)
+    if ($manualStatus && $prelim === null && $midterm === null && $finals === null) {
+      // Update only the status
+      if ($grades_id > 0) {
+          $stmt = $conn->prepare("UPDATE tbl_students_grades SET status = ? WHERE grades_id = ?");
+          $stmt->bind_param("si", $manualStatus, $grades_id);
+      } else {
+          // If no grades_id, insert new record
+          $stmt = $conn->prepare("INSERT INTO tbl_students_grades (school_id, status) VALUES (?, ?)");
+          $stmt->bind_param("ss", $school_id, $manualStatus);
+      }
+  
+      if ($stmt->execute()) {
+          echo json_encode([
+              'success' => true,
+              'status' => $manualStatus
+          ]);
+      } else {
+          echo json_encode([
+              'success' => false,
+              'message' => 'Failed to update status: ' . $conn->error
+          ]);
+      }
+      $stmt->close();
+      $conn->close();
+      exit;
     }
-
-    // Calculate final grades
-    $finalGrades = null;
-    if ($prelim !== null && $midterm !== null && $finals !== null) {
-        $finalGrades = ($prelim + $midterm + $finals) / 3;
-        $finalGrades = roundToNearestGrade($finalGrades); // Round to nearest valid grade
-
-        // Determine status based on final grades
-        $status = ($finalGrades >= 1 && $finalGrades <= 3) ? 'PASSED' : 'FAILED';
-
-        // Update final grades and status in the database
-        $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ?, status = ? WHERE grades_id = ?");
-        $updateFinalsStmt->bind_param("ssi", $finalGrades, $status, $grades_id);
-        
-        if ($updateFinalsStmt->execute()) {
-            // Return the updated values in the response
-            echo json_encode([
-                'success' => true,
-                'final_grades' => $finalGrades,
-                'status' => $status,
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
-        }
-        $updateFinalsStmt->close();
+  
+    // Regular grade update logic
+    if ($grades_id > 0) {
+      // Update existing grades
+      $stmt = $conn->prepare("UPDATE tbl_students_grades SET prelim = ?, midterm = ?, finals = ? WHERE grades_id = ?");
+      $stmt->bind_param("dddi", $prelim, $midterm, $finals, $grades_id);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Invalid grades data.']);
+      // Insert new grades
+      $stmt = $conn->prepare("INSERT INTO tbl_students_grades (school_id, prelim, midterm, finals) VALUES (?, ?, ?, ?)");
+      $stmt->bind_param("sddd", $school_id, $prelim, $midterm, $finals);
     }
+  
+    if ($stmt->execute()) {
+      if ($grades_id == 0) {
+        $grades_id = $stmt->insert_id;
+      }
+  
+      // Calculate final grades only if all grades are present
+      if ($prelim !== null && $midterm !== null && $finals !== null) {
+          $finalGrades = ($prelim + $midterm + $finals) / 3;
+          $finalGrades = roundToNearestGrade($finalGrades);
+          $status = ($finalGrades >= 1 && $finalGrades <= 3) ? 'PASSED' : 'FAILED';
+  
+          $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ?, status = ? WHERE grades_id = ?");
+          $updateFinalsStmt->bind_param("ssi", $finalGrades, $status, $grades_id);
+          
+          if ($updateFinalsStmt->execute()) {
+              echo json_encode([
+                  'success' => true,
+                  'final_grades' => $finalGrades,
+                  'status' => $status,
+              ]);
+          } else {
+              echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
+          }
+          $updateFinalsStmt->close();
+      } else {
+          // If no grades, just return success
+          echo json_encode(['success' => true]);
+      }
+    } else {
+      echo json_encode(['success' => false, 'message' => 'Failed to update grades: ' . $conn->error]);
+    }
+    
+    $stmt->close();
     $conn->close();
     exit;
-}
-
-
-
-  if ($grades_id > 0) {
-    // Update existing grades, allow NULL for midterm and finals
-    $stmt = $conn->prepare("UPDATE tbl_students_grades SET prelim = ?, midterm = ?, finals = ? WHERE grades_id = ?");
-    $stmt->bind_param("dddi", $prelim, $midterm, $finals, $grades_id);
-  } else {
-    // Insert new grades, allow NULL for midterm and finals
-    $stmt = $conn->prepare("INSERT INTO tbl_students_grades (school_id, prelim, midterm, finals) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("sddd", $school_id, $prelim, $midterm, $finals);
   }
-}
+  
 
 
 
@@ -178,16 +198,11 @@ FROM
 LEFT JOIN 
     tbl_students_grades g ON c.school_id = g.school_id
 WHERE 
-    c.instructor = '$current_instructor'";
+    c.instructor = ?";
 
  
-
-
-$results = $conn->query($sql);
-
-
 $stmt = $conn->prepare($sql);
-
+$stmt->bind_param("s", $_SESSION['username']); // or however you store the current instructor
 $stmt->execute();
 $results = $stmt->get_result();
 
@@ -230,33 +245,32 @@ $user_id = $_SESSION['user_id'] ?? null;
 
 // Fetch distinct School IDs and Semesters for the filters
 // First, get the instructor's ID or identifier from the session
-$instructor_id = $_SESSION['user_id']; // or however you store the current user's ID
+// Add these queries to get filter options
+$instructor = $_SESSION['username']; // or however you store the current instructor
 
-// Modify the filter queries
-$schoolIds = $conn->query("SELECT DISTINCT SUBSTRING(c.school_id, 1, 3) AS school_prefix 
-    FROM tbl_cwts c 
-    WHERE c.instructor = '$current_instructor'");
+$schoolIds = $conn->query("SELECT DISTINCT SUBSTRING(school_id, 1, 3) AS school_prefix 
+    FROM tbl_cwts WHERE instructor = '$instructor'");
 
-$semesters = $conn->query("SELECT DISTINCT c.semester 
-    FROM tbl_cwts c 
-    WHERE c.instructor = '$current_instructor'");
+$semesters = $conn->query("SELECT DISTINCT semester 
+    FROM tbl_cwts WHERE instructor = '$instructor'");
 
-$genders = $conn->query("SELECT DISTINCT c.gender 
-    FROM tbl_cwts c 
-    WHERE c.instructor = '$current_instructor'");
+$genders = $conn->query("SELECT DISTINCT gender 
+    FROM tbl_cwts WHERE instructor = '$instructor'");
 
-$colleges = $conn->query("SELECT DISTINCT c.department 
-    FROM tbl_cwts c 
-    WHERE c.instructor = '$current_instructor'");
+$nstps = $conn->query("SELECT DISTINCT nstp 
+    FROM tbl_cwts WHERE instructor = '$instructor'");
 
-$programs = $conn->query("SELECT DISTINCT c.course 
-    FROM tbl_cwts c 
-    WHERE c.instructor = '$current_instructor'");
+$colleges = $conn->query("SELECT DISTINCT department 
+    FROM tbl_cwts WHERE instructor = '$instructor'");
+
+$programs = $conn->query("SELECT DISTINCT course 
+    FROM tbl_cwts WHERE instructor = '$instructor'");
 
 $statuses = $conn->query("SELECT DISTINCT g.status 
     FROM tbl_cwts c 
     JOIN tbl_students_grades g ON c.school_id = g.school_id 
-    WHERE c.instructor = '$current_instructor'");
+    WHERE c.instructor = '$instructor'");
+
 ?>
 
 
@@ -313,7 +327,7 @@ if ($results->num_rows > 0) {
         echo "<td>{$rows["last_name"]}</td>";
         echo "<td>{$rows["gender"]}</td>";
         echo "<td>{$rows["semester"]}</td>";
-        echo "<td>{$rows["nstp"]}</td>";
+        echo "<td>{$rows["nstp"]}</td>";    
         echo "<td>{$rows["department"]}</td>";
         echo "<td>{$rows["course"]}</td>";
         echo "<td class='prelim'>{$rows["prelim"]}</td>";
@@ -787,28 +801,28 @@ dialog button[type="button"]:hover {
   <!-- Modal dialogs -->
   <dialog id="editModal">
     <form method="dialog" id="editForm">
-      <h2>Edit Student Grades</h2>
-      <label for="editPrelims">Prelims:</label>
-      <input type="number" id="editPrelim" name="prelim" min="1.00" max="5.00" step="0.25"><br>
+        <h2>Edit Student Grades</h2>
+        <label for="editPrelims">Prelims:</label>
+        <input type="number" id="editPrelim" name="prelim" min="1.00" max="5.00" step="0.25"><br>
 
-      <label for="editMidterm">Midterms:</label>
-      <input type="number" id="editMidterm" name="midterm" min="1.00" max="5.00" step="0.25"><br>
+        <label for="editMidterm">Midterms:</label>
+        <input type="number" id="editMidterm" name="midterm" min="1.00" max="5.00" step="0.25"><br>
 
-      <label for="editFinals">Finals:</label>
-      <input type="number" id="editFinals" name="finals" min="1.00" max="5.00" step="0.25"><br>
+        <label for="editFinals">Finals:</label>
+        <input type="number" id="editFinals" name="finals" min="1.00" max="5.00" step="0.25"><br>
 
-<label for="editStatus">Status:</label>
-<select id="editStatus" name="status">
-    <option value="">-- Select Status --</option>
-    <option value="INCOMPLETE">INCOMPLETE</option>
-    <option value="DROP">DROP</option>
-</select><br>
+        <label for="editStatus">Status:</label>
+        <select id="editStatus" name="status">
+            <option value="">-- Select Status --</option>
+            <option value="INC">INC</option>
+            <option value="DROP">DROP</option>
+        </select><br>
 
-
-      <button type="submit">Save</button>
-      <button type="button" onclick="editModal.close()">Cancel</button>
+        <button type="submit">Save</button>
+        <button type="button" onclick="editModal.close()">Cancel</button>
     </form>
-  </dialog>
+</dialog>
+
 
   <dialog id="addModal">
     <form method="dialog" id="addForm">
@@ -997,11 +1011,27 @@ function editGradesInfo(button) {
     const prelim = row.querySelector('.prelim').textContent;
     const midterm = row.querySelector('.midterm').textContent;
     const finals = row.querySelector('.finals').textContent;
+    const status = row.querySelector('.status').textContent;
 
     const editForm = document.getElementById('editForm');
+    const statusSelect = document.getElementById('editStatus');
+    
     document.getElementById('editPrelim').value = prelim;
     document.getElementById('editMidterm').value = midterm;
     document.getElementById('editFinals').value = finals;
+    
+    // Check if any grades exist
+    const hasGrades = prelim || midterm || finals;
+    
+    // Enable/disable status select based on grades
+    statusSelect.disabled = hasGrades;
+    
+    // Set current status if it's INCOMPLETE or DROP
+    if (!hasGrades && (status === 'INCOMPLETE' || status === 'DROP')) {
+        statusSelect.value = status;
+    } else {
+        statusSelect.value = '';
+    }
 
     editForm.setAttribute('data-grades-id', gradesId);
     editForm.setAttribute('data-school-id', schoolId);
@@ -1009,6 +1039,7 @@ function editGradesInfo(button) {
     const editModal = document.getElementById('editModal');
     editModal.showModal();
 }
+
 
 // Handle edit form submission
 document.getElementById('editForm').addEventListener('submit', function(event) {
@@ -1018,51 +1049,92 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
     const gradesId = editForm.getAttribute('data-grades-id');
     const schoolId = editForm.getAttribute('data-school-id');
 
-    // Get the grade values and set to null if empty
-    const prelim = document.getElementById('editPrelim').value.trim() !== '' ? parseFloat(document.getElementById('editPrelim').value) : null;
-    const midterm = document.getElementById('editMidterm').value.trim() !== '' ? parseFloat(document.getElementById('editMidterm').value) : null;
-    const finals = document.getElementById('editFinals').value.trim() !== '' ? parseFloat(document.getElementById('editFinals').value) : null;
+    // Get form values
+    const prelimValue = document.getElementById('editPrelim').value.trim();
+    const midtermValue = document.getElementById('editMidterm').value.trim();
+    const finalsValue = document.getElementById('editFinals').value.trim();
+    const status = document.getElementById('editStatus').value;
+
+    // Check if all grade fields are empty
+    const hasNoGrades = !prelimValue && !midtermValue && !finalsValue;
 
     // Prepare the form data
     const formData = new FormData();
     formData.append('grades_id', gradesId);
     formData.append('school_id', schoolId);
-    formData.append('prelim', prelim);
-    formData.append('midterm', midterm);
-    formData.append('finals', finals);
+
+    if (hasNoGrades && status) {
+        // Only send status update if there are no grades
+        formData.append('status_only', 'true');
+        formData.append('status', status);
+    } else if (!hasNoGrades) {
+        // Only send grades if at least one grade exists
+        formData.append('prelim', prelimValue);
+        formData.append('midterm', midtermValue);
+        formData.append('finals', finalsValue);
+    } else {
+        alert('Please enter grades or select a status.');
+        return;
+    }
 
     // Send the request to the server
-    fetch('', {
+    fetch('inputgrades.php', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(response => response.text())
+    .then(text => {
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('Server response:', text);
+            throw new Error('Invalid server response');
+        }
+        
         if (data.success) {
-            // Update the table row with the new grades and status
-            const row = document.querySelector(`tr[data-school-id="${schoolId}"]`);
-            row.querySelector('.prelim').textContent = prelim !== null ? prelim.toFixed(2) : '';
-            row.querySelector('.midterm').textContent = midterm !== null ? midterm.toFixed(2) : '';
-            row.querySelector('.finals').textContent = finals !== null ? finals.toFixed(2) : '';
-            row.querySelector('.final_grades').textContent = data.final_grades !== null ? data.final_grades.toFixed(2) : '';
-            row.querySelector('.status').textContent = data.status; // Update status in the table
-
-            // Close the modal
-            const editModal = document.getElementById('editModal');
-            editModal.close();
-
-            // Show success message
-            alert('Grades updated successfully!');
+            const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
+            if (row) {
+                if (hasNoGrades && status) {
+                    // Update only status
+                    row.querySelector('.status').textContent = status;
+                    row.querySelector('.prelim').textContent = '';
+                    row.querySelector('.midterm').textContent = '';
+                    row.querySelector('.finals').textContent = '';
+                    row.querySelector('.final_grades').textContent = '';
+                } else {
+                    // Update grades and status
+                    row.querySelector('.prelim').textContent = prelimValue || '';
+                    row.querySelector('.midterm').textContent = midtermValue || '';
+                    row.querySelector('.finals').textContent = finalsValue || '';
+                    if (data.final_grades) {
+                        row.querySelector('.final_grades').textContent = 
+                            parseFloat(data.final_grades).toFixed(2);
+                    }
+                    if (data.status) {
+                        row.querySelector('.status').textContent = data.status;
+                    }
+                }
+            }
+            document.getElementById('editModal').close();
+            alert('Update successful!');
+            // Optionally reload the page to ensure data consistency
+            // window.location.reload();
         } else {
-            console.error('Error:', data.message);
-            alert('Error: ' + data.message);
+            throw new Error(data.message || 'Update failed');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An unexpected error occurred. Please check the console for details.');
+        alert('An error occurred: ' + error.message);
     });
 });
+
+
+
+
+
+
 
 // Function to update final grades and status
 function updateFinalGrades(row, prelim, midterm, finals) {
@@ -1126,6 +1198,7 @@ function openDeleteModal(button) {
 }
 
 // Handle delete form submission
+// Handle delete form submission
 document.getElementById('deleteForm').addEventListener('submit', function(event) {
     event.preventDefault();
     const gradesId = document.getElementById('gradesIdInput').value;
@@ -1149,24 +1222,15 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Find the row and clear all grade-related fields
-            const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
-            if (row) {
-                // Clear all grade fields
-                row.querySelector('.prelim').textContent = '';
-                row.querySelector('.midterm').textContent = '';
-                row.querySelector('.finals').textContent = '';
-                row.querySelector('.final_grades').textContent = '';
-                row.querySelector('.status').textContent = '';
-                
-                // Reset the grades_id attribute
-                row.setAttribute('data-grades-id', '0');
-            }
-            
             // Close the modal
             document.getElementById('deleteModal').close();
             
+            // Show success message
             alert('Grades deleted successfully!');
+            
+            // Option 1: Reload the page
+            window.location.reload();
+            
         } else {
             console.error('Error:', data.message);
             alert('Error: ' + data.message);
@@ -1177,6 +1241,7 @@ document.getElementById('deleteForm').addEventListener('submit', function(event)
         alert('An unexpected error occurred. Please check the console for details.');
     });
 });
+
 
 
 
@@ -1385,51 +1450,127 @@ function closeFilterModal() {
 }
 
 function applyFilters() {
+    // Get filter values
     const schoolIdFilter = document.getElementById('schoolIdFilter').value;
     const semesterFilter = document.getElementById('semesterFilter').value;
     const genderFilter = document.getElementById('genderFilter').value;
+    const nstpFilter = document.getElementById('nstpFilter').value;
     const collegeFilter = document.getElementById('collegeFilter').value;
     const programFilter = document.getElementById('programFilter').value;
+    const instructorFilter = document.getElementById('instructorFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
 
+    console.log('Filter Values:', {
+        schoolId: schoolIdFilter,
+        semester: semesterFilter,
+        gender: genderFilter,
+        nstp: nstpFilter,
+        college: collegeFilter,
+        program: programFilter,
+        instructor: instructorFilter,
+        status: statusFilter
+    });
+
+    // Get table rows
     const table = document.getElementById("editableTable");
-    const tr = table.getElementsByTagName("tr");
+    const tbody = table.getElementsByTagName("tbody")[0];
+    const rows = tbody.getElementsByTagName("tr");
     let hasVisibleRows = false;
 
-    for (let i = 1; i < tr.length; i++) {
-        const row = tr[i];
-        const schoolId = row.getAttribute('data-school-id');
-        const semester = row.getAttribute('data-semester');
-        const gender = row.getAttribute('data-gender');
-        const college = row.getAttribute('data-college');
-        const program = row.getAttribute('data-program');
-        const status = row.getAttribute('data-status');
+    // Loop through all rows except header
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        
+        // Skip the "No Results" row
+        if (row.id === 'noResultsRow') continue;
 
-        const schoolIdMatch = schoolIdFilter ? schoolId.startsWith(schoolIdFilter) : true;
-        const semesterMatch = semesterFilter ? semester === semesterFilter : true;
-        const genderMatch = genderFilter ? gender === genderFilter : true;
-        const collegeMatch = collegeFilter ? college === collegeFilter : true;
-        const programMatch = programFilter ? program === programFilter : true;
-        const statusMatch = statusFilter ? status === statusFilter : true;
+        // Get cell values
+        const cells = row.getElementsByTagName("td");
+        if (cells.length === 0) continue; // Skip if no cells (header row)
 
-        if (schoolIdMatch && semesterMatch && genderMatch &&  
-            collegeMatch && programMatch && statusMatch) {
+        const schoolId = cells[0].textContent.trim();
+        const semester = cells[4].textContent.trim();
+        const gender = cells[3].textContent.trim();
+        const nstp = cells[5].textContent.trim();
+        const college = cells[6].textContent.trim();
+        const program = cells[7].textContent.trim();
+        const instructor = cells[8].textContent.trim();
+        const status = cells[13].textContent.trim();
+
+        // Check if row matches all selected filters
+        const matches = 
+            (!schoolIdFilter || schoolId.toLowerCase().startsWith(schoolIdFilter.toLowerCase())) &&
+            (!semesterFilter || semester === semesterFilter) &&
+            (!genderFilter || gender === genderFilter) &&
+            (!nstpFilter || nstp === nstpFilter) &&
+            (!collegeFilter || college === collegeFilter) &&
+            (!programFilter || program === programFilter) &&
+            (!instructorFilter || instructor === instructorFilter) &&
+            (!statusFilter || status === statusFilter);
+
+        // Show/hide row based on filter match
+        if (matches) {
             row.style.display = "";
             hasVisibleRows = true;
         } else {
             row.style.display = "none";
         }
+
+        console.log('Row:', schoolId, 'Matches:', matches);
     }
 
+    // Show/hide "No Results" message
     const noResultsRow = document.getElementById('noResultsRow');
-    if (!hasVisibleRows) {
-        noResultsRow.style.display = 'table-row';
-    } else {
+    if (noResultsRow) {
+        noResultsRow.style.display = hasVisibleRows ? 'none' : 'table-row';
+    }
+
+    // Update pagination
+    currentPage = 1;
+    paginateTable();
+
+    // Close the modal
+    closeFilterModal();
+}
+
+// Add a reset filters function
+function resetFilters() {
+    const filterIds = [
+        'schoolIdFilter', 'semesterFilter', 'genderFilter', 'nstpFilter',
+        'collegeFilter', 'programFilter', 'instructorFilter', 'statusFilter'
+    ];
+
+    // Reset all filter selections
+    filterIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = '';
+    });
+
+    // Show all rows
+    const table = document.getElementById("editableTable");
+    const tbody = table.getElementsByTagName("tbody")[0];
+    const rows = tbody.getElementsByTagName("tr");
+
+    for (let i = 0; i < rows.length; i++) {
+        if (rows[i].id !== 'noResultsRow') {
+            rows[i].style.display = "";
+        }
+    }
+
+    // Hide "No Results" message
+    const noResultsRow = document.getElementById('noResultsRow');
+    if (noResultsRow) {
         noResultsRow.style.display = 'none';
     }
 
-    closeFilterModal();
+    // Reset pagination
+    currentPage = 1;
+    paginateTable();
 }
+
+
+
+
 
 function openExportModal() {
     document.getElementById('exportModal').showModal();
