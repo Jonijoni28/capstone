@@ -875,61 +875,88 @@ dialog button[type="button"]:hover {
 
 <!-- Filter Modal -->
 <dialog id="filterModal">
-    <form method="dialog" id="filterForm">
-        <h2>Filter Options</h2>
+    <h2>Filter Options</h2>
+    <form id="filterForm">
+        <div class="filter-group">
+            <label for="schoolIdFilter">School Year:</label>
+            <select id="schoolIdFilter">
+                <option value="">All</option>
+                <?php while ($row = $schoolIds->fetch_assoc()): ?>
+                    <option value="<?php echo htmlspecialchars($row['school_prefix']); ?>">
+                        <?php echo htmlspecialchars($row['school_prefix']); ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
 
-        <label for="schoolIdFilter">School Year:</label>
-        <select id="schoolIdFilter">
-            <option value="">All</option>
-            <?php while ($row = $schoolIds->fetch_assoc()): ?>
-                <option value="<?php echo $row['school_prefix']; ?>"><?php echo $row['school_prefix']; ?></option>
-            <?php endwhile; ?>
-        </select>
+        <div class="filter-group">
+            <label for="semesterFilter">Semester:</label>
+            <select id="semesterFilter">
+                <option value="">All</option>
+                <?php while ($row = $semesters->fetch_assoc()): ?>
+                    <option value="<?php echo htmlspecialchars($row['semester']); ?>">
+                        <?php echo htmlspecialchars($row['semester']); ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
 
-        <label for="semesterFilter">Semester:</label>
-        <select id="semesterFilter">
-            <option value="">All</option>
-            <?php while ($row = $semesters->fetch_assoc()): ?>
-                <option value="<?php echo $row['semester']; ?>"><?php echo $row['semester']; ?></option>
-            <?php endwhile; ?>
-        </select>
+        <div class="filter-group">
+            <label for="genderFilter">Gender:</label>
+            <select id="genderFilter">
+                <option value="">All</option>
+                <?php while ($row = $genders->fetch_assoc()): ?>
+                    <option value="<?php echo htmlspecialchars($row['gender']); ?>">
+                        <?php echo htmlspecialchars($row['gender']); ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
 
-        <label for="genderFilter">Gender:</label>
-        <select id="genderFilter">
-            <option value="">All</option>
-            <?php while ($row = $genders->fetch_assoc()): ?>
-                <option value="<?php echo $row['gender']; ?>"><?php echo $row['gender']; ?></option>
-            <?php endwhile; ?>
-        </select>
+        <div class="filter-group">
+            <label for="collegeFilter">College:</label>
+            <select id="collegeFilter">
+                <option value="">All</option>
+                <?php while ($row = $colleges->fetch_assoc()): ?>
+                    <option value="<?php echo htmlspecialchars($row['department']); ?>">
+                        <?php echo htmlspecialchars($row['department']); ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
 
-        <label for="collegeFilter">College:</label>
-        <select id="collegeFilter">
-            <option value="">All</option>
-            <?php while ($row = $colleges->fetch_assoc()): ?>
-                <option value="<?php echo $row['department']; ?>"><?php echo $row['department']; ?></option>
-            <?php endwhile; ?>
-        </select>
+        <div class="filter-group">
+            <label for="programFilter">Program:</label>
+            <select id="programFilter">
+                <option value="">All</option>
+                <?php while ($row = $programs->fetch_assoc()): ?>
+                    <option value="<?php echo htmlspecialchars($row['course']); ?>">
+                        <?php echo htmlspecialchars($row['course']); ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
 
-        <label for="programFilter">Program:</label>
-        <select id="programFilter">
-            <option value="">All</option>
-            <?php while ($row = $programs->fetch_assoc()): ?>
-                <option value="<?php echo $row['course']; ?>"><?php echo $row['course']; ?></option>
-            <?php endwhile; ?>
-        </select>
+        <div class="filter-group">
+            <label for="statusFilter">Status:</label>
+            <select id="statusFilter">
+                <option value="">All</option>
+                <?php while ($row = $statuses->fetch_assoc()): ?>
+                    <option value="<?php echo htmlspecialchars($row['status']); ?>">
+                        <?php echo htmlspecialchars($row['status']); ?>
+                    </option>
+                <?php endwhile; ?>
+            </select>
+        </div>
 
-        <label for="statusFilter">Status:</label>
-        <select id="statusFilter">
-            <option value="">All</option>
-            <?php while ($row = $statuses->fetch_assoc()): ?>
-                <option value="<?php echo $row['status']; ?>"><?php echo $row['status']; ?></option>
-            <?php endwhile; ?>
-        </select>
-
-        <button type="button" onclick="applyFilters()">Apply Filters</button>
-        <button type="button" onclick="closeFilterModal()">Cancel</button>
+        <div class="filter-buttons">
+            <button type="button" onclick="applyFilters()" class="apply-filter">Apply Filters</button>
+            <button type="button" onclick="resetFilters()" class="reset-filter">Reset Filters</button>
+            <button type="button" onclick="closeFilterModal()" class="close-filter">Close</button>
+        </div>
     </form>
 </dialog>
+
 
 <!-- Export Data Button -->
 <div class="export-container">
@@ -1441,72 +1468,66 @@ document.addEventListener('DOMContentLoaded', function() {
     paginateTable();
 });
 
-function openFilterModal() {
-    document.getElementById('filterModal').showModal();
-}
-
-function closeFilterModal() {
-    document.getElementById('filterModal').close();
-}
-
 function applyFilters() {
     // Get filter values
-    const schoolIdFilter = document.getElementById('schoolIdFilter').value;
+    const schoolIdFilter = document.getElementById('schoolIdFilter').value.toLowerCase();
     const semesterFilter = document.getElementById('semesterFilter').value;
     const genderFilter = document.getElementById('genderFilter').value;
-    const nstpFilter = document.getElementById('nstpFilter').value;
     const collegeFilter = document.getElementById('collegeFilter').value;
     const programFilter = document.getElementById('programFilter').value;
-    const instructorFilter = document.getElementById('instructorFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
 
-    console.log('Filter Values:', {
+    // Debug log
+    console.log('Applying filters:', {
         schoolId: schoolIdFilter,
         semester: semesterFilter,
         gender: genderFilter,
-        nstp: nstpFilter,
         college: collegeFilter,
         program: programFilter,
-        instructor: instructorFilter,
         status: statusFilter
     });
 
-    // Get table rows
     const table = document.getElementById("editableTable");
-    const tbody = table.getElementsByTagName("tbody")[0];
-    const rows = tbody.getElementsByTagName("tr");
+    const rows = table.getElementsByTagName("tr");
     let hasVisibleRows = false;
 
-    // Loop through all rows except header
-    for (let i = 0; i < rows.length; i++) {
+    // Start from index 1 to skip the header row
+    for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
         
         // Skip the "No Results" row
         if (row.id === 'noResultsRow') continue;
 
-        // Get cell values
         const cells = row.getElementsByTagName("td");
-        if (cells.length === 0) continue; // Skip if no cells (header row)
+        if (cells.length === 0) continue;
 
-        const schoolId = cells[0].textContent.trim();
-        const semester = cells[4].textContent.trim();
+        // Get values from cells
+        const schoolId = cells[0].textContent.toLowerCase().trim();
+        const firstName = cells[1].textContent.trim();
+        const lastName = cells[2].textContent.trim();
         const gender = cells[3].textContent.trim();
-        const nstp = cells[5].textContent.trim();
+        const semester = cells[4].textContent.trim();
         const college = cells[6].textContent.trim();
         const program = cells[7].textContent.trim();
-        const instructor = cells[8].textContent.trim();
-        const status = cells[13].textContent.trim();
+        const status = cells[12].textContent.trim(); // Adjust this index if needed
+
+        // Debug log for each row
+        console.log('Row data:', {
+            schoolId, firstName, lastName, gender, semester, college, program, status
+        });
 
         // Check if row matches all selected filters
-        const matches = 
-            (!schoolIdFilter || schoolId.toLowerCase().startsWith(schoolIdFilter.toLowerCase())) &&
+        const matches = (
+            (!schoolIdFilter || schoolId.startsWith(schoolIdFilter)) &&
             (!semesterFilter || semester === semesterFilter) &&
             (!genderFilter || gender === genderFilter) &&
-            (!nstpFilter || nstp === nstpFilter) &&
             (!collegeFilter || college === collegeFilter) &&
             (!programFilter || program === programFilter) &&
-            (!instructorFilter || instructor === instructorFilter) &&
-            (!statusFilter || status === statusFilter);
+            (!statusFilter || status === statusFilter)
+        );
+
+        // Debug log match result
+        console.log('Row matches filters:', matches);
 
         // Show/hide row based on filter match
         if (matches) {
@@ -1515,8 +1536,6 @@ function applyFilters() {
         } else {
             row.style.display = "none";
         }
-
-        console.log('Row:', schoolId, 'Matches:', matches);
     }
 
     // Show/hide "No Results" message
@@ -1525,33 +1544,42 @@ function applyFilters() {
         noResultsRow.style.display = hasVisibleRows ? 'none' : 'table-row';
     }
 
-    // Update pagination
+    // Reset to first page and update pagination
     currentPage = 1;
     paginateTable();
 
     // Close the modal
     closeFilterModal();
+
+    // Show feedback to user
+    if (!hasVisibleRows) {
+        alert('No records match the selected filters.');
+    }
 }
 
-// Add a reset filters function
 function resetFilters() {
+    // Reset all filter dropdowns
     const filterIds = [
-        'schoolIdFilter', 'semesterFilter', 'genderFilter', 'nstpFilter',
-        'collegeFilter', 'programFilter', 'instructorFilter', 'statusFilter'
+        'schoolIdFilter',
+        'semesterFilter',
+        'genderFilter',
+        'collegeFilter',
+        'programFilter',
+        'statusFilter'
     ];
 
-    // Reset all filter selections
     filterIds.forEach(id => {
         const element = document.getElementById(id);
-        if (element) element.value = '';
+        if (element) {
+            element.value = '';
+        }
     });
 
     // Show all rows
     const table = document.getElementById("editableTable");
-    const tbody = table.getElementsByTagName("tbody")[0];
-    const rows = tbody.getElementsByTagName("tr");
+    const rows = table.getElementsByTagName("tr");
 
-    for (let i = 0; i < rows.length; i++) {
+    for (let i = 1; i < rows.length; i++) {
         if (rows[i].id !== 'noResultsRow') {
             rows[i].style.display = "";
         }
@@ -1566,7 +1594,74 @@ function resetFilters() {
     // Reset pagination
     currentPage = 1;
     paginateTable();
+
+    // Close the modal
+    closeFilterModal();
 }
+
+// Function to check if a string contains another string (case-insensitive)
+function containsText(text, search) {
+    return text.toLowerCase().includes(search.toLowerCase());
+}
+
+// Add event listeners when the document loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize filters
+    initializeFilters();
+
+    // Add event listeners to filter inputs for real-time validation
+    const filterInputs = document.querySelectorAll('#filterForm select');
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            console.log(`Filter ${this.id} changed to: ${this.value}`);
+        });
+    });
+});
+
+function initializeFilters() {
+    const table = document.getElementById("editableTable");
+    if (!table) return;
+
+    const rows = table.getElementsByTagName("tr");
+    
+    // Create sets to store unique values
+    const uniqueValues = {
+        schoolIds: new Set(),
+        semesters: new Set(),
+        genders: new Set(),
+        colleges: new Set(),
+        programs: new Set(),
+        statuses: new Set()
+    };
+
+    // Collect unique values from table
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName("td");
+        if (cells.length === 0 || rows[i].id === 'noResultsRow') continue;
+
+        uniqueValues.schoolIds.add(cells[0].textContent.trim().substring(0, 2));
+        uniqueValues.genders.add(cells[3].textContent.trim());
+        uniqueValues.semesters.add(cells[4].textContent.trim());
+        uniqueValues.colleges.add(cells[6].textContent.trim());
+        uniqueValues.programs.add(cells[7].textContent.trim());
+        uniqueValues.statuses.add(cells[12].textContent.trim());
+    }
+
+    // Log collected values
+    console.log('Unique values collected:', uniqueValues);
+}
+
+function openFilterModal() {
+    const modal = document.getElementById('filterModal');
+    modal.showModal();
+}
+
+function closeFilterModal() {
+    const modal = document.getElementById('filterModal');
+    modal.close();
+}
+
+
 
 
 
@@ -1595,19 +1690,32 @@ function exportToCSV() {
     const rows = table.getElementsByTagName("tr");
     let csvContent = "data:text/csv;charset=utf-8,";
 
-    csvContent += "School ID,Last Name,First Name,Program\n";
+    // Updated header with Final Grades and Status
+    csvContent += "School ID,Last Name,First Name,Program,Final Grades,Status\n";
 
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        if (row.style.display !== "none") {
+        if (row.style.display !== "none" && row.id !== 'noResultsRow') {
             const cells = row.getElementsByTagName("td");
             if (cells.length > 0) {
                 const schoolId = cells[0].textContent;
                 const lastName = cells[2].textContent;
                 const firstName = cells[1].textContent;
                 const program = cells[7].textContent;
+                const finalGrades = cells[11].textContent; // Adjust index based on your table structure
+                const status = cells[12].textContent; // Adjust index based on your table structure
 
-                const csvRow = `${schoolId},${lastName},${firstName},${program}`;
+                // Escape values that might contain commas
+                const escapedValues = [
+                    schoolId,
+                    lastName.includes(',') ? `"${lastName}"` : lastName,
+                    firstName.includes(',') ? `"${firstName}"` : firstName,
+                    program.includes(',') ? `"${program}"` : program,
+                    finalGrades,
+                    status
+                ];
+
+                const csvRow = escapedValues.join(',');
                 csvContent += csvRow + "\n";
             }
         }
@@ -1627,16 +1735,39 @@ function exportToWord() {
     const rows = table.getElementsByTagName("tr");
 
     let header = `
-        <h1 style="text-align: center; font-size: 16px; font-weight: normal;">Republic of the Philippines</h1>
-        <h1 style="text-align: center; font-size: 22px; font-weight: bold;">SOUTHERN LUZON STATE UNIVERSITY</h1>
-        <h2 style="text-align: center; font-size: 16px; font-weight: bold;">MASTERS LIST</h2>
-        <p style="text-align: left;">SUBJECT: The National Service Training Program</p>
-        <br>
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
+        <head>
+            <meta charset="utf-8">
+            <title>Export HTML to Word Document with JavaScript</title>
+            <style>
+                table {
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+                th, td {
+                    border: 1px solid black;
+                    padding: 8px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+            </style>
+        </head>
+        <body>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="text-align: center; font-size: 16px; font-weight: normal;">Republic of the Philippines</h1>
+            <h1 style="text-align: center; font-size: 22px; font-weight: bold;">SOUTHERN LUZON STATE UNIVERSITY</h1>
+            <h2 style="text-align: center; font-size: 16px; font-weight: bold;">MASTERS LIST</h2>
+            <p style="text-align: left;">SUBJECT: The National Service Training Program</p>
+        </div>
         <table style="width: 100%; border-collapse: collapse; text-align: center;">
             <tr>
                 <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NO.</i></th>
                 <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NAME</i></th>
                 <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>COURSE</i></th>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>FINAL GRADES</i></th>
+                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STATUS</i></th>
             </tr>
     `;
 
@@ -1644,30 +1775,53 @@ function exportToWord() {
 
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        if (row.style.display !== "none") {
+        if (row.style.display !== "none" && row.id !== 'noResultsRow') {
             const cells = row.getElementsByTagName("td");
             if (cells.length > 0) {
                 const schoolId = cells[0].textContent;
                 const lastName = cells[2].textContent;
                 const firstName = cells[1].textContent;
                 const program = cells[7].textContent;
+                const finalGrades = cells[11].textContent; // Adjust index based on your table structure
+                const status = cells[12].textContent; // Adjust index based on your table structure
 
                 html += `
                     <tr>
                         <td style="border: 1px solid black; padding: 5px; text-align: left;">${schoolId}</td>
                         <td style="border: 1px solid black; padding: 5px; text-align: left;">${lastName}, ${firstName}</td>
                         <td style="border: 1px solid black; padding: 5px; text-align: left;">${program}</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: center;">${finalGrades}</td>
+                        <td style="border: 1px solid black; padding: 5px; text-align: center;">${status}</td>
                     </tr>
                 `;
             }
         }
     }
-    html += "</table>";
+
+    html += `
+            </table>
+            <br>
+            <div style="margin-top: 30px;">
+                <div style="float: left; width: 50%;">
+                    <p>Prepared by:</p>
+                    <br><br>
+                    <p style="text-decoration: underline;">_______________________</p>
+                    <p>NSTP Coordinator</p>
+                </div>
+                <div style="float: right; width: 50%; text-align: right;">
+                    <p>Noted by:</p>
+                    <br><br>
+                    <p style="text-decoration: underline;">_______________________</p>
+                    <p>NSTP Director</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
 
     const blob = new Blob([html], {
         type: 'application/msword'
     });
-
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "students_data.doc";
@@ -1675,6 +1829,7 @@ function exportToWord() {
     link.click();
     document.body.removeChild(link);
 }
+
 
 
 

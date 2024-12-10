@@ -328,16 +328,7 @@ if (isset($_POST['add_announcement'])) {
             z-index: 2;
         }
 
-        @keyframes popIn {
-            0% {
-                transform: scale(0.8);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(1.1);
-                opacity: 1;
-            }
-        }
+
 
         .progress-container {
             width: 200px;
