@@ -268,10 +268,12 @@ if (isset($_POST['add_announcement'])) {
 <!-- View Announcements -->
 <div id="viewAnnouncementPopup" class="popup">
     <div class="popup-content">
+        <!-- Add the X button here -->
+        <span class="close-x" onclick="hideViewAnnouncementPopup()">&times;</span>
         <h3>View Announcements</h3>
         <div id="announcementsDisplay">
             <?php
-            displayAnnouncements(); // Ensure this function is called
+            displayAnnouncements();
             ?>
         </div>
         <div class="buttons">
@@ -1147,6 +1149,28 @@ h5 {
         .campuses a:hover {
             text-decoration: underline;
         }
+
+        .close-x {
+    position: absolute;
+    right: -10px;
+    top: -30px;
+    font-size: 58px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-x:hover {
+    color: #f44336;
+}
+
+/* Ensure popup-content has relative positioning */
+.popup-content {
+    position: relative;
+    /* ... your existing popup-content styles ... */
+}
+
 
 
 

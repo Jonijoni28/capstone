@@ -332,3 +332,172 @@ h5 {
 }
 
 <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" type="text/css" href="homepage.css">
+
+</head>
+
+<body>
+
+<div id="preloader">
+        <img src="slsulogo.png" alt="Logo" class="preloader-logo">
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+    <div class="header">
+        <a href="prof.php"><img src="slsulogo.png" class="headlogo"></a>
+        <h1>Southern Luzon State University</h1>
+        <p>National Service Training Program</p>
+    </div>
+
+
+    <input type="checkbox" id="check">
+    <label for="check">
+        <i class="fas fa-bars" id="btn"></i>
+        <i class="fas fa-times" id="cancel"></i>
+    </label>
+    <div class="sidebar">
+    <header>
+    <?php
+            $select = mysqli_query($conn, "SELECT * FROM `user_info` WHERE id = '$user_id'") or die('query failed');
+            $fetch = mysqli_fetch_assoc($select);
+
+            if ($fetch['photo'] == '') {
+                echo '<img src="default/avatar.png" class="user-avatar">';
+            }  else {
+                // Fetch the photo as a blob
+                $photoBlob = $fetch['photo'];
+
+                // Check if the blob is not empty
+                if (!empty($photoBlob)) {
+                    // Output the image
+                    echo "<img src=\"$photoBlob\" class=\"user-avatar\" >";
+                } else {
+                    // Debugging output if the blob is empty
+                    echo '<img src="default/avatar.png" class="user-avatar">';
+                }
+            }
+        ?>
+        <h5><?php echo $fetch['first_name'] . ' ' . $fetch['last_name']; ?></h5>
+        <header>Instructor</header>
+        <ul>
+            <li><a href="professor.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
+            <li><a href="inputgrades.php"><i class="fas fa-qrcode"></i>Input Grades</a></li>
+            <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+            </form>
+        </ul>
+    </div>
+
+    echo "<td>";
+        echo "<button id='editBtn' class='editButton' onclick='editStudentInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
+        echo "<button id='deleteBtn' class='deleteButton' onclick='deleteStudent(this)'><i class='fa-solid fa-trash'></i></button>";
+        echo "<button class='assignButton' onclick='checkAndOpenConfirmPopup()'><i class='fa-solid fa-user-plus'></i></button>";
+        echo "</td>";
+
+        .assignButton {
+            background: none;
+            border: none;
+            padding: 6px 10px;
+            text-align: center;
+            display: inline-block !important; /* Force display */
+            font-size: 16px;
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+        
+        }
+        
+        .assignButton i {
+            font-size: 18px;
+            color: black;
+        }
+        
+        /* Optional hover effect */
+        .assignButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .editButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .deleteButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Ensure the actions column width stays consistent */
+        table td:last-child {
+            white-space: nowrap;
+            min-width: 120px; /* Adjust if needed */
+        }
+
+
+        function toggleSelectAll(selectAllCheckbox) {
+            // Get the current page's visible rows only
+            const currentPageRows = Array.from(document.querySelectorAll('#tableBody tr'))
+                .filter(row => row.style.display !== 'none' && !row.id.includes('noResultsRow'));
+        
+            // Toggle checkboxes only for visible rows on the current page
+            currentPageRows.forEach(row => {
+                const checkbox = row.querySelector('.selectStudentCheckbox');
+                if (checkbox) {
+                    checkbox.checked = selectAllCheckbox.checked;
+                }
+            });
+        
+            toggleSelectionActions();
+        }
+        
+        // Update openConfirmPopup to only get selected students from visible rows
+        function openConfirmPopup() {
+            // Get only the visible and checked students
+            const visibleCheckedStudents = Array.from(document.querySelectorAll('#tableBody tr'))
+                .filter(row => 
+                    row.style.display !== 'none' && 
+                    !row.id.includes('noResultsRow') && 
+                    row.querySelector('.selectStudentCheckbox')?.checked
+                )
+                .map(row => row.dataset.id);
+        
+            if (visibleCheckedStudents.length === 0) {
+                alert("Please select at least one student before assigning.");
+                return;
+            }
+        
+            const studentList = document.getElementById('studentList');
+            studentList.textContent = "Selected Student IDs: " + visibleCheckedStudents.join(", ");
+            document.getElementById('confirmPopup').style.display = 'flex';
+            document.body.classList.add('blur');
+        }
+        
+        // Update checkAndOpenConfirmPopup function
+        function checkAndOpenConfirmPopup() {
+            // Check only visible and checked students
+            const visibleCheckedStudents = Array.from(document.querySelectorAll('#tableBody tr'))
+                .filter(row => 
+                    row.style.display !== 'none' && 
+                    !row.id.includes('noResultsRow') && 
+                    row.querySelector('.selectStudentCheckbox')?.checked
+                );
+            
+            if (visibleCheckedStudents.length === 0) {
+                alert("Please select at least one student before assigning.");
+                return;
+            }
+            
+            openConfirmPopup();
+        }
+        
+        

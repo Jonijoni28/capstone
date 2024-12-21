@@ -241,10 +241,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- View Announcements -->
 <div id="viewAnnouncementPopup" class="popup">
     <div class="popup-content">
+        <!-- Add the X button here -->
+        <span class="close-x" onclick="hideViewAnnouncementPopup()">&times;</span>
         <h3>View Announcements</h3>
         <div id="announcementsDisplay">
             <?php
-            displayAnnouncements(); // Ensure this function is called
+            displayAnnouncements();
             ?>
         </div>
         <div class="buttons">
@@ -301,16 +303,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             z-index: 2;
         }
 
-        @keyframes popIn {
-            0% {
-                transform: scale(0.8);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(1.1);
-                opacity: 1;
-            }
-        }
 
         .progress-container {
             width: 200px;
@@ -1094,6 +1086,28 @@ h2{
         .campuses a:hover {
             text-decoration: underline;
         }
+
+        /* X button styling */
+.close-x {
+    position: absolute;
+    right: -10px;
+    top: -30px;
+    font-size: 58px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-x:hover {
+    color: #f44336;
+}
+
+/* Ensure popup-content has relative positioning */
+.popup-content {
+    position: relative;
+    /* ... your existing popup-content styles ... */
+}
 
 
 

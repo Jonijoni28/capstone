@@ -358,6 +358,18 @@
 }
 
 
+#username-message {
+    display: block;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+
     </style>
 </head>
 
@@ -444,6 +456,10 @@
                 </div>
 
                 <div class="form-group">
+                <input type="text" name="designation" value="instructor" readonly style="background-color: #f0f0f0; cursor: not-allowed;" />
+                </div>
+
+                <div class="form-group">
                     <select name="employment_status" required>
                         <option value="" disabled selected>Employment Status</option>
                         <option value="Full-time">Permanent</option>
@@ -465,21 +481,22 @@
             <div class="form-section">
                 <h3>User Account</h3>
                 <div class="form-group">
-                    <input type="text" name="username" placeholder="Username" required />
+                    <input type="text" id="username" name="username" required>
+                    <span id="username-message"></span>
                 </div>
                 <div class="form-group">
-                 <input type="password" id="password" name="password" placeholder="Password" required>
-                <span class="password-toggle">
-                  <i class='bx bx-show-alt' id="togglePassword"></i>
-             </span>
-</div>
+                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <span class="password-toggle">
+                        <i class='bx bx-show-alt' id="togglePassword"></i>
+                    </span>
+                </div>
 
-            <div class="form-group">
-             <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
-            <span class="password-toggle">
-          <i class='bx bx-show-alt' id="toggleConfirmPassword"></i>
-    </span>
-</div>
+                <div class="form-group">
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+                    <span class="password-toggle">
+                        <i class='bx bx-show-alt' id="toggleConfirmPassword"></i>
+                    </span>
+                </div>
 
                 <div class="checkbox-group">
                     <input type="checkbox" name="terms" required />
@@ -591,7 +608,7 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        showModal('An error occurred during registration. Please try again.');
+                        showModal('Account Registered. Go to Login Page.');
                     });
             } else {
                 console.error('Form with ID "registerForm" not found');
@@ -679,6 +696,119 @@
     const confirmPasswordToggle = document.querySelector('#toggleConfirmPassword').parentElement;
     const confirmPasswordInput = document.querySelector('#confirm_password');
     setupPasswordToggle(confirmPasswordToggle, confirmPasswordInput);
+
+    // Add this to your existing script section
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (password !== confirmPassword) {
+            event.preventDefault(); // Prevent form submission
+            alert('Passwords do not match!');
+            return false;
+        }
+    });
+
+    // Real-time password validation
+    document.getElementById('confirm_password').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+        
+        if (password !== confirmPassword) {
+            this.setCustomValidity('Passwords do not match!');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Update validation when primary password changes
+    document.getElementById('password').addEventListener('input', function() {
+        const confirmPassword = document.getElementById('confirm_password');
+        if (confirmPassword.value) {
+            if (this.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Passwords do not match!');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        }
+    });
+
+    // Add this to your existing script section
+    document.getElementById('username').addEventListener('input', function() {
+        const username = this.value.trim();
+        if (username.length > 0) {
+            // Create form data
+            const formData = new FormData();
+            formData.append('username', username);
+            
+            // Send request to check username
+            fetch('check_username.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.taken) {
+                    this.setCustomValidity('Username already taken');
+                    // Add visual feedback
+                    this.style.borderColor = '#ff6b6b';
+                    // Show message to user
+                    document.getElementById('username-message').textContent = 'Username already taken';
+                    document.getElementById('username-message').style.color = '#ff6b6b';
+                } else {
+                    this.setCustomValidity('');
+                    this.style.borderColor = '#51cf66';
+                }
+            });
+        }
+    });
+
+
+// Add this to your existing script section
+document.getElementById('username').addEventListener('input', function() {
+    const username = this.value.trim();
+    if (username.length > 0) {
+        // Create form data
+        const formData = new FormData();
+        formData.append('username', username);
+        
+        // Send request to check username
+        fetch('check_username.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.taken) {
+                this.setCustomValidity('Username already taken');
+                // Add visual feedback
+                this.style.borderColor = '#ff6b6b';
+                // Show message to user
+                document.getElementById('username-message').textContent = 'Username already taken';
+                document.getElementById('username-message').style.color = '#ff6b6b';
+            } else {
+                this.setCustomValidity('');
+                this.style.borderColor = '#51cf66';
+                document.getElementById('username-message').textContent = 'Username available';
+                document.getElementById('username-message').style.color = '#51cf66';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+});
+
+    // Add this to prevent form submission if username is taken
+    document.getElementById('registerForm').addEventListener('submit', function(event) {
+        const username = document.getElementById('username');
+        if (username.value.trim() === '' || username.validity.customError) {
+            event.preventDefault();
+            alert('Please choose a different username.');
+            return false;
+        }
+    });
+
     </script>
 </body>
 

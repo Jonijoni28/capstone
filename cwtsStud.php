@@ -30,14 +30,14 @@ $results = $conn->query($sql);
 
   $conn = connect_db();
 
-  // Fetch all instructors from the database
+  // Fetch all CWTS instructors from the database
   $instructors = [];
-  $sql = "SELECT * FROM registration WHERE user_type = 'instructor'";
+  $sql = "SELECT first_name FROM user_info WHERE designation = 'instructor' AND area_assignment = 'CWTS'";
   $result = $conn->query($sql);
 
   if ($result) {
     while ($row = $result->fetch_assoc()) {
-      $instructors[] = $row['username'];
+      $instructors[] = $row['first_name'];
     }
   } else {
     // Handle query error
@@ -53,14 +53,47 @@ if (isset($_POST['transfer_students'])) {
   $new_instructor = $_POST['new_instructor'];
   $old_instructor = $_POST['old_instructor'];
   
-  // Your existing transfer logic here
+  // Add transfer logic
+  $transfer_successful = true; // Initialize the variable
   
-  if ($transfer_successful) {
-      logTransferActivity(
-          $_SESSION['username'],
-          "From: $old_instructor To: $new_instructor, Students: " . implode(', ', $student_ids)
-      );
+  try {
+      // Update the students' instructor in the database
+      foreach ($student_ids as $student_id) {
+          $sql = "UPDATE tbl_cwts SET instructor = ? WHERE school_id = ?";
+          $stmt = $conn->prepare($sql);
+          $stmt->bind_param("ss", $new_instructor, $student_id);
+          
+          if (!$stmt->execute()) {
+              $transfer_successful = false;
+              break;
+          }
+      }
+      
+      // If transfer was successful, log the activity
+      if ($transfer_successful) {
+          logTransferActivity(
+              $_SESSION['username'],
+              "From: $old_instructor To: $new_instructor, Students: " . implode(', ', $student_ids)
+          );
+          
+          echo json_encode(['success' => true, 'message' => 'Students transferred successfully']);
+      } else {
+          echo json_encode(['success' => false, 'message' => 'Error transferring students']);
+      }
+      
+  } catch (Exception $e) {
+      echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
   }
+}
+
+// Add the logging function if it doesn't exist
+function logTransferActivity($username, $action) {
+  global $conn;
+  
+  $sql = "INSERT INTO audit_log (username, action, timestamp) VALUES (?, ?, NOW())";
+  $stmt = $conn->prepare($sql);
+  $stmt->bind_param("ss", $username, $action);
+  $stmt->execute();
 }
 
   ?>
@@ -86,11 +119,7 @@ if (isset($_POST['transfer_students'])) {
       <p>National Service Training Program</p>
     </div>
 
-    <!-- Select All / Confirm / Cancel buttons -->
-    <!-- Select All / Confirm / Cancel buttons -->
-    <div id="selectionActions" style="display: none; margin-bottom: 10px; position: fixed; top: 200px; left: 90px; z-index: 1000;">
-      <button id="confirmSelectionBtn" style="background-color: white; color: black; font-size: 15px; padding: 10px 26px;" onclick="openConfirmPopup()">Assign Students</button>
-    </div>
+
 
     <table id="editableTable" class="table">
       <thead>
@@ -124,6 +153,7 @@ if (isset($_POST['transfer_students'])) {
             echo "<td>";
             echo "<button id='editBtn' class='editButton' onclick='editStudentInfo(this)'><i class='fa-solid fa-pen-to-square'></i></button>";
             echo "<button id='deleteBtn' class='deleteButton' onclick='deleteStudent(this)'><i class='fa-solid fa-trash'></i></button>";
+            echo "<button class='assignButton' onclick='checkAndOpenConfirmPopup()'><i class='fa-solid fa-user-plus'></i></button>";
             echo "</td>";
             echo "</tr>";
           }
@@ -615,6 +645,43 @@ dialog::backdrop {
     font-weight: 500;  /* Added medium font weight for better readability */
 }
 
+.assignButton {
+            background: none;
+            border: none;
+            padding: 6px 10px;
+            text-align: center;
+            display: inline-block !important; /* Force display */
+            font-size: 16px;
+            position: relative;
+            cursor: pointer;
+            border-radius: 12px;
+        
+        }
+        
+        .assignButton i {
+            font-size: 18px;
+            color: black;
+        }
+        
+        /* Optional hover effect */
+        .assignButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .editButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .deleteButton:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Ensure the actions column width stays consistent */
+        table td:last-child {
+            white-space: nowrap;
+            min-width: 120px; /* Adjust if needed */
+        }
+
     </style>
     <div class="search-container">
       <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
@@ -985,6 +1052,12 @@ function confirmInstructor() {
         return checkbox.closest('tr').dataset.id;
     });
 
+    // Show loading state
+    const confirmButton = document.querySelector('#instructorPopup button');  // Changed this line
+    const originalText = confirmButton.textContent;
+    confirmButton.textContent = 'Transferring...';
+    confirmButton.disabled = true;
+
     // Make the AJAX call to transfer students
     fetch('transfer_students.php', {
         method: 'POST',
@@ -996,7 +1069,12 @@ function confirmInstructor() {
             studentIds: selectedStudents
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Remove transferred students from the table
@@ -1008,16 +1086,23 @@ function confirmInstructor() {
             // Close popups and reset checkboxes
             closePopup('instructorPopup');
             document.getElementById('selectAllCheckbox').checked = false;
-            document.getElementById('selectionActions').style.display = 'none';
             
             alert('Students successfully transferred to instructor.');
+            
+            // Refresh the page to update the table
+            location.reload();
         } else {
-            alert('Failed to transfer students: ' + data.message);
+            throw new Error(data.message || 'Failed to transfer students');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while transferring students.');
+        alert('An error occurred while transferring students: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        confirmButton.textContent = originalText;
+        confirmButton.disabled = false;
     });
 }
 
@@ -1027,6 +1112,63 @@ function confirmInstructor() {
         document.getElementById('selectAllCheckbox').checked = false;
         toggleSelectionActions();
       }
+
+
+      function toggleSelectAll(selectAllCheckbox) {
+            // Get the current page's visible rows only
+            const currentPageRows = Array.from(document.querySelectorAll('#tableBody tr'))
+                .filter(row => row.style.display !== 'none' && !row.id.includes('noResultsRow'));
+        
+            // Toggle checkboxes only for visible rows on the current page
+            currentPageRows.forEach(row => {
+                const checkbox = row.querySelector('.selectStudentCheckbox');
+                if (checkbox) {
+                    checkbox.checked = selectAllCheckbox.checked;
+                }
+            });
+        
+            toggleSelectionActions();
+        }
+        
+        // Update openConfirmPopup to only get selected students from visible rows
+        function openConfirmPopup() {
+            // Get only the visible and checked students
+            const visibleCheckedStudents = Array.from(document.querySelectorAll('#tableBody tr'))
+                .filter(row => 
+                    row.style.display !== 'none' && 
+                    !row.id.includes('noResultsRow') && 
+                    row.querySelector('.selectStudentCheckbox')?.checked
+                )
+                .map(row => row.dataset.id);
+        
+            if (visibleCheckedStudents.length === 0) {
+                alert("Please select at least one student before assigning.");
+                return;
+            }
+        
+            const studentList = document.getElementById('studentList');
+            studentList.textContent = "Selected Student IDs: " + visibleCheckedStudents.join(", ");
+            document.getElementById('confirmPopup').style.display = 'flex';
+            document.body.classList.add('blur');
+        }
+        
+        // Update checkAndOpenConfirmPopup function
+        function checkAndOpenConfirmPopup() {
+            // Check only visible and checked students
+            const visibleCheckedStudents = Array.from(document.querySelectorAll('#tableBody tr'))
+                .filter(row => 
+                    row.style.display !== 'none' && 
+                    !row.id.includes('noResultsRow') && 
+                    row.querySelector('.selectStudentCheckbox')?.checked
+                );
+            
+            if (visibleCheckedStudents.length === 0) {
+                alert("Please select at least one student before assigning.");
+                return;
+            }
+            
+            openConfirmPopup();
+        }
 
     
     </script>

@@ -400,6 +400,7 @@ body {
     background-position: center;
   }
 
+
   .user-avatar {
     width: 80px; /* Adjust the size as needed */
     height: 80px; /* Keep it the same as width for a circle */
@@ -770,6 +771,9 @@ dialog button[type="button"]:hover {
     cursor: pointer;
     font-weight: bold;
 }
+#editableTable th:nth-child(1), #editableTable td:nth-child(1) { width: 80px; }  /* School ID */
+#editableTable th:nth-child(14), #editableTable td:nth-child(14) { width: 110px; } /* Actions */
+
 
 
 
@@ -1146,7 +1150,7 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
             document.getElementById('editModal').close();
             alert('Update successful!');
             // Optionally reload the page to ensure data consistency
-            // window.location.reload();
+            window.location.reload();
         } else {
             throw new Error(data.message || 'Update failed');
         }
@@ -1470,71 +1474,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function applyFilters() {
     // Get filter values
-    const schoolIdFilter = document.getElementById('schoolIdFilter').value.toLowerCase();
-    const semesterFilter = document.getElementById('semesterFilter').value;
-    const genderFilter = document.getElementById('genderFilter').value;
-    const collegeFilter = document.getElementById('collegeFilter').value;
-    const programFilter = document.getElementById('programFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
-
-    // Debug log
-    console.log('Applying filters:', {
-        schoolId: schoolIdFilter,
-        semester: semesterFilter,
-        gender: genderFilter,
-        college: collegeFilter,
-        program: programFilter,
-        status: statusFilter
-    });
+    const schoolIdFilter = document.getElementById('schoolIdFilter').value.toUpperCase();
+    const semesterFilter = document.getElementById('semesterFilter').value.toUpperCase();
+    const genderFilter = document.getElementById('genderFilter').value.toUpperCase();
+    const collegeFilter = document.getElementById('collegeFilter').value.toUpperCase();
+    const programFilter = document.getElementById('programFilter').value.toUpperCase();
+    const statusFilter = document.getElementById('statusFilter').value.toUpperCase();
 
     const table = document.getElementById("editableTable");
-    const rows = table.getElementsByTagName("tr");
+    const tbody = table.getElementsByTagName("tbody")[0];
+    const rows = tbody.getElementsByTagName("tr");
     let hasVisibleRows = false;
 
-    // Start from index 1 to skip the header row
-    for (let i = 1; i < rows.length; i++) {
+    // Loop through all rows
+    for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        
-        // Skip the "No Results" row
         if (row.id === 'noResultsRow') continue;
 
         const cells = row.getElementsByTagName("td");
         if (cells.length === 0) continue;
 
-        // Get values from cells
-        const schoolId = cells[0].textContent.toLowerCase().trim();
-        const firstName = cells[1].textContent.trim();
-        const lastName = cells[2].textContent.trim();
-        const gender = cells[3].textContent.trim();
-        const semester = cells[4].textContent.trim();
-        const college = cells[6].textContent.trim();
-        const program = cells[7].textContent.trim();
-        const status = cells[12].textContent.trim(); // Adjust this index if needed
+        // Get cell values
+        const rowSchoolId = cells[0].textContent.toUpperCase();
+        const rowGender = cells[3].textContent.toUpperCase();
+        const rowSemester = cells[4].textContent.toUpperCase();
+        const rowCollege = cells[6].textContent.toUpperCase();
+        const rowProgram = cells[7].textContent.toUpperCase();
+        const rowStatus = cells[12].textContent.toUpperCase();
 
-        // Debug log for each row
-        console.log('Row data:', {
-            schoolId, firstName, lastName, gender, semester, college, program, status
-        });
-
-        // Check if row matches all selected filters
-        const matches = (
-            (!schoolIdFilter || schoolId.startsWith(schoolIdFilter)) &&
-            (!semesterFilter || semester === semesterFilter) &&
-            (!genderFilter || gender === genderFilter) &&
-            (!collegeFilter || college === collegeFilter) &&
-            (!programFilter || program === programFilter) &&
-            (!statusFilter || status === statusFilter)
+        // Check if row matches all active filters
+        const matchesFilters = (
+            (!schoolIdFilter || rowSchoolId.startsWith(schoolIdFilter)) &&
+            (!semesterFilter || rowSemester === semesterFilter) &&
+            (!genderFilter || rowGender === genderFilter) &&
+            (!collegeFilter || rowCollege === collegeFilter) &&
+            (!programFilter || rowProgram === programFilter) &&
+            (!statusFilter || rowStatus === statusFilter)
         );
 
-        // Debug log match result
-        console.log('Row matches filters:', matches);
-
         // Show/hide row based on filter match
-        if (matches) {
-            row.style.display = "";
+        row.classList.toggle('filtered-out', !matchesFilters);
+        if (matchesFilters) {
             hasVisibleRows = true;
-        } else {
-            row.style.display = "none";
         }
     }
 
@@ -1544,17 +1525,12 @@ function applyFilters() {
         noResultsRow.style.display = hasVisibleRows ? 'none' : 'table-row';
     }
 
-    // Reset to first page and update pagination
+    // Reset pagination to first page and update display
     currentPage = 1;
     paginateTable();
 
-    // Close the modal
+    // Close the filter modal
     closeFilterModal();
-
-    // Show feedback to user
-    if (!hasVisibleRows) {
-        alert('No records match the selected filters.');
-    }
 }
 
 function resetFilters() {
@@ -1575,13 +1551,12 @@ function resetFilters() {
         }
     });
 
-    // Show all rows
+    // Show all rows by removing filtered-out class
     const table = document.getElementById("editableTable");
     const rows = table.getElementsByTagName("tr");
-
-    for (let i = 1; i < rows.length; i++) {
+    for (let i = 0; i < rows.length; i++) {
         if (rows[i].id !== 'noResultsRow') {
-            rows[i].style.display = "";
+            rows[i].classList.remove('filtered-out');
         }
     }
 
@@ -1591,65 +1566,27 @@ function resetFilters() {
         noResultsRow.style.display = 'none';
     }
 
-    // Reset pagination
+    // Reset pagination and update display
     currentPage = 1;
     paginateTable();
-
-    // Close the modal
-    closeFilterModal();
 }
 
-// Function to check if a string contains another string (case-insensitive)
-function containsText(text, search) {
-    return text.toLowerCase().includes(search.toLowerCase());
+// Add this CSS to your existing styles
+function addFilterStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .filtered-out {
+            display: none !important;
+        }
+    `;
+    document.head.appendChild(style);
 }
 
-// Add event listeners when the document loads
+// Call this when the document loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize filters
-    initializeFilters();
-
-    // Add event listeners to filter inputs for real-time validation
-    const filterInputs = document.querySelectorAll('#filterForm select');
-    filterInputs.forEach(input => {
-        input.addEventListener('change', function() {
-            console.log(`Filter ${this.id} changed to: ${this.value}`);
-        });
-    });
+    addFilterStyles();
+    // ... your other initialization code ...
 });
-
-function initializeFilters() {
-    const table = document.getElementById("editableTable");
-    if (!table) return;
-
-    const rows = table.getElementsByTagName("tr");
-    
-    // Create sets to store unique values
-    const uniqueValues = {
-        schoolIds: new Set(),
-        semesters: new Set(),
-        genders: new Set(),
-        colleges: new Set(),
-        programs: new Set(),
-        statuses: new Set()
-    };
-
-    // Collect unique values from table
-    for (let i = 1; i < rows.length; i++) {
-        const cells = rows[i].getElementsByTagName("td");
-        if (cells.length === 0 || rows[i].id === 'noResultsRow') continue;
-
-        uniqueValues.schoolIds.add(cells[0].textContent.trim().substring(0, 2));
-        uniqueValues.genders.add(cells[3].textContent.trim());
-        uniqueValues.semesters.add(cells[4].textContent.trim());
-        uniqueValues.colleges.add(cells[6].textContent.trim());
-        uniqueValues.programs.add(cells[7].textContent.trim());
-        uniqueValues.statuses.add(cells[12].textContent.trim());
-    }
-
-    // Log collected values
-    console.log('Unique values collected:', uniqueValues);
-}
 
 function openFilterModal() {
     const modal = document.getElementById('filterModal');

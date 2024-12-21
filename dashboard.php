@@ -83,18 +83,37 @@ $lineChartDataJson = json_encode($lineChartData);
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    
+    <!-- Add jQuery first since Highcharts depends on it -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    
+    <!-- Highcharts scripts with integrity checks -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/data.js"></script>
+    <script src="https://code.highcharts.com/modules/drilldown.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" 
-    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Your other resources -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="dashboard.css">
+    
+    <!-- Add this script to verify loading -->
+    <script>
+        window.onload = function() {
+            if (typeof Highcharts === 'undefined') {
+                console.error('Highcharts failed to load');
+            } else {
+                console.log('Highcharts loaded successfully');
+                // Initialize your charts here
+                initializeCharts();
+            }
+        };
+    </script>
 
     <div class="header">
         <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
@@ -463,105 +482,91 @@ $lineChartDataJson = json_encode($lineChartData);
     </div>
 
     <script>
-        // First chart (column chart)
-        const chartData = <?php echo $chartDataJson; ?>;
-        const categories = chartData.map(data => data.department);
-        const rotcData = chartData.map(data => data.rotc);
-        const cwtsData = chartData.map(data => data.cwts);
-
-        Highcharts.chart('container1', {
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: 'Student Count by Department (CWTS vs ROTC)'
-            },
-            xAxis: {
-                categories: categories,
+        function initializeCharts() {
+            // First chart (column chart)
+            Highcharts.chart('container1', {
+                chart: {
+                    type: 'column'
+                },
                 title: {
-                    text: 'Department'
-                }
-            },
-            yAxis: {
-                allowDecimals: false,
-                title: {
-                    text: 'Student Count'
-                }
-            },
-            series: [{
-                name: 'ROTC',
-                data: rotcData
-            }, {
-                name: 'CWTS',
-                data: cwtsData
-            }],
-            tooltip: {
-                shared: true,
-                useHTML: true,
-                pointFormat: '<b>{point.y}</b> students in <b>{point.category}</b>'
-            }
-        });
-
-        // Second chart (pie chart)
-        Highcharts.chart('container2', {
-            chart: {
-                type: 'pie'
-            },
-            title: {
-                text: 'Distribution of Students by Program'
-            },
-            series: [{
-                name: 'Students',
-                colorByPoint: true,
-                data: [{
+                    text: 'Student Count by Department (CWTS vs ROTC)'
+                },
+                xAxis: {
+                    categories: <?php echo json_encode(array_column($chartData, 'department')); ?>,
+                    title: {
+                        text: 'Department'
+                    }
+                },
+                yAxis: {
+                    allowDecimals: false,
+                    title: {
+                        text: 'Student Count'
+                    }
+                },
+                series: [{
                     name: 'ROTC',
-                    y: <?php echo $rotcCount; ?>,
-                    sliced: true,
-                    selected: true
+                    data: <?php echo json_encode(array_column($chartData, 'rotc')); ?>
                 }, {
                     name: 'CWTS',
-                    y: <?php echo $cwtsCount; ?>
+                    data: <?php echo json_encode(array_column($chartData, 'cwts')); ?>
                 }]
-            }]
-        });
+            });
 
-        // Third chart (line chart)
-        const genderChartData = <?php echo $genderChartDataJson; ?>;
-        const genderCategories = genderChartData.map(data => data.department);
-        const maleData = genderChartData.map(data => data.male);
-        const femaleData = genderChartData.map(data => data.female);
+            // Second chart (pie chart)
+            Highcharts.chart('container2', {
+                chart: {
+                    type: 'pie'
+                },
+                title: {
+                    text: 'Distribution of Students by Program'
+                },
+                series: [{
+                    name: 'Students',
+                    colorByPoint: true,
+                    data: [{
+                        name: 'ROTC',
+                        y: <?php echo $rotcCount; ?>,
+                        sliced: true,
+                        selected: true
+                    }, {
+                        name: 'CWTS',
+                        y: <?php echo $cwtsCount; ?>
+                    }]
+                }]
+            });
 
-        Highcharts.chart('container3', {
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: 'Gender Count by Department'
-            },
-            xAxis: {
-                categories: genderCategories,
+            // Third chart (gender distribution)
+            Highcharts.chart('container3', {
+                chart: {
+                    type: 'line'
+                },
                 title: {
-                    text: 'Department'
-                }
-            },
-            yAxis: {
-                title: {
-                    text: 'Student Count'
-                }
-            },
-            series: [{
-                name: 'Male',
-                data: maleData
-            }, {
-                name: 'Female',
-                data: femaleData
-            }],
-            tooltip: {
-                shared: true,
-                useHTML: true,
-                pointFormat: '<b>{point.y}</b> students in <b>{point.category}</b>'
-            }
-        });
+                    text: 'Gender Count by Department'
+                },
+                xAxis: {
+                    categories: <?php echo json_encode(array_column($genderChartData, 'department')); ?>,
+                    title: {
+                        text: 'Department'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Student Count'
+                    }
+                },
+                series: [{
+                    name: 'Male',
+                    data: <?php echo json_encode(array_column($genderChartData, 'male')); ?>
+                }, {
+                    name: 'Female',
+                    data: <?php echo json_encode(array_column($genderChartData, 'female')); ?>
+                }]
+            });
+        }
+
+        // Add this to check if data is available
+        console.log('Chart Data:', <?php echo json_encode($chartData); ?>);
+        console.log('Gender Data:', <?php echo json_encode($genderChartData); ?>);
     </script>
 
 </body>

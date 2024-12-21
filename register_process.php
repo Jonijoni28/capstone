@@ -111,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Commit the transaction
         $conn->commit();
         $response['success'] = true;
-        $response['message'] = "Registration successful. Please wait for approval.";
+        $response['message'] = "Registration successful. Go to Login Page.";
 
     } catch (Exception $e) {
         // An error occurred, rollback the transaction

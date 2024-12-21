@@ -18,10 +18,28 @@ $sql = "SELECT
     g.finals,
     g.status,
     CASE 
-        WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
-        THEN ROUND((g.prelim + g.midterm + g.finals) / 3, 3) 
-        ELSE NULL 
-    END AS final_grades
+    WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
+    THEN (
+        SELECT 
+            CASE
+                WHEN AVG_GRADE <= 1.125 THEN 1.000
+                WHEN AVG_GRADE <= 1.375 THEN 1.250
+                WHEN AVG_GRADE <= 1.625 THEN 1.500
+                WHEN AVG_GRADE <= 1.875 THEN 1.750
+                WHEN AVG_GRADE <= 2.125 THEN 2.000
+                WHEN AVG_GRADE <= 2.375 THEN 2.250
+                WHEN AVG_GRADE <= 2.625 THEN 2.500
+                WHEN AVG_GRADE <= 2.875 THEN 2.750
+                WHEN AVG_GRADE <= 3.125 THEN 3.000
+                WHEN AVG_GRADE <= 4.125 THEN 4.000
+                ELSE 5.000
+            END
+        FROM (
+            SELECT (g.prelim + g.midterm + g.finals) / 3 AS AVG_GRADE
+        ) t
+    )
+    ELSE NULL 
+END AS final_grades
 FROM 
     tbl_cwts c
 LEFT JOIN 
@@ -177,6 +195,7 @@ if ($user_id) {
     </select>
 
     <button type="button" onclick="applyFilters()">Apply Filters</button>
+    <button type="button" onclick="resetFilters()" class="reset-filter">Reset Filters</button>
     <button type="button" onclick="closeFilterModal()">Cancel</button>
   </form>
 </dialog>
@@ -216,7 +235,7 @@ if ($user_id) {
       echo "<td>{$rows["prelim"]}</td>";
       echo "<td>{$rows["midterm"]}</td>";
       echo "<td>{$rows["finals"]}</td>";
-      echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? number_format($rows["final_grades"], 2) : '') . "</td>";
+      echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? sprintf("%.2f", $rows["final_grades"]) : '') . "</td>";
       echo "<td>{$rows["status"]}</td>";
       echo "</tr>";
     }
@@ -1176,6 +1195,47 @@ function exportToWord() {
     document.body.appendChild(link);
     link.click(); // Trigger the download
     document.body.removeChild(link); // Clean up
+}
+
+// Add this function after your applyFilters function
+function resetFilters() {
+    // Reset all filter dropdowns
+    const filterIds = [
+        'schoolIdFilter',
+        'semesterFilter',
+        'genderFilter',
+        'nstpFilter',
+        'collegeFilter',
+        'programFilter',
+        'instructorFilter',
+        'statusFilter'
+    ];
+
+    filterIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.value = '';
+        }
+    });
+
+    // Show all rows
+    const table = document.getElementById("editableTable");
+    const rows = table.getElementsByTagName("tr");
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i].id !== 'noResultsRow') {
+            rows[i].style.display = '';
+        }
+    }
+
+    // Hide "No Results" message
+    const noResultsRow = document.getElementById('noResultsRow');
+    if (noResultsRow) {
+        noResultsRow.style.display = 'none';
+    }
+
+    // Reset pagination and update display
+    currentPage = 1;
+    paginateTable();
 }
 
   </script>
