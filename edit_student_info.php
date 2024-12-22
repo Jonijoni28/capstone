@@ -1,68 +1,119 @@
 <?php
 require_once("db_conn.php");
+require_once("audit_functions.php");
+session_start();
 
 $conn = connect_db();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Check the connection
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    // Retrieve the ID to be edited
-    $school_id = $_REQUEST['school_id'];
-
-    // Retrieve other form data
-    $first_name = $_POST['first_name']; // change to match your form field names
-    $last_name = $_POST['last_name']; // change to match your form field names
-    $gender = $_POST['gender']; // change to match your form field names
+    // Retrieve form data for new values
+    $school_id = $_GET['school_id'];
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $gender = $_POST['gender'];
     $semester = $_POST['semester'];
-    $nstp = $_POST['nstp']; // change to match your form field names
-    $department = $_POST['department']; // change to match your form field names
-    $course = $_POST['course']; // change to match your form field names
+    $nstp = $_POST['nstp'];
+    $department = $_POST['department'];
+    $course = $_POST['course'];
+
+    // Get old values before update
+    $get_old = $conn->prepare("SELECT * FROM tbl_cwts WHERE school_id = ?");
+    $get_old->bind_param("s", $school_id);
+    $get_old->execute();
+    $old_result = $get_old->get_result();
+    $old_data = $old_result->fetch_assoc();
 
     // Prepare and execute the UPDATE statement
-    $statement = $conn->prepare("UPDATE tbl_cwts SET first_name=?, last_name=?, gender=?, semester=?, nstp=?, department=?, course=? WHERE school_id=?");
-    $statement->bind_param("ssssssss", $first_name, $last_name, $gender, $semester, $nstp, $department, $course, $school_id);
+    $sql = "UPDATE tbl_cwts SET 
+            first_name = ?, 
+            last_name = ?, 
+            gender = ?, 
+            semester = ?, 
+            nstp = ?, 
+            department = ?, 
+            course = ? 
+            WHERE school_id = ?";
+    
+    $statement = $conn->prepare($sql);
+    
+    if (!$statement) {
+        http_response_code(500);
+        echo "Prepare failed: " . $conn->error;
+        exit;
+    }
+
+    $statement->bind_param("ssssssss", 
+        $first_name, 
+        $last_name, 
+        $gender, 
+        $semester, 
+        $nstp, 
+        $department, 
+        $course, 
+        $school_id
+    );
 
     if ($statement->execute()) {
-        // If update is successful
-        echo "Data updated successfully.";
+        if ($statement->affected_rows > 0) {
+            try {
+                // Create detailed description of changes
+                $changes = array();
+                if ($old_data['first_name'] !== $first_name) {
+                    $changes[] = "First Name: {$old_data['first_name']} → {$first_name}";
+                }
+                if ($old_data['last_name'] !== $last_name) {
+                    $changes[] = "Last Name: {$old_data['last_name']} → {$last_name}";
+                }
+                if ($old_data['gender'] !== $gender) {
+                    $changes[] = "Gender: {$old_data['gender']} → {$gender}";
+                }
+                if ($old_data['semester'] !== $semester) {
+                    $changes[] = "Semester: {$old_data['semester']} → {$semester}";
+                }
+                if ($old_data['nstp'] !== $nstp) {
+                    $changes[] = "NSTP: {$old_data['nstp']} → {$nstp}";
+                }
+                if ($old_data['department'] !== $department) {
+                    $changes[] = "Department: {$old_data['department']} → {$department}";
+                }
+                if ($old_data['course'] !== $course) {
+                    $changes[] = "Course: {$old_data['course']} → {$course}";
+                }
+
+                // Create description with changes
+                $description = "Updated student (ID: $school_id) - Changes made:\n" . implode("\n", $changes);
+                
+                $result = logActivity(
+                    $_SESSION['username'],
+                    'EDIT_STUDENT',
+                    $description,
+                    'CWTS Students Table',
+                    $school_id
+                );
+
+                if ($result) {
+                    echo "Success: Student updated successfully.";
+                } else {
+                    throw new Exception("Failed to log activity");
+                }
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo "Error logging activity: " . $e->getMessage();
+            }
+        } else {
+            http_response_code(404);
+            echo "Error: No student found with ID: $school_id";
+        }
     } else {
-        // If update fails
         http_response_code(500);
-        echo "Error updating data: " . $conn->error;
+        echo "Error updating student: " . $statement->error;
     }
 
-    // Close the connection
     $statement->close();
+    $get_old->close();
     $conn->close();
 } else {
-    // If not a PUT or POST request, return method not allowed
     http_response_code(405);
     echo "Method Not Allowed";
-}
-
-require_once 'db_conn.php';
-require_once 'audit_functions.php';
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $conn = connect_db();
-    $user_id = $_SESSION['user_id'];
-    
-    // Your existing update code
-    $stmt = $conn->prepare("UPDATE your_table SET ... WHERE id = ?");
-    if ($stmt->execute()) {
-        // Log the update action
-        logUpdate(
-            $user_id,
-            'students',
-            $_POST['student_id'],
-            "Updated student information for {$_POST['first_name']} {$_POST['last_name']}"
-        );
-        echo "success";
-    } else {
-        echo "error";
-    }
 }
 ?>
