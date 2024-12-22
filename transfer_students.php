@@ -1,6 +1,10 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once("db_conn.php");
-session_start(); // Add session start
+require_once("audit_functions.php");
 $conn = connect_db();
 
 // Get the JSON input
@@ -15,14 +19,19 @@ try {
     // Create a prepared statement with placeholders for each student ID
     $placeholders = str_repeat('?,', count($student_ids) - 1) . '?';
     
-    // First, get the current instructor for logging purposes
-    $sql_get_instructor = "SELECT instructor FROM tbl_cwts WHERE school_id = ? LIMIT 1";
-    $stmt = $conn->prepare($sql_get_instructor);
-    $stmt->bind_param("s", $student_ids[0]);
+    // First, get the details of all students being transferred
+    $sql_get_students = "SELECT school_id, first_name, last_name, nstp, course, instructor 
+                        FROM tbl_cwts 
+                        WHERE school_id IN ($placeholders)";
+    
+    $stmt = $conn->prepare($sql_get_students);
+    $stmt->bind_param(str_repeat('s', count($student_ids)), ...$student_ids);
     $stmt->execute();
     $result = $stmt->get_result();
-    $row = $result->fetch_assoc();
-    $old_instructor = $row['instructor'] ?? 'None';
+    $students = $result->fetch_all(MYSQLI_ASSOC);
+    
+    // Get the old instructor for the first student (assuming all selected students have the same instructor)
+    $old_instructor = $students[0]['instructor'] ?? 'None';
     
     // Update the instructor field and mark as transferred
     $sql = "UPDATE tbl_cwts 
@@ -45,10 +54,29 @@ try {
 
     // Check if any rows were affected
     if ($stmt->affected_rows > 0) {
-        // Log the transfer activity
-        $username = $_SESSION['username'] ?? 'System';
-        $action = "From: $old_instructor To: $new_instructor, Students: " . implode(', ', $student_ids);
+        // Create detailed description for logging
+        $student_details = array();
+        foreach ($students as $student) {
+            $student_details[] = "{$student['first_name']} {$student['last_name']} " .
+                               "(ID: {$student['school_id']}, NSTP: {$student['nstp']}, " .
+                               "Program: {$student['course']})";
+        }
         
+        $description = "Transferred students to instructor '$new_instructor':\n" . 
+                      implode("\n", $student_details);
+
+        // Log the transfer activity
+        $result = logActivity(
+            $_SESSION['username'],
+            'TRANSFER STUDENTS',
+            $description,
+            'CWTS Students Table',
+            null
+        );
+        
+        if (!$result) {
+            throw new Exception("Failed to log activity");
+        }
         
         // Commit transaction
         $conn->commit();

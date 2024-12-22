@@ -7,28 +7,34 @@ const addEndpoint = "/add_student_info.php";
  * @param {HTMLButtonElement} button - The button element clicked.
  */
 function deleteStudent(button) {
-  if (confirm("Do you really want to delete?")) {
-    const row = button.parentElement.parentElement;
-    const dataId = row.getAttribute("data-id");
-    const url = `${deleteEndpoint}?school_id=${encodeURIComponent(dataId)}`;
-    
-    fetch(url, {
-      method: "DELETE"
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then(text => {
-      row.remove(); // Remove the row from the table
-      alert(text);
-    })
-    .catch(error => {
-      console.error('There was a problem with your fetch operation:', error);
-      alert('Failed to delete student: ' + error.message);
-    });
+  /** @type {HTMLTableRowElement} */
+  const row = button.parentElement.parentElement;
+  /** @type {string} */
+  const dataId = row.getAttribute("data-id");
+  /** @type {boolean} */
+  const result = confirm("Do you really want to delete?");
+
+  const url = `${deleteEndpoint}?school_id=${encodeURIComponent(dataId)}`;
+  const request = new Request(url, {
+    method: "DELETE",
+  });
+
+  if (result) {
+    fetch(request)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        return response.text();
+      })
+      .then((text) => {
+        row.remove(); // Remove the row from the table
+        alert(text);
+      })
+      .catch(error => {
+        console.error('There was a problem with your fetch operation:', error);
+      });
   }
 }
 
@@ -77,12 +83,6 @@ function saveEdit(dataId, row) {
   const editForm = document.getElementById('editForm');
   const formData = new FormData(editForm);
 
-  // Debug log
-  console.log('Sending update for student ID:', dataId);
-  for (let pair of formData.entries()) {
-    console.log(pair[0] + ': ' + pair[1]);
-  }
-
   const url = `${editEndpoint}?school_id=${encodeURIComponent(dataId)}`;
 
   fetch(url, {
@@ -91,34 +91,17 @@ function saveEdit(dataId, row) {
   })
     .then(response => {
       if (!response.ok) {
-        return response.text().then(text => {
-          throw new Error(text || 'Network response was not ok');
-        });
+        throw new Error('Network response was not ok');
       }
       return response.text();
     })
-    .then(data => {
-      if (data.includes("Success")) {
-        alert('Student updated successfully');
-        // Update the row data
-        row.children[1].textContent = formData.get('school_id');
-        row.children[2].textContent = formData.get('first_name');
-        row.children[3].textContent = formData.get('last_name');
-        row.children[4].textContent = formData.get('gender');
-        row.children[5].textContent = formData.get('semester');
-        row.children[6].textContent = formData.get('nstp');
-        row.children[7].textContent = formData.get('department');
-        row.children[8].textContent = formData.get('course');
-        
-        closeModal();
-        window.location.reload(); // Force page reload
-      } else {
-        throw new Error(data);
-      }
+    .then(() => {
+      alert('Data updated successfully');
+      updateTableRow(row); // Update the row in the table
+      closeModal(); // Close the modal
     })
     .catch(error => {
-      console.error('Error:', error);
-      alert('Failed to update student: ' + error.message);
+      console.error('There was a problem with your fetch operation:', error);
     });
 }
 

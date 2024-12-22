@@ -703,33 +703,33 @@ dialog::backdrop {
         <input type="text" id="editSchoolId" name="school_id" readonly><br>
 
         <label for="editFirstName">First Name:</label>
-        <input type="text" name="first_name" id="editFirstName" required><br>
+        <input type="text" id="editFirstName" name="first_name" required><br>
 
         <label for="editLastName">Last Name:</label>
-        <input type="text" name="last_name" id="editLastName" required><br>
+        <input type="text" id="editLastName" name="last_name" required><br>
 
         <label for="editGender">Gender:</label>
-        <select name="gender" id="editGender" required>
+        <select id="editGender" name="gender" required>
           <option value="Male">Male</option>
           <option value="Female">Female</option>
         </select><br>
 
         <label for="editSemester">Semester:</label>
-        <select name="semester" id="editSemester" required>
+        <select id="editSemester" name="semester" required>
           <option value="1st">1st</option>
           <option value="2nd">2nd</option>
         </select><br>
 
         <label for="editNSTP">NSTP:</label>
-        <select name="nstp" id="editNSTP">
+        <select id="editNSTP" name="nstp">
           <option value="CWTS">CWTS</option>
         </select>
 
         <label for="editDepartment">College:</label>
-        <input type="text" name="department" id="editDepartment" required><br>
+        <input type="text" id="editDepartment" name="department" required><br>
 
         <label for="editCourse">Program:</label>
-        <input type="text" name="course" id="editCourse" required><br>
+        <input type="text" id="editCourse" name="course" required><br>
 
         <button type="submit">Save</button>
         <button type="button" onclick="closeModal()">Cancel</button>
