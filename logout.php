@@ -1,45 +1,28 @@
-
-
 <?php
+require_once 'audit_functions.php';  // Include this first!
 session_start();
+
+// Log the logout before destroying the session
+if (isset($_SESSION['username'])) {
+    logActivity($_SESSION['username'], 'LOGOUT', 'User logged out of the system');
+}
 
 // Unset all session variables
 $_SESSION = array();
 
-// Destroy the session
-session_destroy();
-
-require_once 'audit_logger.php';
-
-if (isset($_SESSION['username'])) {
-    logUserActivity($_SESSION['username'], 'LOGOUT', "User logged out");
-}
-
-
-// Remove the authentication cookie
+// Remove cookies
 if (isset($_COOKIE['auth'])) {
-    setcookie('auth', '', time() - 3600, '/'); // Expire the cookie
+    setcookie('auth', '', time() - 3600, '/');
 }
 
 if (isset($_COOKIE['PHPSESSID'])) {
-    setcookie('PHPSESSID', '', time() - 3600, '/'); // Expire the PHP session cookie
+    setcookie('PHPSESSID', '', time() - 3600, '/');
 }
 
-// Redirect to the login page after logout
-header("Location: index.php");
-exit();
-
-require_once 'audit_functions.php';
-
-// Make sure to log before destroying the session
-if (isset($_SESSION['user_id'])) {
-    logLogout($_SESSION['user_id']);
-}
-
-
-
-
+// Destroy the session
 session_destroy();
-header('Location: faculty.php');
+
+// Redirect to login page
+header("Location: index.php");
 exit();
 ?>

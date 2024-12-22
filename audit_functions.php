@@ -131,3 +131,19 @@ function logLogout($user_account) {
     return debugLogLogout($user_account);
 }
 
+// Add these functions to audit_functions.php
+function logUserAction($userId, $action, $description, $tableAffected = 'N/A', $recordId = 'N/A') {
+    $conn = connect_db();
+    
+    $sql = "INSERT INTO audit_log (User_Account, Actions, Description, table_affected, record_id) 
+            VALUES (?, ?, ?, ?, ?)";
+            
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("sssss", $userId, $action, $description, $tableAffected, $recordId);
+    
+    $success = $stmt->execute();
+    $stmt->close();
+    
+    return $success;
+}
+

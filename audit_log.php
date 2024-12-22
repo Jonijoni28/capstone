@@ -618,29 +618,32 @@ dialog::backdrop {
 
  /* PAGINATION OF THE TABLE JS */
 let currentPage = 1;
-let rowsPerPage = 1;
+let rowsPerPage = 5;
 
 function paginateTable() {
     let table = document.getElementById("editableTable");
     let tr = table.getElementsByTagName("tr");
-    let totalRows = tr.length - 2; // excluding the header row and "No Results Found" row
+    let totalRows = tr.length - 1; // subtract only header row
     let totalPages = Math.ceil((totalRows) / rowsPerPage);
 
     // Ensure currentPage stays within valid range
     if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages) currentPage = totalPages;
 
-    let start = ((currentPage - 1) * rowsPerPage) + 1; // skip header row
-    let end = start + rowsPerPage - 1;
+    // Calculate start and end rows
+    let start = ((currentPage - 1) * rowsPerPage) + 1; // Start after header
+    let end = Math.min(start + rowsPerPage - 1, totalRows); // Ensure we don't exceed total rows
 
-    // Hide all rows first
-    for (let i = 1; i < tr.length - 1; i++) {
+    // Hide all rows first (except header)
+    for (let i = 1; i < tr.length; i++) {
         tr[i].style.display = "none";
     }
 
-    // Show rows for current page
-    for (let i = start; i <= Math.min(end, tr.length - 2); i++) {
-        tr[i].style.display = "";
+    // Show only rows for current page
+    for (let i = start; i <= end; i++) {
+        if (tr[i]) {
+            tr[i].style.display = "";
+        }
     }
 
     // Update buttons state

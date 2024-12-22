@@ -34,7 +34,7 @@ $stmt_results = $stmt->get_result();
 if ($stmt_results->num_rows > 0) {
     $user = $stmt_results->fetch_assoc();
 
-    // Verify the password - Fixed the comparison
+    // Verify the password
     if ($input_password !== $user["password"]) {
         $_SESSION['login_error'] = "Invalid username or password. Please try again.";
         header("Location: faculty.php");
@@ -52,11 +52,15 @@ if ($stmt_results->num_rows > 0) {
     $_SESSION['username'] = $user["username"];
     $_SESSION['user_type'] = $user["user_type"];
 
-    // Generate a session identifier (or token)
-    $session_id = session_id();
-    // Set a cookie for the session
-    setcookie('auth', $session_id, time() + (86400 * 30), "/"); // 30 days expiry
+    // Log the successful login
+    require_once 'audit_functions.php';
+    logActivity($user["username"], 'LOGIN', 'User logged into the system');
 
+    // Generate session identifier and set cookie
+    $session_id = session_id();
+    setcookie('auth', $session_id, time() + (86400 * 30), "/");
+
+    // Redirect based on user type
     if ($user["user_type"] == "admin") {
         header('Location: homepage.php');
         exit();
