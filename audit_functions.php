@@ -37,25 +37,20 @@ function logActivity($user_account, $action, $description) {
 }
 
 // Modified function to fetch audit logs with error handling
-function getAuditLogs($page = 1, $records_per_page = 10) {
+function getAuditLogs() {
     global $conn;
     
-    $offset = ($page - 1) * $records_per_page;
-    
-    // Modified query with explicit column selection
+    // Modified query to show all records
     $sql = "SELECT Audit_ID, Timestamp, Actions, Description, User_Account, 
             table_affected, record_id 
             FROM audit_log 
-            ORDER BY Timestamp DESC 
-            LIMIT ? OFFSET ?";
+            ORDER BY Timestamp DESC";
             
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         error_log("Prepare failed in getAuditLogs: " . $conn->error);
         return false;
     }
-    
-    $stmt->bind_param("ii", $records_per_page, $offset);
     
     if (!$stmt->execute()) {
         error_log("Execute failed in getAuditLogs: " . $stmt->error);
