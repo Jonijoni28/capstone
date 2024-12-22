@@ -7,34 +7,28 @@ const addEndpoint = "/add_student_info.php";
  * @param {HTMLButtonElement} button - The button element clicked.
  */
 function deleteStudent(button) {
-  /** @type {HTMLTableRowElement} */
-  const row = button.parentElement.parentElement;
-  /** @type {string} */
-  const dataId = row.getAttribute("data-id");
-  /** @type {boolean} */
-  const result = confirm("Do you really want to delete?");
-
-  const url = `${deleteEndpoint}?school_id=${encodeURIComponent(dataId)}`;
-  const request = new Request(url, {
-    method: "DELETE",
-  });
-
-  if (result) {
-    fetch(request)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-
-        return response.text();
-      })
-      .then((text) => {
-        row.remove(); // Remove the row from the table
-        alert(text);
-      })
-      .catch(error => {
-        console.error('There was a problem with your fetch operation:', error);
-      });
+  if (confirm("Do you really want to delete?")) {
+    const row = button.parentElement.parentElement;
+    const dataId = row.getAttribute("data-id");
+    const url = `${deleteEndpoint}?school_id=${encodeURIComponent(dataId)}`;
+    
+    fetch(url, {
+      method: "DELETE"
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.text();
+    })
+    .then(text => {
+      row.remove(); // Remove the row from the table
+      alert(text);
+    })
+    .catch(error => {
+      console.error('There was a problem with your fetch operation:', error);
+      alert('Failed to delete student: ' + error.message);
+    });
   }
 }
 

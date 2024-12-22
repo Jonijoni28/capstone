@@ -1,66 +1,73 @@
 <?php
-require_once ("db_conn.php");
+// Start session at the very beginning
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once("db_conn.php");
+require_once("audit_functions.php");
 
 $conn = connect_db();
 
-/**
- * Deletes a student from the database.
- * Expects the student ID via GET request parameter 'id'.
- */
-
-// Check if it's a DELETE request
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    // Check the connection
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    // Retrieve the ID to be deleted
+    // Get student details before deletion for logging
     $school_id = $_GET['school_id'];
+    
+    // First get student details
+    $get_student = $conn->prepare("SELECT * FROM tbl_cwts WHERE school_id = ?");
+    $get_student->bind_param("s", $school_id);
+    $get_student->execute();
+    $result = $get_student->get_result();
+    $student = $result->fetch_assoc();
 
-    // Prepare and execute the DELETE statement
-    $statement = $conn->prepare("DELETE FROM tbl_cwts WHERE school_id = ?");
-    $statement->bind_param("s", $school_id);
+    if ($student) {
+        // Prepare and execute the DELETE statement
+        $statement = $conn->prepare("DELETE FROM tbl_cwts WHERE school_id = ?");
+        $statement->bind_param("s", $school_id);
 
-    if ($statement->execute()) {
-        // If deletion is successful
-        echo "Row deleted successfully";
+        if ($statement->execute()) {
+            try {
+                // Create detailed description for the log
+                $description = "Deleted student: {$student['first_name']} {$student['last_name']} " .
+                             "(ID: {$student['school_id']}) - " .
+                             "Details: Gender: {$student['gender']}, " .
+                             "Semester: {$student['semester']}, " .
+                             "NSTP: {$student['nstp']}, " .
+                             "Department: {$student['department']}, " .
+                             "Course: {$student['course']}";
+
+                $result = logActivity(
+                    $_SESSION['username'],
+                    'DELETE STUDENT',
+                    $description,
+                    'CWTS Students Table',
+                    $school_id
+                );
+
+                if ($result) {
+                    echo "Student deleted successfully";
+                } else {
+                    throw new Exception("Failed to log activity");
+                }
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo "Error logging activity: " . $e->getMessage();
+            }
+        } else {
+            http_response_code(500);
+            echo "Error deleting student: " . $statement->error;
+        }
+
+        $statement->close();
     } else {
-        // If deletion fails
-        http_response_code(500);
-        echo "Error deleting row";
+        http_response_code(404);
+        echo "Student not found";
     }
 
-    // Close the connection
-    $statement->close();
+    $get_student->close();
     $conn->close();
 } else {
-    // If not a DELETE request, return method not allowed
     http_response_code(405);
     echo "Method Not Allowed";
-}
-
-
-require_once 'db_conn.php';
-require_once 'audit_functions.php';
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $conn = connect_db();
-    $user_id = $_SESSION['user_id'];
-    
-    // Your existing delete code
-    $stmt = $conn->prepare("DELETE FROM your_table WHERE id = ?");
-    if ($stmt->execute([$_POST['student_id']])) {
-        // Log the delete action
-        logDelete(
-            $user_id,
-            'students',
-            $_POST['student_id'],
-            "Deleted student record"
-        );
-        echo "success";
-    } else {
-        echo "error";
-    }
 }
 ?>

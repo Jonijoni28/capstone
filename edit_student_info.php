@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $result = logActivity(
                     $_SESSION['username'],
-                    'EDIT_STUDENT',
+                    'EDIT STUDENT',
                     $description,
                     'CWTS Students Table',
                     $school_id
