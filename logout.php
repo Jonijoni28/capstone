@@ -14,7 +14,7 @@ $user = $result->fetch_assoc();
 $full_name = $user['full_name'];
 
 // Log the logout with full name
-logActivity($full_name, 'LOGOUT', 'User logged out of the system');
+logActivity($full_name, 'Logout', 'User logged out of the system');
 
 // Remove cookies
 if (isset($_COOKIE['auth'])) {

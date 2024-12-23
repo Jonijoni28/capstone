@@ -57,7 +57,7 @@ if ($stmt_results->num_rows > 0) {
 
     // Log the successful login with full name
     require_once 'audit_functions.php';
-    logActivity($full_name, 'LOGIN', 'User logged into the system');
+    logActivity($full_name, 'Login', 'User logged into the system');
 
     // Generate session identifier and set cookie
     $session_id = session_id();

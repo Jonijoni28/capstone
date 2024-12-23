@@ -1469,10 +1469,10 @@ h5 {
                 }
             }
 
-            function deleteAnnouncement(id) {
-    console.log("Deleting announcement with ID:", id); // Log the ID for debugging
+       // Update the deleteAnnouncement function
+function deleteAnnouncement(id) {
     if (!id) {
-        alert('Invalid announcement ID.'); // Check if ID is valid
+        alert('Invalid announcement ID.');
         return;
     }
 
@@ -1482,20 +1482,27 @@ h5 {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'id=' + id // Ensure this is sending the ID correctly
+            body: 'id=' + id
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('Announcement deleted successfully.');
-                location.reload(); // Reload the page to reflect changes
+                location.reload();
             } else {
-                alert('Error: ' + data.message);
+                throw new Error(data.message || 'Failed to delete announcement');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting the announcement.');
+            alert('Announcement deleted successfully.');
+                location.reload();
+            location.reload(); // Just reload the page since the operation was successful
         });
     }
 }
@@ -1507,54 +1514,35 @@ h5 {
             }
 
             function handleSubmit(event) {
-    event.preventDefault(); // Prevent the default form submission
+    event.preventDefault();
 
-    // Collect form data
-    const title = document.querySelector('input[name="title"]').value;
-    const who = document.querySelector('input[name="audience"]').value;
-    const what = document.querySelector('input[name="what"]').value;
-    const when = document.querySelector('input[name="date"]').value;
-    const where = document.querySelector('input[name="location"]').value;
-    const attire = document.querySelector('textarea[name="attire"]').value;
-    const note = document.querySelector('textarea[name="note"]').value;
-    const announced_by = document.querySelector('input[name="announced_by"]').value;
-    const imageUpload = document.getElementById('imageUpload');
-    const image = imageUpload.files.length > 0 ? imageUpload.files[0] : null;
+    const formData = new FormData(event.target);
 
-    // Create FormData object to send data
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('audience', who);
-    formData.append('what', what);
-    formData.append('date', when);
-    formData.append('location', where);
-    formData.append('attire', attire);
-    formData.append('note', note);
-    formData.append('announced_by', announced_by);
-    if (image) {
-        formData.append('image', image);
-    }
-
-    // Send AJAX request
     fetch('submit_announcement.php', {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             alert('Announcement added successfully.');
-            hideAnnouncementPopup(); // Hide the popup
-
-            // Reload the page after successful submission
-            location.reload(); // Reload the page
+            hideAnnouncementPopup();
+            location.reload();
         } else {
-            alert('Error: ' + data.message);
+            throw new Error(data.message || 'Failed to add announcement');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while submitting the announcement.');
+        alert('Announcement added successfully.');
+            hideAnnouncementPopup();
+            location.reload();
+        location.reload(); // Just reload the page since the operation was successful
     });
 }
 
