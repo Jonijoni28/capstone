@@ -56,6 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($statement->execute()) {
         if ($statement->affected_rows > 0) {
             try {
+                // Get the user's full name
+                $user_id = $_SESSION['user_id'];
+                $query = "SELECT CONCAT(first_name, ' ', last_name) as full_name FROM user_info WHERE id = ?";
+                $stmt = $conn->prepare($query);
+                $stmt->bind_param('i', $user_id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $user = $result->fetch_assoc();
+                $full_name = $user['full_name'];
+
                 // Create detailed description of changes
                 $changes = array();
                 if ($old_data['first_name'] !== $first_name) {
@@ -84,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $description = "Updated student (ID: $school_id) - Changes made:\n" . implode("\n", $changes);
                 
                 $result = logActivity(
-                    $_SESSION['username'],
-                    'EDIT STUDENT',
+                    $full_name,  // Using full name instead of username
+                    'Edit Student',
                     $description,
                     'CWTS Students Table',
                     $school_id

@@ -15,11 +15,21 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
     exit();
 }
 
-// Update the SQL query to remove LIMIT and OFFSET
-$sql = "SELECT * FROM audit_log ORDER BY Timestamp DESC";
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$records_per_page = 10;
+$offset = ($page - 1) * $records_per_page;
+
+// Update the ORDER BY clause to use 'Timestamp' instead of 'created_at'
+$sql = "SELECT * FROM audit_log ORDER BY Timestamp DESC LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($sql);
+$stmt->bind_param("ii", $records_per_page, $offset);
 $stmt->execute();
 $results = $stmt->get_result();
+
+// Get total records for pagination
+$total_records_sql = "SELECT COUNT(*) as count FROM audit_log";
+$total_records_result = $conn->query($total_records_sql);
+$total_records = $total_records_result->fetch_assoc()['count'];
 
 $conn = connect_db();
 $user_id = $_SESSION['user_id'] ?? null;
@@ -65,6 +75,7 @@ $results = getAuditLogs($page, $records_per_page);
             <th>Actions</th>
             <th>Description</th>
             <th>User Account</th>
+
         </tr>
     </thead>
     <tbody id="tableBody">
@@ -609,23 +620,23 @@ let rowsPerPage = 5;
 function paginateTable() {
     let table = document.getElementById("editableTable");
     let tr = table.getElementsByTagName("tr");
-    let totalRows = tr.length - 1; // subtract only header row
+    let totalRows = tr.length - 1; // excluding only the header row
     let totalPages = Math.ceil((totalRows) / rowsPerPage);
 
     // Ensure currentPage stays within valid range
     if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages) currentPage = totalPages;
 
-    // Calculate start and end rows
-    let start = ((currentPage - 1) * rowsPerPage) + 1; // Start after header
-    let end = Math.min(start + rowsPerPage - 1, totalRows); // Ensure we don't exceed total rows
+    // Calculate start and end indices
+    let start = ((currentPage - 1) * rowsPerPage) + 1; // skip header row
+    let end = Math.min(start + rowsPerPage - 1, totalRows);
 
-    // Hide all rows first (except header)
+    // Hide all data rows first
     for (let i = 1; i < tr.length; i++) {
         tr[i].style.display = "none";
     }
 
-    // Show only rows for current page
+    // Show only 5 rows for current page
     for (let i = start; i <= end; i++) {
         if (tr[i]) {
             tr[i].style.display = "";

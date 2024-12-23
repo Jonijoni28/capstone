@@ -52,9 +52,12 @@ if ($stmt_results->num_rows > 0) {
     $_SESSION['username'] = $user["username"];
     $_SESSION['user_type'] = $user["user_type"];
 
-    // Log the successful login
+    // Get full name for audit log
+    $full_name = $user_info['first_name'] . ' ' . $user_info['last_name'];
+
+    // Log the successful login with full name
     require_once 'audit_functions.php';
-    logActivity($user["username"], 'LOGIN', 'User logged into the system');
+    logActivity($full_name, 'LOGIN', 'User logged into the system');
 
     // Generate session identifier and set cookie
     $session_id = session_id();

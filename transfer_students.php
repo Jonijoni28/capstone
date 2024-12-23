@@ -16,6 +16,16 @@ $student_ids = $data['studentIds'];
 $conn->begin_transaction();
 
 try {
+    // Get the user's full name
+    $user_id = $_SESSION['user_id'];
+    $query = "SELECT CONCAT(first_name, ' ', last_name) as full_name FROM user_info WHERE id = ?";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+    $full_name = $user['full_name'];
+
     // Create a prepared statement with placeholders for each student ID
     $placeholders = str_repeat('?,', count($student_ids) - 1) . '?';
     
@@ -65,10 +75,10 @@ try {
         $description = "Transferred students to instructor '$new_instructor':\n" . 
                       implode("\n", $student_details);
 
-        // Log the transfer activity
+        // Log the transfer activity with full name
         $result = logActivity(
-            $_SESSION['username'],
-            'TRANSFER STUDENTS',
+            $full_name,  // Using full name instead of username
+            'Transfer Students',
             $description,
             'CWTS Students Table',
             null

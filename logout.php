@@ -2,13 +2,19 @@
 require_once 'audit_functions.php';  // Include this first!
 session_start();
 
-// Log the logout before destroying the session
-if (isset($_SESSION['username'])) {
-    logActivity($_SESSION['username'], 'LOGOUT', 'User logged out of the system');
-}
+// Get the user's full name before destroying the session
+$conn = connect_db();
+$user_id = $_SESSION['user_id'];
+$query = "SELECT CONCAT(first_name, ' ', last_name) as full_name FROM user_info WHERE id = ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param('i', $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+$full_name = $user['full_name'];
 
-// Unset all session variables
-$_SESSION = array();
+// Log the logout with full name
+logActivity($full_name, 'LOGOUT', 'User logged out of the system');
 
 // Remove cookies
 if (isset($_COOKIE['auth'])) {

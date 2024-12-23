@@ -21,6 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     $student = $result->fetch_assoc();
 
     if ($student) {
+        // Get the user's full name
+        $user_id = $_SESSION['user_id'];
+        $query = "SELECT CONCAT(first_name, ' ', last_name) as full_name FROM user_info WHERE id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $full_name = $user['full_name'];
+
         // Prepare and execute the DELETE statement
         $statement = $conn->prepare("DELETE FROM tbl_cwts WHERE school_id = ?");
         $statement->bind_param("s", $school_id);
@@ -37,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
                              "Course: {$student['course']}";
 
                 $result = logActivity(
-                    $_SESSION['username'],
-                    'DELETE STUDENT',
+                    $full_name,
+                    'Delete Student',
                     $description,
                     'CWTS Students Table',
                     $school_id

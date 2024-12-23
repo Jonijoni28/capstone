@@ -19,19 +19,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $statement->bind_param("ssssssss", $school_id, $first_name, $last_name, $gender, $semester, $nstp, $department, $course);
 
     if ($statement->execute()) {
-        // Check if session username exists
-        if (!isset($_SESSION['username'])) {
-            http_response_code(500);
-            echo "Error: User session not found";
-            return;
-        }
+        // Get the user's full name
+        $user_id = $_SESSION['user_id'];
+        $query = "SELECT CONCAT(first_name, ' ', last_name) as full_name FROM user_info WHERE id = ?";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $full_name = $user['full_name'];
 
         try {
-            // Log the action
-            $description = "Added new student: $first_name $last_name (ID: $school_id) - NSTP: $nstp";
+            // Create a more detailed description including all student information
+            $description = "Added new student:\n" .
+                          "ID: $school_id\n" .
+                          "Name: $first_name $last_name\n" .
+                          "Gender: $gender\n" .
+                          "Semester: $semester\n" .
+                          "NSTP: $nstp\n" .
+                          "Department: $department\n" .
+                          "Course: $course";
+
             $result = logActivity(
-                $_SESSION['username'],
-                'ADD STUDENT',
+                $full_name,
+                'Add Student',
                 $description,
                 'CWTS Students Table',
                 $school_id
