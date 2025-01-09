@@ -1242,91 +1242,59 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
     formData.append('single_entry', 'true'); // Flag to ensure single entry
 
     // Create description based on action type
-// Create description based on action type
-let description = '';
-if (isAdd) {
-    // For new entries
-    if (statusValue && !prelimValue && !midtermValue && !finalsValue) {
-        description = `Added grades for student: ${studentFullName} (${schoolId}) Status: ${statusValue}`;
-    } else {
-        description = `Added grades for student: ${studentFullName} (${schoolId})`;
-        if (prelimValue) description += ` Prelim: ${prelimValue}`;
-        if (midtermValue) description += ` Midterm: ${midtermValue}`;
-        if (finalsValue) description += ` Finals: ${finalsValue}`;
+    let description = '';
+    if (isAdd) {
+        description = `Added grades for student: ${studentFullName} (${schoolId})\n`;
         
-        if (prelimValue && midtermValue && finalsValue) {
-            const avgGrade = (parseFloat(prelimValue) + parseFloat(midtermValue) + parseFloat(finalsValue)) / 3;
-            const finalGrade = roundToNearestGrade(avgGrade);
-            const newStatus = (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
-            description += ` Final Grade: ${finalGrade.toFixed(2)} Status: ${newStatus}`;
-        }
-    }
-    formData.append('action_type', 'add');
-} else {
-    // For edits - check if any values actually changed
-    const changedValues = [];
-    
-    if (prelimValue && prelimValue !== currentPrelim) {
-        changedValues.push(`Prelim: ${currentPrelim} → ${prelimValue}`);
-    }
-    if (midtermValue && midtermValue !== currentMidterm) {
-        changedValues.push(`Midterm: ${currentMidterm} → ${midtermValue}`);
-    }
-    if (finalsValue && finalsValue !== currentFinals) {
-        changedValues.push(`Finals: ${currentFinals} → ${finalsValue}`);
-    }
-    
-    // Special handling for INC/DROP status changes
-    if (statusValue && !prelimValue && !midtermValue && !finalsValue && 
-        (currentStatus === 'INC' || currentStatus === 'DROP') && 
-        (statusValue === 'INC' || statusValue === 'DROP') &&
-        statusValue !== currentStatus) {
-        description = `Edit Grades for student: ${studentFullName} (${schoolId}) - Changes made: Status: ${currentStatus} → ${statusValue}`;
-    } 
-    // Only create edit description if values actually changed
-    else if (changedValues.length > 0) {
-        description = `Edit Grades for student: ${studentFullName} (${schoolId})\n`;
-        description += changedValues.join(', ');
-        
-        // Only add final grade if all grades are present and at least one grade changed
-        if (prelimValue && midtermValue && finalsValue) {
-            const avgGrade = (parseFloat(prelimValue) + parseFloat(midtermValue) + parseFloat(finalsValue)) / 3;
-            const finalGrade = roundToNearestGrade(avgGrade);
-            const newStatus = (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
-            
-            if (finalGrade !== parseFloat(currentFinalGrades)) {
-                description += `\nFinal Grade: ${currentFinalGrades} → ${finalGrade.toFixed(2)}`;
-                description += ` Status: ${currentStatus} → ${newStatus}`;
+        // If setting only status (INC or DROP)
+        if (statusValue && !prelimValue && !midtermValue && !finalsValue) {
+            description += `Status: ${statusValue}`;
+        } else {
+            description += prelimValue ? `Prelim: ${prelimValue}\n` : '';
+            description += midtermValue ? `Midterm: ${midtermValue}\n` : '';
+            description += finalsValue ? `Finals: ${finalsValue}\n` : '';
+
+            // Calculate and add final grade and status in the same entry
+            if (prelimValue && midtermValue && finalsValue) {
+                const avgGrade = (parseFloat(prelimValue) + parseFloat(midtermValue) + parseFloat(finalsValue)) / 3;
+                const finalGrade = roundToNearestGrade(avgGrade);
+                const newStatus = (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
+                description += `Final Grade: ${finalGrade.toFixed(2)}\n`;
+                description += `Status: ${newStatus}`;
             }
         }
-    }
-    
-    // Only append action_type and description if there were actual changes
-    if (description) {
+        
+        formData.append('action_type', 'add');
+    } else {
+        description = `Edit Grades for student: ${studentFullName} (${schoolId})\n`;
+        
+        // Add previous values section
+        description += "Previous values:\n";
+        description += `Prelim: ${currentPrelim || 'None'}\n`;
+        description += `Midterm: ${currentMidterm || 'None'}\n`;
+        description += `Finals: ${currentFinals || 'None'}\n`;
+        description += `Final Grade: ${currentFinalGrades || 'None'}\n`;
+        description += `Status: ${currentStatus || 'None'}\n\n`;
+
+        // Add new values section
+        description += "New values:\n";
+        description += prelimValue !== currentPrelim ? `Prelim: ${prelimValue}\n` : `Prelim: ${currentPrelim}\n`;
+        description += midtermValue !== currentMidterm ? `Midterm: ${midtermValue}\n` : `Midterm: ${currentMidterm}\n`;
+        description += finalsValue !== currentFinals ? `Finals: ${finalsValue}\n` : `Finals: ${currentFinals}\n`;
+
+        // Calculate new final grade and status in the same entry
+        if (prelimValue && midtermValue && finalsValue) {
+            const avgGrade = (parseFloat(prelimValue) + parseFloat(midtermValue) + parseFloat(finalsValue)) / 3;
+            const finalGrade = roundToNearestGrade(avgGrade);
+            const newStatus = (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
+            description += `Final Grade: ${finalGrade.toFixed(2)}\n`;
+            description += `Status: ${newStatus}`;
+        }
+
         formData.append('action_type', 'edit');
     }
-}
-
-// Only append description if it exists (meaning there were changes to log)
-if (description) {
+    
     formData.append('description', description);
-}
-
-    // Helper functions
-    function calculateFinalGrade(prelim, midterm, finals) {
-        if (prelim && midterm && finals) {
-            const avgGrade = (parseFloat(prelim) + parseFloat(midterm) + parseFloat(finals)) / 3;
-            return roundToNearestGrade(avgGrade);
-        }
-        return null;
-    }
-
-    function calculateStatus(finalGrade) {
-        if (finalGrade) {
-            return (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
-        }
-        return '';
-    }
 
     // Send the request to the server
     fetch('inputgrades.php', {
@@ -1834,6 +1802,7 @@ function exportToCSV() {
     const table = document.getElementById("editableTable");
     const rows = table.getElementsByTagName("tr");
     let csvContent = "data:text/csv;charset=utf-8,";
+    let exportCount = 0;
 
     // Updated header with Final Grades and Status
     csvContent += "School ID,Last Name,First Name,Program,Final Grades,Status\n";
@@ -1862,11 +1831,12 @@ function exportToCSV() {
 
                 const csvRow = escapedValues.join(',');
                 csvContent += csvRow + "\n";
+                exportCount++;
             }
         }
     }
 
-    // After successful export, log the activity
+    // Update the log message with the count
     fetch('log_export.php', {
         method: 'POST',
         headers: {
@@ -1874,7 +1844,7 @@ function exportToCSV() {
         },
         body: JSON.stringify({
             type: 'CSV',
-            description: 'Exported student grades to CSV format'
+            description: `Exported ${exportCount} student records to CSV format`
         })
     });
 
@@ -1890,6 +1860,7 @@ function exportToCSV() {
 function exportToWord() {
     const table = document.getElementById("editableTable");
     const rows = table.getElementsByTagName("tr");
+    let exportCount = 0;
 
     let header = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
@@ -1951,6 +1922,7 @@ function exportToWord() {
                         <td style="border: 1px solid black; padding: 5px; text-align: center;">${status}</td>
                     </tr>
                 `;
+                exportCount++;
             }
         }
     }
@@ -1976,7 +1948,7 @@ function exportToWord() {
         </html>
     `;
 
-    // After successful export, log the activity
+    // Update the log message with the count
     fetch('log_export.php', {
         method: 'POST',
         headers: {
@@ -1984,7 +1956,7 @@ function exportToWord() {
         },
         body: JSON.stringify({
             type: 'WORD',
-            description: 'Exported student grades to Word format'
+            description: `Exported ${exportCount} student records to Word format`
         })
     });
 

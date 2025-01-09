@@ -1406,9 +1406,8 @@ h2{
             }
 
             function deleteAnnouncement(id) {
-    console.log("Deleting announcement with ID:", id); // Log the ID for debugging
     if (!id) {
-        alert('Invalid announcement ID.'); // Check if ID is valid
+        alert('Invalid announcement ID.');
         return;
     }
 
@@ -1418,20 +1417,45 @@ h2{
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: 'id=' + id // Ensure this is sending the ID correctly
+            body: 'id=' + id
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
         .then(data => {
-            if (data.success) {
-                alert('Announcement deleted successfully.');
-                location.reload(); // Reload the page to reflect changes
-            } else {
-                alert('Error: ' + data.message);
+            try {
+                // Try to parse the response as JSON
+                const jsonData = JSON.parse(data);
+                if (jsonData.success) {
+                    alert('Announcement deleted successfully.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (jsonData.message || 'Unknown error occurred'));
+                }
+            } catch (e) {
+                // If JSON parsing fails, check if it's a successful response
+                if (data.includes('success')) {
+                    alert('Announcement deleted successfully.');
+                    location.reload();
+                } else {
+                    console.error('Response parsing error:', e);
+                    alert('Error processing the response');
+                }
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while deleting the announcement.');
+            // Even if we get an error, check if deletion was successful
+            const announcementElement = document.querySelector(`[data-announcement-id="${id}"]`);
+            if (!announcementElement) {
+                alert('Announcement deleted successfully.');
+                location.reload();
+            } else {
+                alert('An error occurred while deleting the announcement.');
+            }
         });
     }
 }
@@ -1443,8 +1467,8 @@ h2{
             }
 
             function handleSubmit(event) {
-    event.preventDefault(); // Prevent the default form submission
-
+    event.preventDefault();
+    
     // Collect form data
     const title = document.querySelector('input[name="title"]').value;
     const who = document.querySelector('input[name="audience"]').value;
@@ -1476,16 +1500,34 @@ h2{
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        // First check if the response is valid
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.text(); // Change from response.json() to response.text()
+    })
     .then(data => {
-        if (data.success) {
-            alert('Announcement added successfully.');
-            hideAnnouncementPopup(); // Hide the popup
-
-            // Reload the page after successful submission
-            location.reload(); // Reload the page
-        } else {
-            alert('Error: ' + data.message);
+        try {
+            // Try to parse the response as JSON
+            const jsonData = JSON.parse(data);
+            if (jsonData.success) {
+                alert('Announcement added successfully.');
+                hideAnnouncementPopup();
+                location.reload();
+            } else {
+                alert('Error: ' + (jsonData.message || 'Unknown error occurred'));
+            }
+        } catch (e) {
+            // If JSON parsing fails, check if it's a successful response
+            if (data.includes('success')) {
+                alert('Announcement added successfully.');
+                hideAnnouncementPopup();
+                location.reload();
+            } else {
+                console.error('Response parsing error:', e);
+                alert('Error processing the response');
+            }
         }
     })
     .catch(error => {

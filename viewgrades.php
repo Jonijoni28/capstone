@@ -1099,102 +1099,145 @@ function exportData(format) {
     closeExportModal(); // Close the modal after selection
 }
 
-function exportToCSV() {
-    const table = document.getElementById("editableTable");
-    const rows = table.getElementsByTagName("tr");
-    let csvContent = "data:text/csv;charset=utf-8,";
-
-    // Add header row
-    csvContent += "School ID,Last Name,First Name,Program\n";
-
-    // Loop through table rows
-    for (let i = 1; i < rows.length; i++) { // Start from 1 to skip header
-        const row = rows[i];
-        if (row.style.display !== "none") { // Check if the row is visible
-            const cells = row.getElementsByTagName("td");
-            if (cells.length > 0) {
-                const schoolId = cells[0].textContent; // School ID
-                const lastName = cells[2].textContent; // Last Name
-                const firstName = cells[1].textContent; // First Name
-                const program = cells[7].textContent; // Program
-
-                // Create a CSV row
-                const csvRow = `${schoolId},${lastName},${firstName},${program}`;
-                csvContent += csvRow + "\n";
+async function exportToCSV() {
+    try {
+        const table = document.getElementById("editableTable");
+        const rows = table.getElementsByTagName("tr");
+        let visibleRowCount = 0;
+        
+        // Create CSV content
+        let csvData = [];
+        
+        // Get headers - only include School ID, Last Name, First Name, Program
+        csvData.push('"School ID","Last Name","First Name","Program"');
+        
+        // Get data rows - only include specific columns
+        for (let i = 1; i < rows.length; i++) {
+            if (rows[i].style.display !== "none" && rows[i].id !== 'noResultsRow') {
+                const cells = rows[i].getElementsByTagName("td");
+                const rowData = [
+                    `"${cells[0].innerText.replace(/"/g, '""')}"`, // School ID
+                    `"${cells[2].innerText.replace(/"/g, '""')}"`, // Last Name
+                    `"${cells[1].innerText.replace(/"/g, '""')}"`, // First Name
+                    `"${cells[7].innerText.replace(/"/g, '""')}"`, // Program
+                ];
+                csvData.push(rowData.join(','));
+                visibleRowCount++;
             }
         }
-    }
 
-    // Create a link to download the CSV file
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "students_data.csv");
-    document.body.appendChild(link); // Required for Firefox
-    link.click(); // This will download the data file
-    document.body.removeChild(link); // Clean up
+        // Log the export activity with specific description
+        await fetch('log_exportadmin.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'CSV',
+                description: `Exported ${visibleRowCount} student records to CSV format`
+            })
+        });
+
+        // Create and download CSV file
+        const csvContent = csvData.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'students_data.csv';
+
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export data. Please try again.');
+    }
 }
 
+async function exportToWord() {
+    try {
+        const table = document.getElementById("editableTable");
+        const rows = table.getElementsByTagName("tr");
+        let visibleRowCount = 0;
 
+        // Create table HTML with specific columns
+        let tableHtml = '<table border="1" style="border-collapse: collapse; width: 100%;">';
+        
+        // Add header row with specific columns
+        tableHtml += '<tr style="background-color: #f2f2f2;">';
+        const headers = ['School ID', 'Last Name', 'First Name', 'Program'];
+        headers.forEach(header => {
+            tableHtml += `<th style="padding: 8px; text-align: left;">${header}</th>`;
+        });
+        tableHtml += '</tr>';
 
-function exportToWord() {
-    const table = document.getElementById("editableTable");
-    const rows = table.getElementsByTagName("tr");
-
-    // Create the header content
-    let header = `
-        <h1 style="text-align: center; font-size: 16px; font-weight: normal;">Republic of the Philippines</h1>
-<h1 style="text-align: center; font-size: 22px; font-weight: bold;">SOUTHERN LUZON STATE UNIVERSITY</h1>
-<h2 style="text-align: center; font-size: 16px; font-weight: bold;">MASTERS LIST</h2>
-        <p style="text-align: left;">SUBJECT: The National Service Training Program</p>
-        <br>
-        <table style="width: 100%; border-collapse: collapse; text-align: center;">
-            <tr>
-                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NO.</i></th>
-                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>STUDENT NAME</i></th>
-                <th style="border: 1px solid black; padding: 5px; text-align: center;"><i>COURSE</i></th>
-            </tr>
-    `;
-
-    // Start the table HTML
-    let html = header;
-
-    // Loop through table rows
-    for (let i = 1; i < rows.length; i++) { // Start from 1 to skip header
-        const row = rows[i];
-        if (row.style.display !== "none") { // Check if the row is visible
-            const cells = row.getElementsByTagName("td");
-            if (cells.length > 0) {
-                const schoolId = cells[0].textContent; // School ID
-                const lastName = cells[2].textContent; // Last Name
-                const firstName = cells[1].textContent; // First Name
-                const program = cells[7].textContent; // Program
-
-                // Create a row for the Word document
-                html += `
-                    <tr>
-                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${schoolId}</td>
-                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${lastName}, ${firstName}</td>
-                        <td style="border: 1px solid black; padding: 5px; text-align: left;">${program}</td>
-                    </tr>
-                `;
+        // Add data rows with specific columns
+        for (let i = 1; i < rows.length; i++) {
+            if (rows[i].style.display !== "none" && rows[i].id !== 'noResultsRow') {
+                const cells = rows[i].getElementsByTagName("td");
+                tableHtml += '<tr>';
+                // Add only School ID, Last Name, First Name, Program
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[0].innerText}</td>`; // School ID
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[2].innerText}</td>`; // Last Name
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[1].innerText}</td>`; // First Name
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[7].innerText}</td>`; // Program
+                tableHtml += '</tr>';
+                visibleRowCount++;
             }
         }
+        tableHtml += '</table>';
+
+        // Create complete Word document HTML
+        const docHtml = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
+            <head>
+                <meta charset="utf-8">
+                <title>Student Records</title>
+            </head>
+            <body>
+                <h2>Student Records</h2>
+                ${tableHtml}
+            </body>
+            </html>
+        `;
+
+        // Log the export activity with specific description
+        await fetch('log_exportadmin.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'Word',
+                description: `Exported ${visibleRowCount} student records to Word format`
+            })
+        });
+
+        // Create and download Word file
+        const blob = new Blob([docHtml], { type: 'application/msword' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'students_data.doc';
+
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export data. Please try again.');
     }
-    html += "</table>";
-
-    // Create a new Blob with the HTML content
-    const blob = new Blob([html], {
-        type: 'application/msword'
-    });
-
-    // Create a link to download the Blob
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "students_data.doc"; // Name of the downloaded file
-    document.body.appendChild(link);
-    link.click(); // Trigger the download
-    document.body.removeChild(link); // Clean up
 }
 
 // Add this function after your applyFilters function
