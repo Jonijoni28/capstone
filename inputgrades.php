@@ -1,6 +1,6 @@
 <?php
 require_once("db_conn.php");
-session_start();
+require_once("audit_functions.php");
 
 // At the top of your file after session_start()
 if (isset($_SESSION['username'])) {
@@ -26,6 +26,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Connect to database
         $conn = connect_db();
 
+        // First, get the student information for logging
+        $student_query = "
+            SELECT 
+                c.first_name,
+                c.last_name,
+                c.school_id,
+                g.prelim,
+                g.midterm,
+                g.finals,
+                g.final_grades,
+                g.status
+            FROM tbl_cwts c
+            JOIN tbl_students_grades g ON c.school_id = g.school_id
+            WHERE g.grades_id = ?";
+
+        $stmt = $conn->prepare($student_query);
+        $stmt->bind_param('i', $gradesId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $student_data = $result->fetch_assoc();
+
+        if (!$student_data) {
+            throw new Exception('Student record not found');
+        }
+
+        // Create description for audit log
+        $description = "Deleted grades for student: {$student_data['first_name']} {$student_data['last_name']} ({$student_data['school_id']})\n";
+        $description .= "Previous values:\n";
+        $description .= "Prelim: " . ($student_data['prelim'] ?? 'None') . "\n";
+        $description .= "Midterm: " . ($student_data['midterm'] ?? 'None') . "\n";
+        $description .= "Finals: " . ($student_data['finals'] ?? 'None') . "\n";
+        $description .= "Final Grade: " . ($student_data['final_grades'] ?? 'None') . "\n";
+        $description .= "Status: " . ($student_data['status'] ?? 'None');
+
         // Update query to set ALL grade-related fields to NULL
         $sql = "UPDATE tbl_students_grades 
                 SET prelim = NULL, 
@@ -36,19 +70,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 WHERE grades_id = ?";
         
         $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $gradesId);
         
-        if ($stmt->execute([$gradesId])) {
-            // Check if the update was successful
-            if ($stmt->affected_rows > 0) {
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Grades deleted successfully'
-                ]);
-            } else {
-                throw new Exception('No records were updated');
-            }
+        if ($stmt->execute()) {
+            // Get the user's full name from the database using user_id
+            $user_query = "SELECT CONCAT(first_name, ' ', last_name) as full_name 
+                           FROM user_info 
+                           WHERE id = ?";
+            $user_stmt = $conn->prepare($user_query);
+            $user_stmt->bind_param('i', $_SESSION['user_id']);
+            $user_stmt->execute();
+            $user_result = $user_stmt->get_result();
+            $user_data = $user_result->fetch_assoc();
+            $full_name = $user_data['full_name'];
+
+            // Log the activity with full name
+            logActivity(
+                $full_name,
+                'Delete Grades',
+                $description,
+                'Student Grades',
+                $gradesId
+            );
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Grades deleted successfully'
+            ]);
         } else {
-            throw new Exception('Failed to execute update query');
+            throw new Exception('Failed to delete grades');
         }
         
     } catch (Exception $e) {
@@ -81,11 +131,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
     $grades_id = isset($_POST['grades_id']) ? intval($_POST['grades_id']) : 0;
     $school_id = isset($_POST['school_id']) ? $_POST['school_id'] : '';
-  
+    $action_type = isset($_POST['action_type']) ? $_POST['action_type'] : '';
+    
     // Use null if the field is empty, not set, or zero
     $prelim = (isset($_POST['prelim']) && $_POST['prelim'] !== '' && floatval($_POST['prelim']) !== 0.0) ? floatval($_POST['prelim']) : null;
     $midterm = (isset($_POST['midterm']) && $_POST['midterm'] !== '' && floatval($_POST['midterm']) !== 0.0) ? floatval($_POST['midterm']) : null;
     $finals = (isset($_POST['finals']) && $_POST['finals'] !== '' && floatval($_POST['finals']) !== 0.0) ? floatval($_POST['finals']) : null;
+    
+    $conn = connect_db();
+
+    // Get user's full name
+    $user_query = "SELECT CONCAT(first_name, ' ', last_name) as full_name 
+                   FROM user_info 
+                   WHERE id = ?";
+    $user_stmt = $conn->prepare($user_query);
+    $user_stmt->bind_param('i', $_SESSION['user_id']);
+    $user_stmt->execute();
+    $user_data = $user_stmt->get_result()->fetch_assoc();
+    $full_name = $user_data['full_name'];
+
+    // Log the activity with the appropriate action type
+    logActivity(
+        $full_name,
+        $action_type === 'add' ? 'Add Grades' : 'Edit Grades',
+        $_POST['description'],
+        'Student Grades',
+        $grades_id
+    );
     
     // Get status if it's being set manually
     $manualStatus = isset($_POST['status']) ? $_POST['status'] : null;
@@ -122,51 +194,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
     // Regular grade update logic
     if ($grades_id > 0) {
-      // Update existing grades
-      $stmt = $conn->prepare("UPDATE tbl_students_grades SET prelim = ?, midterm = ?, finals = ? WHERE grades_id = ?");
-      $stmt->bind_param("dddi", $prelim, $midterm, $finals, $grades_id);
+        // Get existing grades before update for audit log
+        $existing_query = "SELECT prelim, midterm, finals, final_grades, status 
+                          FROM tbl_students_grades 
+                          WHERE grades_id = ?";
+        $stmt = $conn->prepare($existing_query);
+        $stmt->bind_param('i', $grades_id);
+        $stmt->execute();
+        $old_grades = $stmt->get_result()->fetch_assoc();
+
+        // Update existing grades
+        $stmt = $conn->prepare("UPDATE tbl_students_grades SET prelim = ?, midterm = ?, finals = ? WHERE grades_id = ?");
+        $stmt->bind_param("dddi", $prelim, $midterm, $finals, $grades_id);
+        
+        $action = "Edit Grades";
     } else {
-      // Insert new grades
-      $stmt = $conn->prepare("INSERT INTO tbl_students_grades (school_id, prelim, midterm, finals) VALUES (?, ?, ?, ?)");
-      $stmt->bind_param("sddd", $school_id, $prelim, $midterm, $finals);
+        // Insert new grades
+        $stmt = $conn->prepare("INSERT INTO tbl_students_grades (school_id, prelim, midterm, finals) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sddd", $school_id, $prelim, $midterm, $finals);
+        
+        $action = "Add Grades";
     }
-  
+
     if ($stmt->execute()) {
-      if ($grades_id == 0) {
-        $grades_id = $stmt->insert_id;
-      }
-  
-      // Calculate final grades only if all grades are present
-      if ($prelim !== null && $midterm !== null && $finals !== null) {
-          $finalGrades = ($prelim + $midterm + $finals) / 3;
-          $finalGrades = roundToNearestGrade($finalGrades);
-          $status = ($finalGrades >= 1 && $finalGrades <= 3) ? 'PASSED' : 'FAILED';
-  
-          $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ?, status = ? WHERE grades_id = ?");
-          $updateFinalsStmt->bind_param("ssi", $finalGrades, $status, $grades_id);
-          
-          if ($updateFinalsStmt->execute()) {
-              echo json_encode([
-                  'success' => true,
-                  'final_grades' => $finalGrades,
-                  'status' => $status,
-              ]);
-          } else {
-              echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
-          }
-          $updateFinalsStmt->close();
-      } else {
-          // If no grades, just return success
-          echo json_encode(['success' => true]);
-      }
+        if ($grades_id == 0) {
+            $grades_id = $stmt->insert_id;
+        }
+
+        // Get student information for the audit log
+        $student_query = "SELECT first_name, last_name FROM tbl_cwts WHERE school_id = ?";
+        $stmt = $conn->prepare($student_query);
+        $stmt->bind_param('s', $school_id);
+        $stmt->execute();
+        $student_data = $stmt->get_result()->fetch_assoc();
+
+        // Get user's full name
+        $user_query = "SELECT CONCAT(first_name, ' ', last_name) as full_name 
+                       FROM user_info 
+                       WHERE id = ?";
+        $user_stmt = $conn->prepare($user_query);
+        $user_stmt->bind_param('i', $_SESSION['user_id']);
+        $user_stmt->execute();
+        $user_data = $user_stmt->get_result()->fetch_assoc();
+        $full_name = $user_data['full_name'];
+
+        // Create audit description
+        $description = "{$action} for student: {$student_data['first_name']} {$student_data['last_name']} ({$school_id})\n";
+        
+        
+
+        // Calculate final grades if all components are present
+        if ($prelim !== null && $midterm !== null && $finals !== null) {
+            $finalGrades = ($prelim + $midterm + $finals) / 3;
+            $finalGrades = roundToNearestGrade($finalGrades);
+            $status = ($finalGrades >= 1 && $finalGrades <= 3) ? 'PASSED' : 'FAILED';
+
+            $updateFinalsStmt = $conn->prepare("UPDATE tbl_students_grades SET final_grades = ?, status = ? WHERE grades_id = ?");
+            $updateFinalsStmt->bind_param("ssi", $finalGrades, $status, $grades_id);
+            
+            if ($updateFinalsStmt->execute()) {
+                $description .= "\nFinal Grade: {$finalGrades}\n";
+                $description .= "Status: {$status}";
+                
+                // Log the activity
+                logActivity(
+                    $full_name,
+                    $action,
+                    $description,
+                    'Student Grades',
+                    $grades_id
+                );
+
+                echo json_encode([
+                    'success' => true,
+                    'final_grades' => $finalGrades,
+                    'status' => $status,
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Database update failed: ' . $conn->error]);
+            }
+            $updateFinalsStmt->close();
+        } else {
+            // Log activity even without final grades
+            logActivity(
+                $full_name,
+                $action,
+                $description,
+                'Student Grades',
+                $grades_id
+            );
+            
+            echo json_encode(['success' => true]);
+        }
     } else {
-      echo json_encode(['success' => false, 'message' => 'Failed to update grades: ' . $conn->error]);
+        echo json_encode(['success' => false, 'message' => 'Failed to update grades: ' . $conn->error]);
     }
     
     $stmt->close();
     $conn->close();
     exit;
-  }
+}
   
 
 
@@ -240,6 +367,7 @@ $user_id = $_SESSION['user_id'] ?? null;
 ?>
 
 
+
 <?php
 // ... existing PHP code ...
 
@@ -272,6 +400,7 @@ $statuses = $conn->query("SELECT DISTINCT g.status
     WHERE c.instructor = '$instructor'");
 
 ?>
+
 
 
 <!DOCTYPE html>
@@ -1084,28 +1213,119 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
     const prelimValue = document.getElementById('editPrelim').value.trim();
     const midtermValue = document.getElementById('editMidterm').value.trim();
     const finalsValue = document.getElementById('editFinals').value.trim();
-    const status = document.getElementById('editStatus').value;
+    const statusValue = document.getElementById('editStatus').value;
 
-    // Check if all grade fields are empty
-    const hasNoGrades = !prelimValue && !midtermValue && !finalsValue;
+    // Get the current row's values
+    const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
+    const currentPrelim = row.querySelector('.prelim').textContent.trim();
+    const currentMidterm = row.querySelector('.midterm').textContent.trim();
+    const currentFinals = row.querySelector('.finals').textContent.trim();
+    const currentFinalGrades = row.querySelector('.final_grades').textContent.trim();
+    const currentStatus = row.querySelector('.status').textContent.trim();
+    
+    // Get student name from the row
+    const firstName = row.cells[1].textContent;
+    const lastName = row.cells[2].textContent;
+    const studentFullName = `${firstName} ${lastName}`;
 
+    // Determine if this is an add or edit action
+    const isAdd = !currentPrelim && !currentMidterm && !currentFinals && !currentStatus;
+    
     // Prepare the form data
     const formData = new FormData();
     formData.append('grades_id', gradesId);
     formData.append('school_id', schoolId);
+    formData.append('prelim', prelimValue);
+    formData.append('midterm', midtermValue);
+    formData.append('finals', finalsValue);
+    formData.append('status', statusValue);
+    formData.append('single_entry', 'true'); // Flag to ensure single entry
 
-    if (hasNoGrades && status) {
-        // Only send status update if there are no grades
-        formData.append('status_only', 'true');
-        formData.append('status', status);
-    } else if (!hasNoGrades) {
-        // Only send grades if at least one grade exists
-        formData.append('prelim', prelimValue);
-        formData.append('midterm', midtermValue);
-        formData.append('finals', finalsValue);
+    // Create description based on action type
+// Create description based on action type
+let description = '';
+if (isAdd) {
+    // For new entries
+    if (statusValue && !prelimValue && !midtermValue && !finalsValue) {
+        description = `Added grades for student: ${studentFullName} (${schoolId}) Status: ${statusValue}`;
     } else {
-        alert('Please enter grades or select a status.');
-        return;
+        description = `Added grades for student: ${studentFullName} (${schoolId})`;
+        if (prelimValue) description += ` Prelim: ${prelimValue}`;
+        if (midtermValue) description += ` Midterm: ${midtermValue}`;
+        if (finalsValue) description += ` Finals: ${finalsValue}`;
+        
+        if (prelimValue && midtermValue && finalsValue) {
+            const avgGrade = (parseFloat(prelimValue) + parseFloat(midtermValue) + parseFloat(finalsValue)) / 3;
+            const finalGrade = roundToNearestGrade(avgGrade);
+            const newStatus = (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
+            description += ` Final Grade: ${finalGrade.toFixed(2)} Status: ${newStatus}`;
+        }
+    }
+    formData.append('action_type', 'add');
+} else {
+    // For edits - check if any values actually changed
+    const changedValues = [];
+    
+    if (prelimValue && prelimValue !== currentPrelim) {
+        changedValues.push(`Prelim: ${currentPrelim} → ${prelimValue}`);
+    }
+    if (midtermValue && midtermValue !== currentMidterm) {
+        changedValues.push(`Midterm: ${currentMidterm} → ${midtermValue}`);
+    }
+    if (finalsValue && finalsValue !== currentFinals) {
+        changedValues.push(`Finals: ${currentFinals} → ${finalsValue}`);
+    }
+    
+    // Special handling for INC/DROP status changes
+    if (statusValue && !prelimValue && !midtermValue && !finalsValue && 
+        (currentStatus === 'INC' || currentStatus === 'DROP') && 
+        (statusValue === 'INC' || statusValue === 'DROP') &&
+        statusValue !== currentStatus) {
+        description = `Edit Grades for student: ${studentFullName} (${schoolId}) - Changes made: Status: ${currentStatus} → ${statusValue}`;
+    } 
+    // Only create edit description if values actually changed
+    else if (changedValues.length > 0) {
+        description = `Edit Grades for student: ${studentFullName} (${schoolId})\n`;
+        description += changedValues.join(', ');
+        
+        // Only add final grade if all grades are present and at least one grade changed
+        if (prelimValue && midtermValue && finalsValue) {
+            const avgGrade = (parseFloat(prelimValue) + parseFloat(midtermValue) + parseFloat(finalsValue)) / 3;
+            const finalGrade = roundToNearestGrade(avgGrade);
+            const newStatus = (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
+            
+            if (finalGrade !== parseFloat(currentFinalGrades)) {
+                description += `\nFinal Grade: ${currentFinalGrades} → ${finalGrade.toFixed(2)}`;
+                description += ` Status: ${currentStatus} → ${newStatus}`;
+            }
+        }
+    }
+    
+    // Only append action_type and description if there were actual changes
+    if (description) {
+        formData.append('action_type', 'edit');
+    }
+}
+
+// Only append description if it exists (meaning there were changes to log)
+if (description) {
+    formData.append('description', description);
+}
+
+    // Helper functions
+    function calculateFinalGrade(prelim, midterm, finals) {
+        if (prelim && midterm && finals) {
+            const avgGrade = (parseFloat(prelim) + parseFloat(midterm) + parseFloat(finals)) / 3;
+            return roundToNearestGrade(avgGrade);
+        }
+        return null;
+    }
+
+    function calculateStatus(finalGrade) {
+        if (finalGrade) {
+            return (finalGrade >= 1 && finalGrade <= 3) ? 'PASSED' : 'FAILED';
+        }
+        return '';
     }
 
     // Send the request to the server
@@ -1124,32 +1344,20 @@ document.getElementById('editForm').addEventListener('submit', function(event) {
         }
         
         if (data.success) {
-            const row = document.querySelector(`tr[data-grades-id="${gradesId}"]`);
             if (row) {
-                if (hasNoGrades && status) {
-                    // Update only status
-                    row.querySelector('.status').textContent = status;
-                    row.querySelector('.prelim').textContent = '';
-                    row.querySelector('.midterm').textContent = '';
-                    row.querySelector('.finals').textContent = '';
-                    row.querySelector('.final_grades').textContent = '';
-                } else {
-                    // Update grades and status
-                    row.querySelector('.prelim').textContent = prelimValue || '';
-                    row.querySelector('.midterm').textContent = midtermValue || '';
-                    row.querySelector('.finals').textContent = finalsValue || '';
-                    if (data.final_grades) {
-                        row.querySelector('.final_grades').textContent = 
-                            parseFloat(data.final_grades).toFixed(2);
-                    }
-                    if (data.status) {
-                        row.querySelector('.status').textContent = data.status;
-                    }
+                row.querySelector('.prelim').textContent = prelimValue || '';
+                row.querySelector('.midterm').textContent = midtermValue || '';
+                row.querySelector('.finals').textContent = finalsValue || '';
+                if (data.final_grades) {
+                    row.querySelector('.final_grades').textContent = 
+                        parseFloat(data.final_grades).toFixed(2);
+                }
+                if (statusValue || data.status) {
+                    row.querySelector('.status').textContent = statusValue || data.status;
                 }
             }
             document.getElementById('editModal').close();
-            alert('Update successful!');
-            // Optionally reload the page to ensure data consistency
+            alert(isAdd ? 'Grades added successfully!' : 'Grades updated successfully!');
             window.location.reload();
         } else {
             throw new Error(data.message || 'Update failed');
@@ -1658,6 +1866,18 @@ function exportToCSV() {
         }
     }
 
+    // After successful export, log the activity
+    fetch('log_export.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'CSV',
+            description: 'Exported student grades to CSV format'
+        })
+    });
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -1756,6 +1976,18 @@ function exportToWord() {
         </html>
     `;
 
+    // After successful export, log the activity
+    fetch('log_export.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            type: 'WORD',
+            description: 'Exported student grades to Word format'
+        })
+    });
+
     const blob = new Blob([html], {
         type: 'application/msword'
     });
@@ -1766,6 +1998,13 @@ function exportToWord() {
     link.click();
     document.body.removeChild(link);
 }
+
+
+
+
+
+
+
 
 
 

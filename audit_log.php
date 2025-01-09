@@ -615,7 +615,7 @@ dialog::backdrop {
 
  /* PAGINATION OF THE TABLE JS */
 let currentPage = 1;
-let rowsPerPage = 5;
+let rowsPerPage = 50;
 
 function paginateTable() {
     let table = document.getElementById("editableTable");
