@@ -10,6 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $school_id = $_GET['school_id'];
     $first_name = $_POST['first_name'];
     $last_name = $_POST['last_name'];
+    $mi = $_POST['mi'];
+    $suffix = $_POST['suffix'];
     $gender = $_POST['gender'];
     $semester = $_POST['semester'];
     $nstp = $_POST['nstp'];
@@ -27,6 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql = "UPDATE tbl_cwts SET 
             first_name = ?, 
             last_name = ?, 
+            mi = ?,
+            suffix = ?,
             gender = ?, 
             semester = ?, 
             nstp = ?, 
@@ -42,9 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $statement->bind_param("ssssssss", 
+    $statement->bind_param("ssssssssss", 
         $first_name, 
-        $last_name, 
+        $last_name,
+        $mi,
+        $suffix, 
         $gender, 
         $semester, 
         $nstp, 
@@ -73,6 +79,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if ($old_data['last_name'] !== $last_name) {
                     $changes[] = "Last Name: {$old_data['last_name']} → {$last_name}";
+                }
+                if ($old_data['mi'] !== $mi) {
+                    $changes[] = "MI: {$old_data['mi']} → {$mi}";
+                }
+                if ($old_data['suffix'] !== $suffix) {
+                    $changes[] = "Suffix: {$old_data['suffix']} → {$suffix}";
                 }
                 if ($old_data['gender'] !== $gender) {
                     $changes[] = "Gender: {$old_data['gender']} → {$gender}";

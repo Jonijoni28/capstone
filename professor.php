@@ -117,8 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="slsulogo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>NSTP Homepage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
         integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -135,11 +136,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <div class="header">
-        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
-        <h1>Southern Luzon State University</h1>
-        <p>National Service Training Program</p>
-    </div>
 
 
     <input type="checkbox" id="check">
@@ -175,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <ul>
             <li><a href="professor.php"><i class="fa-solid fa-house"></i></i>Homepage</a></li>
             <li><a href="inputgrades.php"><i class="fas fa-qrcode"></i>Input Grades</a></li>
-            <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+            <li><a href="#" onclick="confirmLogout()" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
             </form>
         </ul>
     </div>
@@ -258,10 +254,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
  body {
             background-color: white;
-            /* Set background to white */
-            background-image: none;
-            /* Ensure no background image is applied */
             margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            min-height: 100vh;
+            width: 100%;
         }
 
         /* Preloader styles */
@@ -390,60 +387,99 @@ ul li:hover a.logout-link {
 }
 
 /* Sidebar toggle button */
+
 #check {
-    display: none;
-}
+            display: none;
+        }
 
-/* Styling for the open button */
-label #btn,
-label #cancel {
-    position: absolute;
-    cursor: pointer;
-    background: #0a3a20;
-    border-radius: 3px;
-}
+        /* Styling for the open button */
+        label #btn,
+        label #cancel {
+            position: absolute;
+            cursor: pointer;
+            background: #0a3a20;
+            border-radius: 3px;
+            z-index: 1001;
+        }
 
-/* Button to open the sidebar */
-label #btn {
-    left: 20px;
-    top: 130px;
-    font-size: 35px;
-    color: white;
-    padding: 6px 12px;
-    transition: all .5s;
-}
+        /* Button to open the sidebar */
+        label #btn {
+            left: 20px;
+            top: 130px;
+            font-size: 35px;
+            color: white;
+            padding: 6px 12px;
+            transition: all .5s;
+        }
 
-/* Button to close the sidebar */
-label #cancel {
-    z-index: 1111;
-    left: -195px;
-    top: 170px;
-    font-size: 30px;
-    color: #fff;
-    padding: 4px 9px;
+        /* Button to close the sidebar */
+        label #cancel {
+            z-index: 1111;
+            left: -195px;
+            top: 170px;
+            font-size: 30px;
+            color: #fff;
+            padding: 4px 9px;
+            transition: all .5s ease;
+        }
+
+        /* Toggle: When checked, open the sidebar */
+        #check:checked~.sidebar {
+            left: 0;
+        }
+
+        /* Hide the open button and show the close button when the sidebar is open */
+        #check:checked~label #btn {
+            left: 200px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Move the close button when the sidebar is open */
+        #check:checked~label #cancel {
+            left: 195px;
+        }
+
+        /* Ensure the content shifts when the sidebar is open */
+        #check:checked~body {
+            margin-left: 250px;
+        }
+
+        /* Create a wrapper for all content except sidebar */
+.content-wrapper {
     transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
-/* Toggle: When checked, open the sidebar */
-#check:checked~.sidebar {
-    left: 0;
+/* Adjust the content when sidebar is open */
+#check:checked ~ .content-wrapper {
+    margin-left: 0;
 }
 
-/* Hide the open button and show the close button when the sidebar is open */
-#check:checked~label #btn {
-    left: 250px;
-    opacity: 0;
-    pointer-events: none;
+/* Remove the existing body margin rule if present */
+#check:checked ~ body {
+    margin-left: 0;
 }
 
-/* Move the close button when the sidebar is open */
-#check:checked~label #cancel {
-    left: 195px;
+/* Ensure header stays full width but shifts with content */
+.header {
+    overflow: hidden;
+    background-color: #0a3a20;
+    color: white;
+    width: 100%;
+    position: relative;
+    transition: all .5s ease;
+    box-sizing: border-box;
 }
 
-/* Ensure the content shifts when the sidebar is open */
-#check:checked~body {
+#check:checked ~ .content-wrapper .header {
     margin-left: 250px;
+    width: calc(100% - 250px);
 }
 
 .user-avatar {
@@ -694,35 +730,38 @@ h2{
             justify-content: space-between;
         }
 
-        .cancel-btn,
-        .upload-img-btn,
-        .upload-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+.cancel-btn,
+.upload-btn {
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
 
-        .cancel-btn {
-            background-color: #f44336;
-            color: white;
-        }
+.cancel-btn {
+    background-color: #f44336;
+    color: white;
+}
 
-        .upload-img-btn {
-            background-color: #2196F3;
-            color: white;
-        }
+.upload-btn {
+    top: 840px;
+    left: 185px;
+    position: absolute;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+}
 
-        .upload-btn {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .cancel-btn:hover,
-        .upload-img-btn:hover,
-        .upload-btn:hover {
-            opacity: 0.9;
-        }
+.cancel-btn:hover,
+.upload-btn:hover {
+    opacity: 0.9;
+}
 
         /* Show popup */
         .popup.show {
@@ -1117,11 +1156,120 @@ h2{
             margin: 30px 0;
             font-size: 0.9em;
             color: #888;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            bottom: 0;
         }
+
+        
+        
+@media screen and (max-width: 2120px){
+
+.upload-btn {
+    top: 830px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+@media screen and (max-width: 1800px){
+
+.upload-btn {
+    top: 430px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+
+
+
+@media screen and (max-width: 1710px){
+
+.upload-btn {
+    top: 830px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+@media screen and (max-width: 1600px){
+
+.upload-btn {
+    top: 840px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+@media screen and (max-width: 1500px){
+
+.upload-btn {
+    top: 825px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
     </style>
     </head>
 
     <body>
+
+
+<div class="content-wrapper">
+    <div class="header">
+        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
+        <h1>Southern Luzon State University</h1>
+        <p>National Service Training Program</p>
+    </div>
+</div>
 
         <!-- SLIDESHOW START -->
 
@@ -1240,10 +1388,10 @@ h2{
                     </div>
                 </div>
                 <div class="card">
-                    <img src="nstppres.png" alt="PROF. ANTONIO V. ROMANA">
+                    <img src="sheeesh.png" alt="PROF. EDSEL V. PARAON">
                     <div class="card-body">
-                        <p>PROF. ANTONIO<br>V. ROMANA</p>
-                        <p>CWTS - President</p>
+                        <p>PROF. EDSEL<br>V. PARAON</p>
+                        <p>OIC- CWTS Director</p>
                     </div>
                 </div>
             </div>
@@ -1255,12 +1403,12 @@ h2{
             <div class="description">
                 <div>
                     <h3 class="text-center">ROTC</h3>
-                    <p>“Reserve Officers' Training Corps (ROTC)” is a program institutionalized under sections 38 and 39 of Republic Act No. 7077 designed to provide military training to tertiary level students in order to motivate, train, organize and mobilize them for national defense preparedness.</p>
+                    <p>"Reserve Officers' Training Corps (ROTC)" is a program institutionalized under sections 38 and 39 of Republic Act No. 7077 designed to provide military training to tertiary level students in order to motivate, train, organize and mobilize them for national defense preparedness.</p>
                 </div>
                 <hr>
                 <div>
                     <h3 class="text-center">CWTS</h3>
-                    <p>The course mandated by Republic Act No. 9163, otherwise known as the National Service Training Act of 2001, aims to enhance the civic consciousness of the students “by developing the ethics of service and patriotism” while undergoing Civic Welfare Training Service (CWTS).</p>
+                    <p>The course mandated by Republic Act No. 9163, otherwise known as the National Service Training Act of 2001, aims to enhance the civic consciousness of the students "by developing the ethics of service and patriotism" while undergoing Civic Welfare Training Service (CWTS).</p>
                 </div>
             </div>
         </section>
@@ -1560,7 +1708,11 @@ h2{
             }, 20);
         });
 
-
+        function confirmLogout() {
+            if (confirm("Do you want to Logout?")) {
+                window.location.href = "logout.php";
+            }
+        }
         
         </script>
 

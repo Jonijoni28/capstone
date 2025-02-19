@@ -43,26 +43,47 @@ function deleteStudent(button) {
  * @param {HTMLButtonElement} button - The button element clicked.
  */
 function editStudentInfo(button) {
-  /**@type {HTMLTableRowElement} */
-  const row = button.parentElement.parentElement;
-  /** @type {string} */
+  // Get the closest tr element (row) from the clicked button
+  const row = button.closest('tr');
+  if (!row) {
+    console.error('Could not find parent row');
+    return;
+  }
+
+  // Get the data-id attribute from the row
   const dataId = row.getAttribute("data-id");
+  if (!dataId) {
+    console.error('No data-id found on row');
+    return;
+  }
 
-  document.getElementById('editSchoolId').value = dataId;
-  document.getElementById('editFirstName').value = row.children[2].textContent;
-  document.getElementById('editLastName').value = row.children[3].textContent;
-  document.getElementById('editGender').value = row.children[4].textContent;
-  document.getElementById('editSemester').value = row.children[5].textContent;
-  document.getElementById('editNSTP').value = row.children[6].textContent;
-  document.getElementById('editDepartment').value = row.children[7].textContent;
-  document.getElementById('editCourse').value = row.children[8].textContent;
-
+  // Get the edit modal
   const editModal = document.getElementById('editModal');
+  if (!editModal) {
+    console.error('Edit modal not found');
+    return;
+  }
+
+  // Populate form fields with correct cell indices
+  // Note: cells[0] is checkbox, so data starts at index 1
+  document.getElementById('editSchoolId').value = row.cells[1].textContent.trim();  // School ID
+  document.getElementById('editFirstName').value = row.cells[2].textContent.trim(); // First Name
+  document.getElementById('editLastName').value = row.cells[3].textContent.trim();  // Last Name
+  document.getElementById('editMI').value = row.cells[4].textContent.trim();        // MI
+  document.getElementById('editSuffix').value = row.cells[5].textContent.trim();    // Suffix
+  document.getElementById('editGender').value = row.cells[6].textContent.trim();    // Gender
+  document.getElementById('editSemester').value = row.cells[7].textContent.trim();  // Semester
+  document.getElementById('editNSTP').value = row.cells[8].textContent.trim();      // NSTP
+  document.getElementById('editDepartment').value = row.cells[9].textContent.trim(); // College
+  document.getElementById('editCourse').value = row.cells[10].textContent.trim();    // Program
+
+  // Show the modal
   editModal.showModal();
 
+  // Set up form submission handler
   document.getElementById('editForm').onsubmit = function (event) {
     event.preventDefault();
-    saveEdit(dataId, row); // Pass the row to saveEdit function
+    saveEdit(dataId, row);
   };
 }
 
@@ -110,14 +131,17 @@ function saveEdit(dataId, row) {
  * @param {HTMLTableRowElement} row - The table row to be updated.
  */
 function updateTableRow(row) {
-  row.children[1].textContent = document.getElementById('editSchoolId').value;
-  row.children[2].textContent = document.getElementById('editFirstName').value;
-  row.children[3].textContent = document.getElementById('editLastName').value;
-  row.children[4].textContent = document.getElementById('editGender').value;
-  row.children[5].textContent = document.getElementById('editSemester').value;
-  row.children[6].textContent = document.getElementById('editNSTP').value;
-  row.children[7].textContent = document.getElementById('editDepartment').value;
-  row.children[8].textContent = document.getElementById('editCourse').value;
+  // Update each cell with the new values
+  row.cells[1].textContent = document.getElementById('editSchoolId').value;
+  row.cells[2].textContent = document.getElementById('editFirstName').value;
+  row.cells[3].textContent = document.getElementById('editLastName').value;
+  row.cells[4].textContent = document.getElementById('editMI').value;
+  row.cells[5].textContent = document.getElementById('editSuffix').value;
+  row.cells[6].textContent = document.getElementById('editGender').value;
+  row.cells[7].textContent = document.getElementById('editSemester').value;
+  row.cells[8].textContent = document.getElementById('editNSTP').value;
+  row.cells[9].textContent = document.getElementById('editDepartment').value;
+  row.cells[10].textContent = document.getElementById('editCourse').value;
 }
 
 /**
@@ -129,30 +153,51 @@ function addTableRow(newData) {
   const newRow = document.createElement('tr');
   newRow.setAttribute('data-id', newData.school_id);
 
+  // Create checkbox cell
+  const checkboxCell = document.createElement('td');
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.className = 'selectStudentCheckbox';
+  checkbox.onclick = function() { toggleSelectionActions(); };
+  checkboxCell.appendChild(checkbox);
+  newRow.appendChild(checkboxCell);
+
   // Create table data cells for each column
-  const columns = ['school_id', 'first_name', 'last_name', 'gender', 'semester', 'nstp', 'department', 'course'];
+  const columns = ['school_id', 'first_name', 'last_name', 'mi', 'suffix', 'gender', 'semester', 'nstp', 'department', 'course'];
   columns.forEach(column => {
     const cell = document.createElement('td');
-    cell.textContent = newData[column];
+    cell.textContent = newData[column] || ''; // Add empty string fallback for null values
     newRow.appendChild(cell);
   });
 
   // Create action buttons cell
   const actionCell = document.createElement('td');
+  
+  // Edit button
   const editButton = document.createElement('button');
-  editButton.textContent = 'Edit';
   editButton.className = 'editButton';
+  editButton.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
   editButton.addEventListener('click', function () {
     editStudentInfo(this);
   });
+  
+  // Delete button
   const deleteButton = document.createElement('button');
-  deleteButton.textContent = 'Delete';
   deleteButton.className = 'deleteButton';
+  deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
   deleteButton.addEventListener('click', function () {
     deleteStudent(this);
   });
+  
+  // Assign button
+  const assignButton = document.createElement('button');
+  assignButton.className = 'assignButton';
+  assignButton.innerHTML = '<i class="fa-solid fa-user-plus"></i>';
+  assignButton.onclick = checkAndOpenConfirmPopup;
+  
   actionCell.appendChild(editButton);
   actionCell.appendChild(deleteButton);
+  actionCell.appendChild(assignButton);
   newRow.appendChild(actionCell);
 
   // Append the new row to the table body
@@ -190,7 +235,7 @@ function submitAddForm() {
     })
     .catch(error => {
       console.error('There was a problem with your fetch operation:', error);
-      alert('An error occurred while adding the student');
+      alert('Error: Student ID is already added to the system');
     });
 }
 

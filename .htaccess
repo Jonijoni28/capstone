@@ -1,0 +1,30 @@
+RewriteEngine On
+
+# Handle faculty login specifically
+RewriteRule ^faculty_login/?$ faculty_login.php [L,QSA]
+RewriteRule ^faculty/?$ faculty.php [L,QSA]
+
+# Handle all POST, PUT, DELETE requests normally
+RewriteCond %{REQUEST_METHOD} ^(POST|PUT|DELETE)$ [NC]
+RewriteRule ^ %{REQUEST_URI} [L,QSA]
+
+# Remove .php extension from URLs
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.*)$ $1.php [L]
+
+# Redirect .php URLs to extensionless URLs
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.php [NC]
+RewriteRule ^ %1 [R=301,L,NE]
+
+# Handle specific routes
+RewriteRule ^forgot_password/?$ forgot_password.php [L]
+RewriteRule ^process_reset_password/?$ process_reset_password.php [L]
+RewriteRule ^reset_password/?$ reset_password.php [L]
+
+# Handle CRUD operation endpoints
+RewriteRule ^delete_student\.php$ delete_student.php [L]
+RewriteRule ^edit_student_info\.php$ edit_student_info.php [L]
+RewriteRule ^add_student_info\.php$ add_student_info.php [L]
+RewriteRule ^transfer_students\.php$ transfer_students.php [L]
+RewriteRule ^update_user_type\.php$ update_user_type.php [L]

@@ -2,51 +2,38 @@
 require_once ("db_conn.php");
 
 $conn = connect_db();
+$selectedSemester = isset($_GET['semester']) ? $_GET['semester'] : '1st';
 $sql = "SELECT 
     c.school_id, 
     c.first_name, 
     c.last_name, 
-    c.gender,
+    c.mi, 
+    c.suffix, 
+    c.gender, 
     c.semester,
-    c.nstp,
-    c.department,
-    c.course,
+    c.nstp, 
+    c.department, 
+    c.course, 
     c.instructor,
-    COALESCE(g.grades_id, 0) AS grades_id,
-    g.prelim, 
-    g.midterm, 
+    u.first_name as instructor_fname, 
+    u.last_name as instructor_lname,
+    g.grades_id,
+    g.prelim,
+    g.midterm,
     g.finals,
-    g.status,
-    CASE 
-    WHEN g.prelim IS NOT NULL AND g.midterm IS NOT NULL AND g.finals IS NOT NULL 
-    THEN (
-        SELECT 
-            CASE
-                WHEN AVG_GRADE <= 1.125 THEN 1.000
-                WHEN AVG_GRADE <= 1.375 THEN 1.250
-                WHEN AVG_GRADE <= 1.625 THEN 1.500
-                WHEN AVG_GRADE <= 1.875 THEN 1.750
-                WHEN AVG_GRADE <= 2.125 THEN 2.000
-                WHEN AVG_GRADE <= 2.375 THEN 2.250
-                WHEN AVG_GRADE <= 2.625 THEN 2.500
-                WHEN AVG_GRADE <= 2.875 THEN 2.750
-                WHEN AVG_GRADE <= 3.125 THEN 3.000
-                WHEN AVG_GRADE <= 4.125 THEN 4.000
-                ELSE 5.000
-            END
-        FROM (
-            SELECT (g.prelim + g.midterm + g.finals) / 3 AS AVG_GRADE
-        ) t
-    )
-    ELSE NULL 
-END AS final_grades
-FROM 
-    tbl_cwts c
-LEFT JOIN 
-    tbl_students_grades g ON c.school_id = g.school_id";
+    g.final_grades,
+    g.status
+FROM tbl_cwts c
+LEFT JOIN tbl_students_grades g ON c.school_id = g.school_id AND g.semester = ?
+LEFT JOIN registration r ON r.username = c.instructor
+LEFT JOIN user_info u ON u.registration_id = r.id
+ORDER BY c.last_name, c.first_name";
 
-// Execute the query and store the result
-$results = $conn->query($sql);
+// Use prepared statement
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("s", $selectedSemester);
+$stmt->execute();
+$results = $stmt->get_result();
 
 // Check if query was successful
 if (!$results) {
@@ -56,15 +43,38 @@ if (!$results) {
 <?php
 // ... existing PHP code ...
 
-// Fetch distinct School IDs and Semesters for the filters
-$schoolIds = $conn->query("SELECT DISTINCT SUBSTRING(school_id, 1, 3) AS school_prefix FROM tbl_cwts");
-$semesters = $conn->query("SELECT DISTINCT semester FROM tbl_cwts");
-$genders = $conn->query("SELECT DISTINCT gender FROM tbl_cwts");
-$nstps = $conn->query("SELECT DISTINCT nstp FROM tbl_cwts");
-$colleges = $conn->query("SELECT DISTINCT department FROM tbl_cwts");
-$programs = $conn->query("SELECT DISTINCT course FROM tbl_cwts");
-$instructors = $conn->query("SELECT DISTINCT instructor FROM tbl_cwts");
-$statuses = $conn->query("SELECT DISTINCT status FROM tbl_students_grades");
+// Fetch distinct values for filters, all with alphabetical ordering
+$schoolIds = $conn->query("SELECT DISTINCT 
+    SUBSTRING(school_id, 1, 3) AS school_prefix,
+    CASE 
+        WHEN SUBSTRING(school_id, 1, 2) REGEXP '^[0-9]+$' 
+        THEN CONCAT('20', SUBSTRING(school_id, 1, 2))
+        ELSE SUBSTRING(school_id, 1, 3)
+    END AS display_year
+    FROM tbl_cwts 
+    ORDER BY school_prefix DESC"); // Keep descending order for years
+
+$semesters = $conn->query("SELECT DISTINCT semester FROM tbl_cwts ORDER BY semester ASC");
+
+$genders = $conn->query("SELECT DISTINCT gender FROM tbl_cwts ORDER BY gender ASC");
+
+$nstps = $conn->query("SELECT DISTINCT nstp FROM tbl_cwts ORDER BY nstp ASC");
+
+$colleges = $conn->query("SELECT DISTINCT department FROM tbl_cwts ORDER BY department ASC");
+
+$programs = $conn->query("SELECT DISTINCT course FROM tbl_cwts ORDER BY course ASC");
+
+$instructors = $conn->query("SELECT DISTINCT 
+    u.first_name as instructor_fname, 
+    u.last_name as instructor_lname,
+    r.username as instructor_username
+    FROM tbl_cwts c
+    JOIN registration r ON r.username = c.instructor
+    JOIN user_info u ON u.registration_id = r.id
+    WHERE r.user_type = 'instructor'
+    ORDER BY u.last_name, u.first_name"); // Sort by last name, then first name
+
+$statuses = $conn->query("SELECT DISTINCT status FROM tbl_students_grades ORDER BY status ASC");
 ?>
 
 
@@ -101,8 +111,9 @@ if ($user_id) {
 
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="slsulogo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <title>View Grades</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
@@ -113,12 +124,6 @@ if ($user_id) {
 <body>
 
 
-
-  <div class="header">
-    <a href="professor.php"><img src="slsulogo.png" class="headlogo"></a>
-    <h1>Southern Luzon State University</h1>
-    <p>National Service Training Program</p>
-  </div>
 
     <!-- Filter Button -->
     <button class="filter-button" onclick="openFilterModal()">
@@ -134,7 +139,12 @@ if ($user_id) {
     <select id="schoolIdFilter">
       <option value="">All</option>
       <?php while ($row = $schoolIds->fetch_assoc()): ?>
-        <option value="<?php echo $row['school_prefix']; ?>"><?php echo $row['school_prefix']; ?></option>
+        <option value="<?php echo $row['school_prefix']; ?>">
+            <?php 
+            // Display the converted year but keep the original value
+            echo $row['display_year']; 
+            ?>
+        </option>
       <?php endwhile; ?>
     </select>
 
@@ -182,7 +192,7 @@ if ($user_id) {
     <select id="instructorFilter">
       <option value="">All</option>
       <?php while ($row = $instructors->fetch_assoc()): ?>
-        <option value="<?php echo $row['instructor']; ?>"><?php echo $row['instructor']; ?></option>
+        <option value="<?php echo $row['instructor_fname'] . ' ' . $row['instructor_lname']; ?>"><?php echo $row['instructor_fname'] . ' ' . $row['instructor_lname']; ?></option>
       <?php endwhile; ?>
     </select>
 
@@ -200,12 +210,22 @@ if ($user_id) {
   </form>
 </dialog>
 
+<style>
+/* Center all table headers and cells */
+#editableTable th, 
+#editableTable td {
+    text-align: center !important;
+}
+</style>
+
 <table id="editableTable" class="table">
   <thead>
     <tr>
       <th>School ID</th>
-      <th>First Name</th>
       <th>Last Name</th>
+      <th>First Name</th>
+      <th>MI</th>
+      <th>Suffix</th>
       <th>Gender</th>
       <th>Semester</th>
       <th>NSTP</th>
@@ -222,21 +242,41 @@ if ($user_id) {
   <tbody id="tableBody">
     <?php
     while ($rows = $results->fetch_assoc()) {
-      echo "<tr data-grades-id='{$rows["grades_id"]}' data-school-id='{$rows["school_id"]}' data-semester='{$rows["semester"]}' data-gender='{$rows["gender"]}' data-nstp='{$rows["nstp"]}' data-college='{$rows["department"]}' data-program='{$rows["course"]}' data-instructor='{$rows["instructor"]}' data-status='{$rows["status"]}'>";
-      echo "<td>{$rows["school_id"]}</td>";
-      echo "<td>{$rows["first_name"]}</td>";
-      echo "<td>{$rows["last_name"]}</td>";
-      echo "<td>{$rows["gender"]}</td>";
-      echo "<td>{$rows["semester"]}</td>";
-      echo "<td>{$rows["nstp"]}</td>";
-      echo "<td>{$rows["department"]}</td>";
-      echo "<td>{$rows["course"]}</td>";
-      echo "<td>" . ($rows["instructor"] ? $rows["instructor"] : "Not Assigned") . "</td>";
-      echo "<td>{$rows["prelim"]}</td>";
-      echo "<td>{$rows["midterm"]}</td>";
-      echo "<td>{$rows["finals"]}</td>";
-      echo "<td class='final_grades'>" . ($rows["final_grades"] !== null ? sprintf("%.2f", $rows["final_grades"]) : '') . "</td>";
-      echo "<td>{$rows["status"]}</td>";
+      echo "<tr data-grades-id='" . (isset($rows["grades_id"]) ? $rows["grades_id"] : '') . "' 
+                data-school-id='{$rows["school_id"]}' 
+                data-semester='{$rows["semester"]}' 
+                data-gender='{$rows["gender"]}' 
+                data-nstp='{$rows["nstp"]}' 
+                data-college='{$rows["department"]}' 
+                data-program='{$rows["course"]}' 
+                data-instructor='{$rows["instructor_fname"]} {$rows["instructor_lname"]}' 
+                data-status='" . (isset($rows["status"]) ? $rows["status"] : '') . "'>";
+      echo "<td style='text-align: center;'>{$rows["school_id"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["last_name"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["first_name"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["mi"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["suffix"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["gender"]}</td>";
+      echo "<td style='text-align: center;'>$selectedSemester</td>";
+      echo "<td style='text-align: center;'>{$rows["nstp"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["department"]}</td>";
+      echo "<td style='text-align: center;'>{$rows["course"]}</td>";
+      
+      // Format instructor name
+      $instructor_name = '';
+      if (!empty($rows['instructor_fname']) && !empty($rows['instructor_lname'])) {
+          $instructor_name = $rows['instructor_fname'] . ' ' . $rows['instructor_lname'];
+      } else if (!empty($rows['instructor'])) {
+          // If we have instructor username but no name mapping, show the username
+          $instructor_name = $rows['instructor'];
+      }
+      
+      echo "<td style='text-align: center;'>" . (!empty($instructor_name) ? htmlspecialchars($instructor_name) : "Not Assigned") . "</td>";
+      echo "<td style='text-align: center;'>" . (isset($rows["prelim"]) ? $rows["prelim"] : '') . "</td>";
+      echo "<td style='text-align: center;'>" . (isset($rows["midterm"]) ? $rows["midterm"] : '') . "</td>";
+      echo "<td style='text-align: center;'>" . (isset($rows["finals"]) ? $rows["finals"] : '') . "</td>";
+      echo "<td class='final_grades' style='text-align: center; font-weight: bold;'>" . (isset($rows["final_grades"]) && $rows["final_grades"] !== null ? sprintf("%.2f", $rows["final_grades"]) : '') . "</td>";
+      echo "<td style='text-align: center;'>" . (isset($rows["status"]) ? $rows["status"] : '') . "</td>";
       echo "</tr>";
     }
     ?>
@@ -260,6 +300,15 @@ if ($user_id) {
         <button type="button" onclick="closeExportModal()">Cancel</button>
     </form>
 </dialog>
+
+
+<!-- Add semester selector -->
+<div class="semester-select">
+    <select id="semesterSelect" onchange="changeSemester()">
+        <option value="1st" <?php echo $selectedSemester === '1st' ? 'selected' : ''; ?>>1st Semester</option>
+        <option value="2nd" <?php echo $selectedSemester === '2nd' ? 'selected' : ''; ?>>2nd Semester</option>
+    </select>
+</div>
 
 
   <input type="checkbox" id="check">
@@ -304,18 +353,23 @@ if ($user_id) {
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
         <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
-        <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+        <li><a href="#" onclick="confirmLogout()" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
     </ul>
 </div>
 
 
 
 <style>
-  body {
-    background: url('backgroundss.jpg');
-    background-position: center;
-
-  }
+body {
+    background: url('backgroundss.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
   /* Sidebar */
 .sidebar {
     position: fixed;
@@ -375,60 +429,91 @@ ul li:hover a.logout-link {
 }
 
 /* Sidebar toggle button */
-#check {
-    display: none;
-}
+        /* Sidebar toggle button */
+        #check {
+            display: none;
+        }
 
-/* Styling for the open button */
-label #btn,
-label #cancel {
-    position: absolute;
-    cursor: pointer;
-    background: #0a3a20;
-    border-radius: 3px;
-}
+        /* Styling for the open button */
+        label #btn,
+        label #cancel {
+            position: absolute;
+            cursor: pointer;
+            background: #0a3a20;
+            border-radius: 3px;
+            z-index: 1001;
+        }
 
-/* Button to open the sidebar */
-label #btn {
-    left: 20px;
-    top: 130px;
-    font-size: 35px;
-    color: white;
-    padding: 6px 12px;
-    transition: all .5s;
-}
+        /* Button to open the sidebar */
+        label #btn {
+            left: 20px;
+            top: 130px;
+            font-size: 35px;
+            color: white;
+            padding: 6px 12px;
+            transition: all .5s;
+        }
 
-/* Button to close the sidebar */
-label #cancel {
-    z-index: 1111;
-    left: -195px;
-    top: 170px;
-    font-size: 30px;
-    color: #fff;
-    padding: 4px 9px;
+        /* Button to close the sidebar */
+        label #cancel {
+            z-index: 1111;
+            left: -195px;
+            top: 170px;
+            font-size: 30px;
+            color: #fff;
+            padding: 4px 9px;
+            transition: all .5s ease;
+        }
+
+        /* Toggle: When checked, open the sidebar */
+        #check:checked~.sidebar {
+            left: 0;
+        }
+
+        /* Hide the open button and show the close button when the sidebar is open */
+        #check:checked~label #btn {
+            left: 200px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Move the close button when the sidebar is open */
+        #check:checked~label #cancel {
+            left: 195px;
+        }
+
+        /* Ensure the content shifts when the sidebar is open */
+        #check:checked~body {
+            margin-left: 250px;
+        }
+
+        /* Create a wrapper for all content except sidebar */
+.content-wrapper {
     transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
 }
 
-/* Toggle: When checked, open the sidebar */
-#check:checked~.sidebar {
-    left: 0;
+/* Adjust the content when sidebar is open */
+#check:checked ~ .content-wrapper {
+    margin-left: 150px;
 }
 
-/* Hide the open button and show the close button when the sidebar is open */
-#check:checked~label #btn {
-    left: 250px;
-    opacity: 0;
-    pointer-events: none;
+/* Remove the existing body margin rule if present */
+#check:checked ~ body {
+    margin-left: 0;
 }
 
-/* Move the close button when the sidebar is open */
-#check:checked~label #cancel {
-    left: 195px;
+/* Ensure header stays full width but shifts with content */
+.header {
+    width: 100%;
+    transition: margin-left .5s ease;
 }
 
-/* Ensure the content shifts when the sidebar is open */
-#check:checked~body {
-    margin-left: 250px;
+#check:checked ~ .content-wrapper .header {
+    margin-left: 100px;
 }
 
 .user-avatar {
@@ -699,8 +784,417 @@ dialog button[type="button"]:hover {
 }
 
 
+@media screen and (max-width: 2520px){
+
+.filter-button {
+    position: absolute; /* Use absolute positioning */
+    top: 200px; /* Adjust the top position */
+    left: 300px; /* Adjust the right position */
+    /* You can also use left, bottom, etc. */
+}
+.export-container {
+  position:absolute;
+    margin-top: 10px; /* Space between the table and the button */
+    top: 230px; /* Adjust the top position */
+    left: 217px; /* Adjust the right position */
+}
+
+    #searchInput { width: 300px;
+    left: 1700px;
+        
+    }
+    
+.semester-select {
+    position: absolute; 
+    top: 155px; 
+    left: 440px
+}
+
+    .filter-buttons button.apply-filter {
+    background-color: #006400; /* Darker green to match the image */
+    color: white;
+}
+
+.filter-buttons button.apply-filter:hover {
+    background-color: #005400; /* Slightly darker on hover */
+}
+
+.filter-buttons button.reset-filter,
+.filter-buttons button.close-filter {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e0e0e0; /* Light gray for other buttons */
+    color: black;
+}
+
+
+.rows-per-page {
+    position: absolute;
+    top: 160px;
+    left: 335px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.filter-buttons button.apply-filter {
+    background-color: #006400; /* Darker green to match the image */
+    color: white;
+}
+
+.filter-buttons button.apply-filter:hover {
+    background-color: #005400; /* Slightly darker on hover */
+}
+
+.filter-buttons button.reset-filter,
+.filter-buttons button.close-filter {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e0e0e0; /* Light gray for other buttons */
+    color: black;
+}
+
+}
+
+
+@media screen and (max-width: 1920px){
+
+.filter-button {
+    position: absolute; /* Use absolute positioning */
+    top: 200px; /* Adjust the top position */
+    left: 280px; /* Adjust the right position */
+    /* You can also use left, bottom, etc. */
+}
+.export-container {
+  position:absolute;
+    margin-top: 10px; /* Space between the table and the button */
+    top: 230px; /* Adjust the top position */
+    left: 197px; /* Adjust the right position */
+}
+
+    #searchInput { width: 300px;
+    left: 1550px;
+        
+    }
+
+
+.rows-per-page {
+    position: absolute;
+    top: 160px;
+    left: 315px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.semester-select {
+    position: absolute; 
+    top: 155px; 
+    left: 420px
+}
+
+.filter-buttons button.apply-filter {
+    background-color: #006400; /* Darker green to match the image */
+    color: white;
+}
+
+.filter-buttons button.apply-filter:hover {
+    background-color: #005400; /* Slightly darker on hover */
+}
+
+.filter-buttons button.reset-filter,
+.filter-buttons button.close-filter {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e0e0e0; /* Light gray for other buttons */
+    color: black;
+}
+
+}
+
+
+@media screen and (max-width: 1710px){
+
+.filter-button {
+    position: absolute; /* Use absolute positioning */
+    top: 200px; /* Adjust the top position */
+    left: 241px; /* Adjust the right position */
+    /* You can also use left, bottom, etc. */
+}
+.export-container {
+  position:absolute;
+    margin-top: 10px; /* Space between the table and the button */
+    top: 230px; /* Adjust the top position */
+    left: 159px; /* Adjust the right position */
+}
+
+    #searchInput { width: 300px;
+    left: 1350px;
+        
+    }
+
+.rows-per-page {
+    position: absolute;
+    top: 160px;
+    left: 275px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.semester-select {
+    position: absolute; 
+    top: 155px; 
+    left: 380px
+}
+
+.filter-buttons button.apply-filter {
+    background-color: #006400; /* Darker green to match the image */
+    color: white;
+}
+
+.filter-buttons button.apply-filter:hover {
+    background-color: #005400; /* Slightly darker on hover */
+}
+
+.filter-buttons button.reset-filter,
+.filter-buttons button.close-filter {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e0e0e0; /* Light gray for other buttons */
+    color: black;
+}
+
+}
+
+@media screen and (max-width: 1600px){
+
+.filter-button {
+    position: absolute; /* Use absolute positioning */
+    top: 200px; /* Adjust the top position */
+    left: 213px; /* Adjust the right position */
+    /* You can also use left, bottom, etc. */
+}
+.export-container {
+  position:absolute;
+    margin-top: 10px; /* Space between the table and the button */
+    top: 230px; /* Adjust the top position */
+    left: 130px; /* Adjust the right position */
+}
+
+    #searchInput { width: 300px; 
+    left: 1200px; 
+        
+    }
+
+.rows-per-page {
+    position: absolute;
+    top: 160px;
+    left: 240px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+.semester-select {
+    position: absolute; 
+    top: 155px; 
+    left: 350px
+}
+
+.filter-buttons button.apply-filter {
+    background-color: #006400; /* Darker green to match the image */
+    color: white;
+}
+
+.filter-buttons button.apply-filter:hover {
+    background-color: #005400; /* Slightly darker on hover */
+}
+
+.filter-buttons button.reset-filter,
+.filter-buttons button.close-filter {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e0e0e0; /* Light gray for other buttons */
+    color: black;
+}
+
+
+
+}
+
+
+@media screen and (max-width: 1500px){
+
+.filter-button {
+    position: absolute; /* Use absolute positioning */
+    top: 200px; /* Adjust the top position */
+    left: 120px; /* Adjust the right position */
+    /* You can also use left, bottom, etc. */
+}
+.export-container {
+  position:absolute;
+    margin-top: 10px; /* Space between the table and the button */
+    top: 230px; /* Adjust the top position */
+    left: 38px; /* Adjust the right position */
+}
+
+    #searchInput { width: 300px;
+    left: 1050px;
+        
+    }
+
+.rows-per-page {
+    position: absolute;
+    top: 160px;
+    left: 220px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+}
+
+}
+
+/* Add this to your existing CSS styles */
+.filter-buttons {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.filter-buttons button {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.filter-buttons button.apply-filter {
+    background-color: #006400; /* Darker green to match the image */
+    color: white;
+}
+
+.filter-buttons button.apply-filter:hover {
+    background-color: #005400; /* Slightly darker on hover */
+}
+
+.filter-buttons button.reset-filter,
+.filter-buttons button.close-filter {
+    padding: 8px 15px;
+    margin: 0 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #e0e0e0; /* Light gray for other buttons */
+    color: black;
+}
+
+.content-wrapper {
+    transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
+}
+
+/* Adjust the content when sidebar is open */
+#check:checked ~ .content-wrapper {
+    margin-left: 150px;
+}
+
+#check:checked ~ .content-wrapper .header {
+    margin-left: 100px;
+}
+
+
+#check:checked ~ body {
+    margin-left: 0;
+}
+
+
+.select-semester {
+    position: absolute; 
+    top: 150px; 
+    right: 20px;
+    border-radius: 10px;
+}
+
+
+/* Center all table headers and cells */
+#editableTable th, 
+#editableTable td {
+    text-align: center !important;
+}
+
+/* Style for semester selector */
+.semester-select {
+    position: absolute;
+    top: 155px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.select#semesterSelect {
+    top: 10%;
+}
+#semesterSelect {
+    padding: 8px 15px;
+    border: 2px solid #096c37;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.semester-select {
+    display: inline-flex;
+    align-items: center;
+    max-width: 150px; /* Adjust width */
+}
+
+
+#semesterSelect:hover {
+    border-color: #074d27;
+}
+
+#semesterSelect:focus {
+    box-shadow: 0 0 5px rgba(9, 108, 55, 0.3);
+}
+
+/* Adjust filter button position if needed */
+.filter-button {
+    margin-right: 150px; /* Add space between filter button and semester select */
+}
 
 </style>
+
+<div class="content-wrapper">
+  <div class="header">
+    <a href="professor.php"><img src="slsulogo.png" class="headlogo"></a>
+    <h1>Southern Luzon State University</h1>
+    <p>National Service Training Program</p>
+  </div>
+</div>
 
   <div class="search-container">
   <input type="text" id="searchInput" onkeyup="searchRecords()" placeholder="Search by any column...">
@@ -762,6 +1256,9 @@ dialog button[type="button"]:hover {
       <button type="button" onclick="closeAddModal()">Cancel</button>
     </form>
   </dialog>
+  
+  
+
   
 
   <script>
@@ -1004,7 +1501,7 @@ const style = document.createElement('style');
 style.textContent = `
     .ellipsis {
         margin: 0 5px;
-        color: #666;
+        color: #fff;
     }
 `;
 document.head.appendChild(style);
@@ -1108,18 +1605,20 @@ async function exportToCSV() {
         // Create CSV content
         let csvData = [];
         
-        // Get headers - only include School ID, Last Name, First Name, Program
-        csvData.push('"School ID","Last Name","First Name","Program"');
+        // Get headers with updated order
+        csvData.push('"School ID","Last Name","First Name","MI","Suffix","Program"');
         
-        // Get data rows - only include specific columns
+        // Get data rows with updated order
         for (let i = 1; i < rows.length; i++) {
             if (rows[i].style.display !== "none" && rows[i].id !== 'noResultsRow') {
                 const cells = rows[i].getElementsByTagName("td");
                 const rowData = [
                     `"${cells[0].innerText.replace(/"/g, '""')}"`, // School ID
-                    `"${cells[2].innerText.replace(/"/g, '""')}"`, // Last Name
-                    `"${cells[1].innerText.replace(/"/g, '""')}"`, // First Name
-                    `"${cells[7].innerText.replace(/"/g, '""')}"`, // Program
+                    `"${cells[1].innerText.replace(/"/g, '""')}"`, // Last Name (updated index)
+                    `"${cells[2].innerText.replace(/"/g, '""')}"`, // First Name (updated index)
+                    `"${cells[3].innerText.replace(/"/g, '""')}"`, // MI
+                    `"${cells[4].innerText.replace(/"/g, '""')}"`, // Suffix
+                    `"${cells[9].innerText.replace(/"/g, '""')}"`, // Program
                 ];
                 csvData.push(rowData.join(','));
                 visibleRowCount++;
@@ -1171,7 +1670,7 @@ async function exportToWord() {
         
         // Add header row with specific columns
         tableHtml += '<tr style="background-color: #f2f2f2;">';
-        const headers = ['School ID', 'Last Name', 'First Name', 'Program'];
+        const headers = ['School ID', 'Last Name', 'First Name', 'MI', 'Suffix', 'Program'];
         headers.forEach(header => {
             tableHtml += `<th style="padding: 8px; text-align: left;">${header}</th>`;
         });
@@ -1182,16 +1681,27 @@ async function exportToWord() {
             if (rows[i].style.display !== "none" && rows[i].id !== 'noResultsRow') {
                 const cells = rows[i].getElementsByTagName("td");
                 tableHtml += '<tr>';
-                // Add only School ID, Last Name, First Name, Program
                 tableHtml += `<td style="padding: 8px; text-align: left;">${cells[0].innerText}</td>`; // School ID
-                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[2].innerText}</td>`; // Last Name
-                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[1].innerText}</td>`; // First Name
-                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[7].innerText}</td>`; // Program
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[1].innerText}</td>`; // Last Name
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[2].innerText}</td>`; // First Name
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[3].innerText}</td>`; // MI
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[4].innerText}</td>`; // Suffix
+                tableHtml += `<td style="padding: 8px; text-align: left;">${cells[9].innerText}</td>`; // Program
                 tableHtml += '</tr>';
                 visibleRowCount++;
             }
         }
         tableHtml += '</table>';
+
+        // Add header content as in the first image
+        const headerHtml = `
+            <div style="text-align: center; font-family: Arial, sans-serif; margin-bottom: 20px;">
+                <p style="margin: 0;">Republic of the Philippines</p>
+                <p style="margin: 0; font-weight: bold; font-size: 18px;">SOUTHERN LUZON STATE UNIVERSITY</p>
+                <p style="margin: 0;">Masters List</p>
+                <p style="margin: 0;">Subject: The National Service Training Program</p>
+            </div>
+        `;
 
         // Create complete Word document HTML
         const docHtml = `
@@ -1201,7 +1711,8 @@ async function exportToWord() {
                 <title>Student Records</title>
             </head>
             <body>
-                <h2>Student Records</h2>
+                ${headerHtml}
+                <h2 style="text-align: center; font-family: Arial, sans-serif;">Student Records</h2>
                 ${tableHtml}
             </body>
             </html>
@@ -1239,6 +1750,42 @@ async function exportToWord() {
         alert('Failed to export data. Please try again.');
     }
 }
+
+
+function changeSemester() {
+            const semester = document.getElementById('semesterSelect').value;
+            
+            // Update all semester cells in the table
+            const semesterCells = document.querySelectorAll('#editableTable tbody tr td:nth-child(7)');
+            semesterCells.forEach(cell => {
+                cell.textContent = semester;
+            });
+            
+            // Update URL with new semester parameter
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('semester', semester);
+            
+            // Reload the page with the new semester
+            window.location.href = currentUrl.toString();
+        }
+        
+        // Initialize semester selector and table cells on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const semester = urlParams.get('semester') || '1st';
+            
+            // Set the semester dropdown value
+            const semesterSelect = document.getElementById('semesterSelect');
+            if (semesterSelect) {
+                semesterSelect.value = semester;
+            }
+            
+            // Update all semester cells in the table
+            const semesterCells = document.querySelectorAll('#editableTable tbody tr td:nth-child(7)');
+            semesterCells.forEach(cell => {
+                cell.textContent = semester;
+            });
+        });
 
 // Add this function after your applyFilters function
 function resetFilters() {
@@ -1281,8 +1828,15 @@ function resetFilters() {
     paginateTable();
 }
 
+        function confirmLogout() {
+            if (confirm("Do you want to Logout?")) {
+                window.location.href = "logout.php";
+            }
+        }
+
   </script>
   <script src="./crud_input_grades.js"></script>
+
 </body>
 
 </html>

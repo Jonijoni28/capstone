@@ -5,10 +5,10 @@
     if (isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SESSION['user_type'])) {
         // Redirect based on user type
         if ($_SESSION['user_type'] === 'admin') {
-            header("Location: homepage.php");
+            header("Location: homepage");
             exit();
         } elseif ($_SESSION['user_type'] === 'instructor') {
-            header("Location: professor.php");
+            header("Location: professor");
             exit();
         }
     }
@@ -22,6 +22,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="slsulogo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
@@ -33,12 +34,16 @@
         
         }
 
-        body {
-            background-image: url(backgroundss.jpg);
-             height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+body {
+    background: url('backgroundss.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
 
          /* Preloader styles */
          #preloader {
@@ -239,6 +244,78 @@
             margin-top: 10px;
             color: white;
         }
+        
+.captcha-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    position: relative;
+    align-items: center; /* Align items vertically */
+}
+
+.captcha-container {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between captcha image and refresh icon */
+}
+
+.captcha-group img {
+    height: 40px;
+    border-radius: 4px;
+    width: 120px;
+}
+
+.captcha-group input {
+    flex: 1;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+#refresh-captcha {
+    cursor: pointer;
+    font-size: 18px; /* Smaller font size */
+    color: white;
+    padding: 4px; /* Add some padding */
+    display: flex;
+    right: 120px;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+}
+
+#refresh-captcha:hover {
+    color: #28a745;
+}
+
+.remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.remember-forgot label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.forgot-password {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+    color: #white;
+    text-decoration: underline;
+}
     </style>
 </head>
 <body>
@@ -257,29 +334,45 @@
     </div>
 
     <!-- Login Form Section -->
-    <div class="container">
+ <div class="container">
         <div class="login-box">
             <h2>Login Form</h2>
-            <form action="faculty_login.php" method="post">
+            <form action="faculty_login" method="post">
                 <div class="form-group">
-                    <input type="text" id="username" name="username" placeholder="Username" required />
+                    <input type="text" id="username" name="username" placeholder="Username" required 
+                           value="<?php echo isset($_COOKIE['remembered_username']) ? htmlspecialchars($_COOKIE['remembered_username']) : ''; ?>"/>
                     <i class='bx bxs-user'></i>
                 </div>
                 <div class="form-group">
-    <input type="password" id="password" name="password" placeholder="Password" required />
-    <i class='bx bx-show-alt' id="togglePassword"></i>
-</div>
-                <?php
-    if (isset($_SESSION['login_error'])) {
-        echo '<div style="color: white; margin-bottom: 10px;">' . $_SESSION['login_error'] . '</div>';
-        unset($_SESSION['login_error']);
-    }
-?>
-                <div class="remember-forgot">
-                    <label><input type="checkbox"> Remember me</label>
+                    <input type="password" id="password" name="password" placeholder="Password" required
+                           value="<?php echo isset($_COOKIE['remembered_password']) ? htmlspecialchars($_COOKIE['remembered_password']) : ''; ?>"/>
+                    <i class='bx bx-show-alt' id="togglePassword"></i>
                 </div>
-                <input type="submit" class="btn" value="Login" />
-            </form>
+                <!-- Add CAPTCHA -->
+                <div class="form-group captcha-group">
+                    <img src="captcha" id="captcha-image" alt="CAPTCHA">
+                    <i class='bx bx-refresh' id="refresh-captcha"></i>
+                    <input type="text" name="captcha" placeholder="Enter CAPTCHA" required />
+                </div>
+                <?php
+                if (isset($_SESSION['login_error'])) {
+                    echo '<div style="color: #ff3333; background-color: rgba(255, 255, 255, 0.9); 
+                              padding: 10px; border-radius: 5px; margin-bottom: 15px; 
+                              text-align: center; font-weight: bold;">' 
+                         . $_SESSION['login_error'] . 
+                         '</div>';
+                    unset($_SESSION['login_error']);
+                }
+?>
+                    <div class="remember-forgot">
+        <label>
+            <input type="checkbox" name="remember" <?php echo isset($_COOKIE['remembered_username']) ? 'checked' : ''; ?>> 
+            Remember me
+        </label>
+        <a href="forgot_password" class="forgot-password">Forgot Password?</a>
+    </div>
+    <input type="submit" class="btn" value="Login" />
+</form>
             <small>&copy; BSIT Students</small>
         </div>
     </div>
@@ -288,7 +381,6 @@
          // Preloader script
     document.addEventListener('DOMContentLoaded', function() {
         const preloader = document.getElementById('preloader');
-        const mainContent = document.getElementById('main-content');
         const progressBar = document.getElementById('progress-bar');
         let progress = 0;
 
@@ -299,15 +391,26 @@
             if (progress >= 100) {
                 clearInterval(interval);
                 setTimeout(() => {
-                    preloader.style.display = 'none';
-                    mainContent.style.display = 'block';
+                    preloader.style.opacity = '0';
                     setTimeout(() => {
-                        mainContent.classList.add('show');
-                    }, 50);
+                        preloader.style.display = 'none';
+                    }, 500);
                 }, 500);
             }
         }, 20);
     });
+
+    // CAPTCHA refresh functionality
+ document.getElementById('refresh-captcha').addEventListener('click', function(e) {
+        e.stopPropagation(); // Stop event from bubbling
+        document.getElementById('captcha-image').src = 'captcha?' + new Date().getTime();
+        document.querySelector('input[name="captcha"]').value = ''; // Clear the input
+    });
+
+    // Show error messages if any
+    <?php if (isset($_SESSION['login_error'])): ?>
+        alert('<?php echo $_SESSION['login_error']; ?>');
+    <?php endif; ?>
 
     const togglePassword = document.querySelector('#togglePassword');
     const password = document.querySelector('#password');

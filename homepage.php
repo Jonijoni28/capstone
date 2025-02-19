@@ -138,8 +138,9 @@ if (isset($_POST['add_announcement'])) {
 
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="slsulogo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>NSTP Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
         integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -154,12 +155,6 @@ if (isset($_POST['add_announcement'])) {
         <div class="progress-container">
             <div id="progress-bar"></div>
         </div>
-    </div>
-
-    <div class="header">
-        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
-        <h1>Southern Luzon State University</h1>
-        <p>National Service Training Program</p>
     </div>
 
 
@@ -203,7 +198,7 @@ if (isset($_POST['add_announcement'])) {
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
         <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
-        <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+        <li><a href="#" onclick="confirmLogout()" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
     </ul>
 </div>
 
@@ -441,6 +436,7 @@ h5 {
 }
 
         /* Sidebar toggle button */
+ 
         #check {
             display: none;
         }
@@ -452,6 +448,7 @@ h5 {
             cursor: pointer;
             background: #0a3a20;
             border-radius: 3px;
+            z-index: 1001;
         }
 
         /* Button to open the sidebar */
@@ -482,7 +479,7 @@ h5 {
 
         /* Hide the open button and show the close button when the sidebar is open */
         #check:checked~label #btn {
-            left: 250px;
+            left: 200px;
             opacity: 0;
             pointer-events: none;
         }
@@ -496,6 +493,79 @@ h5 {
         #check:checked~body {
             margin-left: 250px;
         }
+
+        /* Create a wrapper for all content except sidebar */
+.content-wrapper {
+    transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
+}
+
+/* Adjust the content when sidebar is open */
+#check:checked ~ .content-wrapper {
+    margin-left: 150px;
+}
+
+/* Remove the existing body margin rule if present */
+#check:checked ~ body {
+    margin-left: 0;
+}
+
+/* Ensure header stays full width but shifts with content */
+.header {
+    overflow: hidden;
+    background-color: #0a3a20;
+    color: white;
+    width: 100%;
+    position: relative;
+    transition: all .5s ease;
+}
+
+/* Adjust the header shift when sidebar opens */
+#check:checked ~ .content-wrapper .header {
+    margin-left: 250px;
+    width: calc(100% - 48px); /* This prevents the header from stretching */
+}
+
+/* Content wrapper styles */
+.content-wrapper {
+    transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
+}
+
+/* Remove any conflicting margin adjustments */
+#check:checked ~ .content-wrapper {
+    margin-left: 0; /* Remove this if it exists */
+}
+
+/* Remove any body margin adjustments */
+#check:checked ~ body {
+    margin-left: 0;
+}
+
+/* Header logo and text styles */
+.headlogo {
+    width: 100px;   
+    height: 100px;   
+    float: left;
+    margin: 10px 20px;
+}
+
+.header h1 {
+    margin-left: 150px;
+    margin-top: 30px;
+}
+
+.header p {
+    margin-left: 150px;
+    font-size: 20px;
+    color: white;
+}
 
         .menu .profile .btn,
         .menu .profile .delete-btn {
@@ -757,24 +827,39 @@ h5 {
             justify-content: space-between;
         }
 
-        .cancel-btn,
-        .upload-img-btn,
-        .upload-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+.cancel-btn,
+.upload-btn {
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
 
-        .cancel-btn {
-            background-color: #f44336;
-            color: white;
-        }
+.cancel-btn {
+    background-color: #f44336;
+    color: white;
+}
 
-        .upload-img-btn {
-            background-color: #2196F3;
-            color: white;
-        }
+.upload-btn {
+    top: 840px;
+    left: 185px;
+    position: absolute;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px;
+}
+
+.cancel-btn:hover,
+.upload-btn:hover {
+    opacity: 0.9;
+}
+
 
         .upload-btn {
             background-color: #4CAF50;
@@ -1181,11 +1266,117 @@ h5 {
             font-size: 0.9em;
             color: #888;
         }
+        
+        
+        
+        
+@media screen and (max-width: 2120px){
+
+.upload-btn {
+    top: 830px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+@media screen and (max-width: 1800px){
+
+.upload-btn {
+    top: 430px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+
+
+
+@media screen and (max-width: 1710px){
+
+.upload-btn {
+    top: 830px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+@media screen and (max-width: 1600px){
+
+.upload-btn {
+    top: 840px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+@media screen and (max-width: 1500px){
+
+.upload-btn {
+    top: 825px;
+    padding: 10px 20px; /* Ensure same padding */
+    font-size: 16px; /* Ensure same font size */
+    height: 40px; /* Set a fixed height */
+    line-height: normal; /* Prevent differences in text alignment */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-block;
+    width: 48%; /* Make both buttons take equal width */
+    text-align: center;
+}
+
+}
+
+
 
     </style>
     </head>
 
     <body>
+
+    <div class="content-wrapper">
+    <div class="header">
+        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
+        <h1>Southern Luzon State University</h1>
+        <p>National Service Training Program</p>
+    </div>
+</div>
 
         <!-- SLIDESHOW START -->
 
@@ -1293,7 +1484,7 @@ h5 {
                     <img src="dator1.png" alt="LTC DR. NILO H. DATOR">
                     <div class="card-body">
                         <p>LTC DR.<br>NILO H. DATOR</p>
-                        <p>OIC - University President</p>
+                        <p>OIC - ROTC Director</p>
                     </div>
                 </div>
                 <div class="card">
@@ -1304,10 +1495,10 @@ h5 {
                     </div>
                 </div>
                 <div class="card">
-                    <img src="nstppres.png" alt="PROF. ANTONIO V. ROMANA">
+                    <img src="sheeesh.png" alt="PROF. EDSEL V. PARAON">
                     <div class="card-body">
-                        <p>PROF. ANTONIO<br>V. ROMANA</p>
-                        <p>CWTS - President</p>
+                        <p>PROF. EDSEL<br>V. PARAON</p>
+                        <p>OIC- CWTS Director</p>
                     </div>
                 </div>
             </div>
@@ -1319,12 +1510,12 @@ h5 {
             <div class="description">
                 <div>
                     <h3 class="text-center">ROTC</h3>
-                    <p>“Reserve Officers' Training Corps (ROTC)” is a program institutionalized under sections 38 and 39 of Republic Act No. 7077 designed to provide military training to tertiary level students in order to motivate, train, organize and mobilize them for national defense preparedness.</p>
+                    <p>"Reserve Officers' Training Corps (ROTC)" is a program institutionalized under sections 38 and 39 of Republic Act No. 7077 designed to provide military training to tertiary level students in order to motivate, train, organize and mobilize them for national defense preparedness.</p>
                 </div>
                 <hr>
                 <div>
                     <h3 class="text-center">CWTS</h3>
-                    <p>The course mandated by Republic Act No. 9163, otherwise known as the National Service Training Act of 2001, aims to enhance the civic consciousness of the students “by developing the ethics of service and patriotism” while undergoing Civic Welfare Training Service (CWTS).</p>
+                    <p>The course mandated by Republic Act No. 9163, otherwise known as the National Service Training Act of 2001, aims to enhance the civic consciousness of the students "by developing the ethics of service and patriotism" while undergoing Civic Welfare Training Service (CWTS).</p>
                 </div>
             </div>
         </section>
@@ -1570,6 +1761,11 @@ function deleteAnnouncement(id) {
             }, 20);
         });
 
+        function confirmLogout() {
+            if (confirm("Do you want to Logout?")) {
+                window.location.href = "logout.php";
+            }
+        }
 
         
         </script>
@@ -1580,4 +1776,8 @@ function deleteAnnouncement(id) {
         </header>
     </body>
 
+</html>
+
+
+</body>
 </html>

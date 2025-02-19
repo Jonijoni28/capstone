@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="slsulogo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registration</title>
     <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
@@ -13,12 +14,16 @@
             box-sizing: border-box;
         }
 
-        body {
-            background-image: url(backgroundss.jpg);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+body {
+    background: url('backgroundss.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
 
         /* Preloader styles */
         #preloader {
@@ -238,11 +243,14 @@
             display: flex;
             justify-content: start;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 15px;
+            font-size: 18px;
         }
 
-        .checkbox-group input {
-            margin-right: 10px;
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
         }
 
         /* Modal styles */
@@ -263,16 +271,23 @@
         .modal-content {
             background-color: #fff;
             margin: auto;
-            padding: 20px;
+            padding: 30px;
             border: 1px solid #888;
-            width: 50%;
+            width: 80%;
             text-align: center;
             border-radius: 8px;
             position: absolute;
-            top: 50%;
+            top: 56%;
             left: 50%;
             transform: translate(-50%, -50%);
             /* Center horizontally and vertically */
+            max-width: 900px;
+        }
+
+        .modal-content h2 {
+            font-size: 28px;
+            margin-bottom: 25px;
+            color: #0a3a20;
         }
 
         .modal-content p {
@@ -296,69 +311,69 @@
         }
 
         .terms-text {
-        text-align: left;
-        margin: 20px 0;
-        color: #333;
-        padding: 0 20px;
-    }
+            text-align: left;
+            margin: 20px 0;
+            color: #333;
+            padding: 0 20px;
+            font-size: 16px;
+        }
 
-    .terms-text h3 {
-        color: #0a3a20;
-        margin-bottom: 15px;
-    }
+        .terms-text h3 {
+            color: #0a3a20;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
 
-    .terms-text p {
-        line-height: 1.6;
-        margin-bottom: 10px;
-    }
+        .terms-text p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
 
-    .terms-text strong {
-        color: #0a3a20;
-    }
+        .terms-text strong {
+            color: #0a3a20;
+        }
 
-    .modal-content {
-        width: 70%; /* Increased width for better readability */
-        max-width: 800px;
-    }
+        .modal-buttons {
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+            padding: 15px 0;
+            border-top: 1px solid #ddd;
+        }
 
-    .modal-buttons {
-        position: sticky;
-        bottom: 0;
-        background-color: white;
-        padding: 15px 0;
-        border-top: 1px solid #ddd;
-    }
+        .agree-btn, .disagree-btn {
+            padding: 12px 35px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 15px;
+            min-width: 150px;
+        }
 
-    .agree-btn, .disagree-btn {
-    padding: 10px 30px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin: 10px;
-}
+        .agree-btn {
+            background-color: #0a3a20; /* SLSU green color */
+            color: white;
+        }
 
-.agree-btn {
-    background-color: #0a3a20; /* SLSU green color */
-    color: white;
-}
+        .agree-btn:hover {
+            background-color: #0c4526;
+        }
 
-.agree-btn:hover {
-    background-color: #0c4526;
-}
+        .disagree-btn {
+            background-color: #dc3545; /* Red color */
+            color: white;
+        }
 
-.disagree-btn {
-    background-color: #dc3545; /* Red color */
-    color: white;
-}
-
-.disagree-btn:hover {
-    background-color: #c82333;
-}
+        .disagree-btn:hover {
+            background-color: #c82333;
+        }
 
 
 #username-message {
+    color:white;
     display: block;
     font-size: 14px;
     margin-top: 5px;
@@ -369,6 +384,52 @@ input:disabled {
     cursor: not-allowed;
 }
 
+/* Add this inside your existing <style> tags */
+input[type="file"] {
+    color: black;
+    background-color: white;
+    padding: 5px;
+    border-radius: 8px;
+    width: 100%;
+}
+
+/* Style for the file input text */
+input[type="file"]::file-selector-button {
+    background-color: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+/* Hover effect for the button */
+input[type="file"]::file-selector-button:hover {
+    background-color: #096c37;
+}
+
+/* Add this to your existing style section */
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: black; /* Ensures text is visible */
+}
+
+.form-group select:focus {
+    outline: none;
+    border: 1px solid #28a745;
+}
+
+.form-group select option {
+    background-color: white;
+    color: black;
+}
 
     </style>
 </head>
@@ -400,17 +461,11 @@ input:disabled {
                     <div class="form-group">
                         <select name="title" required>
                             <option value="" disabled selected>Title</option>
-                            <option value="Archi">Architech</option>
-                            <option value="Atty">Atty.</option>
-                            <option value="Dean">Dean</option>
-                            <option value="Director">Director</option>
-                            <option value="Dr.">Dr.</option>
-                            <option value="Engr.">Engr.</option>
-                            <option value="Mr.">Mr.</option>
-                            <option value="Ms.">Ms.</option>
-                            <option value="Mrs.">Mrs.</option>
-                            <option value="Pres.">President</option>
-                            <option value="Prof.">Prof.</option>
+                            <option value="Instructor">Instructor</option>
+                            <option value="Assistant Instructor">Assistant Instructor</option>
+                            <option value="Assistant Prof">Associate Professor</option>
+                            <option value="Professor">Professor</option>
+                            <option value="Trainee Staff">Trainee Staff</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -423,14 +478,22 @@ input:disabled {
                         <input type="text" name="last_name" placeholder="Last Name" required />
                     </div>
                     <div class="form-group">
-                        <input type="text" name="suffix" placeholder="Suffix" />
+                        <select name="suffix" id="suffix">
+                            <option value="None">None</option>
+                            <option value="Jr.">Jr.</option>
+                            <option value="Sr.">Sr.</option>
+                            <option value="I">I</option>
+                            <option value="II">II</option>
+                            <option value="III">III</option>
+                            <option value="IV">IV</option>
+                            <option value="V">V</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <select name="sex" required>
                             <option value="" disabled selected>Sex</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
-                            <option value="Other">Other</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -449,14 +512,26 @@ input:disabled {
             <div class="form-section">
                 <h3>Affiliation</h3>
                 <div class="form-group">
-                    <input type="text" name="university" placeholder="University" required />
+                    <select name="university" required>
+                        <option value="" disabled selected>Select Campus</option>
+                        <option value="SLSU Alabat">SLSU Main Campus</option>
+                        <option value="SLSU Alabat">SLSU Alabat</option>
+                        <option value="SLSU Catanauan">SLSU Catanauan</option>
+                        <option value="SLSU Gumaca">SLSU Gumaca</option>
+                        <option value="SLSU Infanta">SLSU Infanta</option>
+                        <option value="SLSU Lucena">SLSU Lucena</option>
+                        <option value="SLSU Polillo">SLSU Polillo</option>
+                        <option value="SLSU Tagkawayan">SLSU Tagkawayan</option>
+                        <option value="SLSU Tayabas">SLSU Tayabas</option>
+                        <option value="SLSU Tiaong">SLSU Tiaong</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <input type="text" name="department" placeholder="Department" required />
                 </div>
 
                 <div class="form-group">
-                <input type="text" name="designation" value="instructor" readonly style="background-color: #f0f0f0; cursor: not-allowed;" />
+                    <input type="text" name="designation" value="Instructor" readonly style="background-color: #f0f0f0; cursor: not-allowed;" />
                 </div>
 
                 <div class="form-group">
@@ -479,9 +554,9 @@ input:disabled {
 
             <!-- User Account Section -->
             <div class="form-section">
-                <h3>User Account</h3>
+                <h3>Username</h3>
                 <div class="form-group">
-                    <input type="text" id="username" name="username" required>
+                    <input type="text" id="username" name="username" placeholder="Username" minlength="8" required>
                     <span id="username-message"></span>
                 </div>
                 <div class="form-group">
@@ -733,83 +808,93 @@ input:disabled {
         }
     });
 
-    // Add this to your existing script section
-    document.getElementById('username').addEventListener('input', function() {
-        const username = this.value.trim();
-        if (username.length > 0) {
-            // Create form data
-            const formData = new FormData();
-            formData.append('username', username);
-            
-            // Send request to check username
-            fetch('check_username.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.taken) {
-                    this.setCustomValidity('Username already taken');
-                    // Add visual feedback
-                    this.style.borderColor = '#ff6b6b';
-                    // Show message to user
-                    document.getElementById('username-message').textContent = 'Username already taken';
-                    document.getElementById('username-message').style.color = '#ff6b6b';
-                } else {
-                    this.setCustomValidity('');
-                    this.style.borderColor = '#51cf66';
-                }
-            });
-        }
-    });
-
-
-// Add this to your existing script section
-document.getElementById('username').addEventListener('input', function() {
+document.getElementById('username').addEventListener('input', function () {
     const username = this.value.trim();
-    if (username.length > 0) {
-        // Create form data
+    const usernameMessage = document.getElementById('username-message');
+
+    if (username.length === 0) {
+        this.setCustomValidity('Username cannot be empty.');
+        usernameMessage.textContent = 'Username cannot be empty.';
+        usernameMessage.style.color = '#white';
+        this.style.borderColor = '#white';
+    } else {
+        // Check availability if username is not empty
         const formData = new FormData();
         formData.append('username', username);
-        
-        // Send request to check username
+
         fetch('check_username.php', {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.taken) {
-                this.setCustomValidity('Username already taken');
-                // Add visual feedback
-                this.style.borderColor = '#ff6b6b';
-                // Show message to user
-                document.getElementById('username-message').textContent = 'Username already taken';
-                document.getElementById('username-message').style.color = '#ff6b6b';
-            } else {
-                this.setCustomValidity('');
-                this.style.borderColor = '#51cf66';
-                document.getElementById('username-message').textContent = 'Username available';
-                document.getElementById('username-message').style.color = '#51cf66';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.taken) {
+                    this.setCustomValidity('Username already taken.');
+                    usernameMessage.textContent = 'Username already taken.';
+                    usernameMessage.style.color = '#white';
+                    this.style.borderColor = '#white';
+                } else {
+                    this.setCustomValidity('');
+                    usernameMessage.textContent = 'Username available!';
+                    usernameMessage.style.color = '#white';
+                    this.style.borderColor = '#white';
+                }
+            })
+            .catch(() => {
+                this.setCustomValidity('Error checking username.');
+                usernameMessage.textContent = 'Error checking username.';
+                usernameMessage.style.color = '#white';
+                this.style.borderColor = '#white';
+            });
     }
 });
 
-    // Add this to prevent form submission if username is taken
-    document.getElementById('registerForm').addEventListener('submit', function(event) {
-        const username = document.getElementById('username');
-        if (username.value.trim() === '' || username.validity.customError) {
-            event.preventDefault();
-            alert('Please choose a different username.');
-            return false;
-        }
-    });
+// Password validation
+document.getElementById('password').addEventListener('input', function () {
+    const password = this.value.trim();
+    const passwordMessage = document.getElementById('password-message');
+
+    const specialCharPattern = /[!@#$%^&*(),.?":{}|<>]/;
+
+    if (password.length === 0) {
+        this.setCustomValidity('Password cannot be empty.');
+        passwordMessage.textContent = 'Password cannot be empty.';
+        passwordMessage.style.color = '#ff6b6b';
+        this.style.borderColor = '#ff6b6b';
+    } else if (password.length < 8) {
+        this.setCustomValidity('Password must be at least 8 characters long.');
+        passwordMessage.textContent = 'Password must be at least 8 characters long.';
+        passwordMessage.style.color = '#ff6b6b';
+        this.style.borderColor = '#ff6b6b';
+    } else if (!specialCharPattern.test(password)) {
+        this.setCustomValidity('Password must contain at least one special character.');
+        passwordMessage.textContent = 'Password must contain at least one special character (@, #, $, etc.).';
+        passwordMessage.style.color = '#ff6b6b';
+        this.style.borderColor = '#ff6b6b';
+    } else {
+        this.setCustomValidity('');
+        passwordMessage.textContent = 'Strong password!';
+        passwordMessage.style.color = '#51cf66';
+        this.style.borderColor = '#51cf66';
+    }
+});
+
+// Prevent form submission if username or password is invalid
+document.getElementById('registerForm').addEventListener('submit', function (event) {
+    const username = document.getElementById('username');
+    const password = document.getElementById('password');
+
+    if (username.value.trim() === '' || username.validity.customError || password.value.trim() === '' || password.validity.customError) {
+        event.preventDefault();
+        alert('Please enter a valid username and a strong password (8+ characters with a special character).');
+    }
+});
+
+
+
 
     </script>
 </body>
 
+</html>
 </html>

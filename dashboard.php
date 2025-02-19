@@ -1,7 +1,5 @@
 <?php
-    require_once("dashboardPHP.php");
-?>
-<?php
+require_once("dashboardPHP.php");
 require_once 'db_conn.php';
 session_start();
 
@@ -15,19 +13,19 @@ if (!(isset($_COOKIE['auth']) && $_COOKIE['auth'] == session_id() && isset($_SES
 $conn = connect_db();
 $user_id = $_SESSION['user_id'] ?? null;
 
-// Fetch data for the charts
-$rotcData = mysqli_query($conn, "SELECT COUNT(*) as count FROM `tbl_cwts` WHERE nstp = 'ROTC'") or die('query failed');
-$rotcCount = mysqli_fetch_assoc($rotcData)['count'];
+// Get the counts using the functions from dashboardPHP.php
+$totalCount = get_all_student_count();
+$rotcCount = get_rotc_student_count();
+$cwtsCount = get_cwts_student_count();
 
-$cwtsData = mysqli_query($conn, "SELECT COUNT(*) as count FROM `tbl_cwts` WHERE nstp = 'CWTS'") or die('query failed');
-$cwtsCount = mysqli_fetch_assoc($cwtsData)['count'];
-
-// Fetch data for the first chart (count per department)
+// Update department data query
 $departmentData = mysqli_query($conn, "
     SELECT department, 
            SUM(CASE WHEN nstp = 'ROTC' THEN 1 ELSE 0 END) AS rotc_count,
            SUM(CASE WHEN nstp = 'CWTS' THEN 1 ELSE 0 END) AS cwts_count
     FROM tbl_cwts
+    WHERE department IS NOT NULL
+    AND LEFT(school_id, 2) REGEXP '^[0-9]{2}'
     GROUP BY department
 ") or die('query failed');
 
@@ -44,38 +42,26 @@ while ($row = mysqli_fetch_assoc($departmentData)) {
 // Convert PHP array to JSON
 $chartDataJson = json_encode($chartData);
 
-// Fetch data for the third chart (count of gender per department)
-$genderData = mysqli_query($conn, "
-    SELECT department, 
-           SUM(CASE WHEN gender = 'Male' THEN 1 ELSE 0 END) AS male_count,
-           SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) AS female_count
-    FROM tbl_cwts
-    GROUP BY department
+// Update year data query to handle any two-digit year
+$yearData = mysqli_query($conn, "
+    SELECT 
+        CONCAT('20', LEFT(school_id, 2)) as year,
+        SUM(CASE WHEN nstp = 'ROTC' THEN 1 ELSE 0 END) as rotc_count,
+        SUM(CASE WHEN nstp = 'CWTS' THEN 1 ELSE 0 END) as cwts_count
+    FROM tbl_cwts 
+    WHERE LEFT(school_id, 2) REGEXP '^[0-9]{2}'
+    GROUP BY LEFT(school_id, 2)
+    ORDER BY LEFT(school_id, 2) ASC
 ") or die('query failed');
 
-// Prepare data for the third chart
-$genderChartData = [];
-while ($row = mysqli_fetch_assoc($genderData)) {
-    $genderChartData[] = [
-        'department' => $row['department'],
-        'male' => (int)$row['male_count'],
-        'female' => (int)$row['female_count']
+$lineChartData = [];
+while ($row = mysqli_fetch_assoc($yearData)) {
+    $lineChartData[] = [
+        'year' => $row['year'],
+        'rotc' => (int)$row['rotc_count'],
+        'cwts' => (int)$row['cwts_count']
     ];
 }
-
-// Convert PHP array to JSON
-$genderChartDataJson = json_encode($genderChartData);
-
-// Prepare data for the second chart
-$lineChartData = [
-    ['year' => '2018', 'rotc' => 10, 'cwts' => 20],
-    ['year' => '2019', 'rotc' => 30, 'cwts' => 40],
-    ['year' => '2020', 'rotc' => 50, 'cwts' => 70],
-    ['year' => '2021', 'rotc' => 80, 'cwts' => 100],
-    ['year' => '2022', 'rotc' => 60, 'cwts' => 90],
-    ['year' => '2023', 'rotc' => 90, 'cwts' => 110],
-    ['year' => '2024', 'rotc' => 100, 'cwts' => 120],
-];
 
 // Convert PHP array to JSON
 $lineChartDataJson = json_encode($lineChartData);
@@ -84,6 +70,7 @@ $lineChartDataJson = json_encode($lineChartData);
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="slsulogo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     
@@ -114,29 +101,21 @@ $lineChartDataJson = json_encode($lineChartData);
             }
         };
     </script>
-
-    <div class="header">
-        <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
-        <h1>Southern Luzon State University</h1>
-        <p>National Service Training Program</p>
-    </div>
-    
 </head>
 
 <body>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            text-decoration: none;
-            box-sizing: border-box;
-        }
 
-        body {
-            background: url('backgroundss.jpg');
-            background-position: center;
-        }
+body {
+    background: url('backgroundss.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
 
         .header p {
             margin-left: 150px;
@@ -214,6 +193,7 @@ $lineChartDataJson = json_encode($lineChartData);
             cursor: pointer;
             background: #0a3a20;
             border-radius: 3px;
+            z-index: 1001;
         }
 
         /* Button to open the sidebar */
@@ -244,7 +224,7 @@ $lineChartDataJson = json_encode($lineChartData);
 
         /* Hide the open button and show the close button when the sidebar is open */
         #check:checked~label #btn {
-            left: 250px;
+            left: 200px;
             opacity: 0;
             pointer-events: none;
         }
@@ -364,6 +344,96 @@ $lineChartDataJson = json_encode($lineChartData);
         input[type="number"] {
             min-width: 50px;
         }
+
+.header {
+    overflow: hidden;
+    background-color: #0a3a20;
+    color: white;
+    width: 100%;
+    position: relative;
+    transition: all .5s ease;
+}
+
+h1 {
+    margin-top: 30px;
+    margin-left: 150px;
+}
+
+.header p{
+    margin-left: 150px;
+    font-size: 20px;
+    color: white;
+}
+
+.headlogo{
+    width:-100%;
+    height:100px;   
+    float:left;
+    margin-top:10px;
+    margin-left:20px;
+    margin-bottom: 10px;
+ }
+
+ .firstlogo{
+    width:-150%;
+    height:150px;   
+    float:right;
+    margin-top:10px;
+    margin-left:20px;
+    margin-bottom: 10px;
+ }
+
+ .secondlogo{
+    width:-150%;
+    height:150px;   
+    float:left;
+    margin-top:10px;
+    margin-left:20px;
+    margin-bottom: 10px;
+ }
+ 
+.header {
+    overflow: hidden;
+    background-color: #0a3a20;
+    color: white;
+}
+
+.header .p{
+    color:white;
+}
+
+/* Create a wrapper for all content except sidebar */
+.content-wrapper {
+    transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
+}
+
+/* Adjust the content when sidebar is open */
+#check:checked ~ .content-wrapper {
+    margin-left: 150px;
+}
+
+/* Remove the existing body margin rule if present */
+#check:checked ~ body {
+    margin-left: 0;
+}
+
+/* Ensure header stays full width but shifts with content */
+.header {
+    width: 100%;
+    transition: margin-left .5s ease;
+}
+
+#check:checked ~ .content-wrapper .header {
+    margin-left: 100px;
+}
+
+text.highcharts-credits {
+    display: none;
+}
     </style>
 
     <input type="checkbox" id="check">
@@ -406,80 +476,91 @@ $lineChartDataJson = json_encode($lineChartData);
             <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
             <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
             <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
-            <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+            <li><a href="#" onclick="confirmLogout()" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
         </ul>
     </div>
 
-    <div class="dashboard">
-        <div class="box">
-            <h3>Total Students</h3>
-            <p id="total-students"><?php echo get_all_student_count(); ?></p>
-        </div>
-        <div class="box">
-            <h3>ROTC Students</h3>
-            <p id="rotc-students"><?php echo get_rotc_student_count(); ?></p>
-        </div>
-        <div class="box">
-            <h3>CWTS Students</h3>
-            <p id="cwts-students"><?php echo get_cwts_student_count(); ?></p>
+    <div class="content-wrapper">
+        <div class="header">
+            <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
+            <h1>Southern Luzon State University</h1>
+            <p>National Service Training Program</p>
         </div>
     </div>
 
-    <div class="charts-container">
-        <figure class="highcharts-figure">
-            <div id="container1"></div>
-            <table id="datatable" style="display: none;">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>CWTS</th>
-                        <th>ROTC</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <th>CABHA</th>
-                        <td>100</td>
-                        <td>200</td>
-                    </tr>
-                    <tr>
-                        <th>CAg</th>
-                        <td>300</td>
-                        <td>100</td>
-                    </tr>
-                    <tr>
-                        <th>CAM</th>
-                        <td>400</td>
-                        <td>100</td>
-                    </tr>
-                    <tr>
-                        <th>CAS</th>
-                        <td>400</td>
-                        <td>600</td>
-                    </tr>
-                    <tr>
-                        <th>CEN</th>
-                        <td>800</td>
-                        <td>400</td>
-                    </tr>
-                    <tr>
-                        <th>CIT</th>
-                        <td>200</td>
-                        <td>700</td>
-                    </tr>
-                </tbody>
-            </table>
-        </figure>
+        <div class="dashboard">
+            <div class="box">
+                <h3>Total Students</h3>
+                <p id="total-students"><?php echo $totalCount; ?></p>
+            </div>
+            <div class="box">
+                <h3>ROTC Students</h3>
+                <p id="rotc-students"><?php echo $rotcCount; ?></p>
+            </div>
+            <div class="box">
+                <h3>CWTS Students</h3>
+                <p id="cwts-students"><?php echo $cwtsCount; ?></p>
+            </div>
+        </div>
 
-        <figure class="highcharts-figure">
-            <div id="container2"></div>
-        </figure>
-        
-        <!-- New third chart -->
-        <figure class="highcharts-figure">
-            <div id="container3"></div>
-        </figure>
+        <div class="charts-container">
+            <figure class="highcharts-figure">
+                <div id="container1"></div>
+                <table id="datatable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>CWTS</th>
+                            <th>ROTC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>CABHA</th>
+                            <td>100</td>
+                            <td>200</td>
+                        </tr>
+                        <tr>
+                            <th>CAg</th>
+                            <td>300</td>
+                            <td>100</td>
+                        </tr>
+                        <tr>
+                            <th>CAM</th>
+                            <td>400</td>
+                            <td>100</td>
+                        </tr>
+                        <tr>
+                            <th>CAS</th>
+                            <td>400</td>
+                            <td>600</td>
+                        </tr>
+                        <tr>
+                            <th>CEN</th>
+                            <td>800</td>
+                            <td>400</td>
+                        </tr>
+                        <tr>
+                            <th>CIT</th>
+                            <td>200</td>
+                            <td>700</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+
+            <figure class="highcharts-figure">
+                <div id="container2"></div>
+            </figure>
+            
+            <!-- New third chart -->
+            <figure class="highcharts-figure">
+                <div id="container3"></div>
+            </figure>
+        </div>
     </div>
+
+
 
     <script>
         function initializeCharts() {
@@ -520,53 +601,108 @@ $lineChartDataJson = json_encode($lineChartData);
                 title: {
                     text: 'Distribution of Students by Program'
                 },
+                tooltip: {
+                    pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+                },
+                plotOptions: {
+                    pie: {
+                        allowPointSelect: true,
+                        cursor: 'pointer',
+                        dataLabels: {
+                            enabled: true,
+                            distance: -50,
+                            format: '{point.percentage:.1f}%',
+                            style: {
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                color: 'white',
+                                textOutline: 'none'
+                            }
+                        },
+                        showInLegend: true
+                    }
+                },
+                legend: {
+                    enabled: true,
+                    align: 'right',
+                    layout: 'vertical',
+                    verticalAlign: 'middle'
+                },
                 series: [{
                     name: 'Students',
                     colorByPoint: true,
                     data: [{
                         name: 'ROTC',
-                        y: <?php echo $rotcCount; ?>,
+                        y: <?php echo get_rotc_student_count(); ?>,
                         sliced: true,
                         selected: true
                     }, {
                         name: 'CWTS',
-                        y: <?php echo $cwtsCount; ?>
+                        y: <?php echo get_cwts_student_count(); ?>
                     }]
                 }]
             });
 
-            // Third chart (gender distribution)
+            // Third chart (line graph - students per school year)
             Highcharts.chart('container3', {
                 chart: {
                     type: 'line'
                 },
                 title: {
-                    text: 'Gender Count by Department'
+                    text: 'Number of Students Each School Year'
                 },
                 xAxis: {
-                    categories: <?php echo json_encode(array_column($genderChartData, 'department')); ?>,
+                    categories: <?php echo json_encode(array_column($lineChartData, 'year')); ?>,
                     title: {
-                        text: 'Department'
+                        text: 'School Year'
                     }
                 },
                 yAxis: {
                     title: {
-                        text: 'Student Count'
+                        text: 'Number of Students'
+                    },
+                    min: 0,
+                    allowDecimals: false
+                },
+                plotOptions: {
+                    line: {
+                        dataLabels: {
+                            enabled: true,
+                            format: '{y}'
+                        },
+                        marker: {
+                            enabled: true,
+                            radius: 4
+                        }
+                    }
+                },
+                tooltip: {
+                    formatter: function() {
+                        return '<b>' + this.series.name + '</b><br/>' +
+                               'Year: ' + this.x + '<br/>' +
+                               'Students: ' + this.y;
                     }
                 },
                 series: [{
-                    name: 'Male',
-                    data: <?php echo json_encode(array_column($genderChartData, 'male')); ?>
+                    name: 'ROTC',
+                    data: <?php echo json_encode(array_column($lineChartData, 'rotc')); ?>
                 }, {
-                    name: 'Female',
-                    data: <?php echo json_encode(array_column($genderChartData, 'female')); ?>
+                    name: 'CWTS',
+                    data: <?php echo json_encode(array_column($lineChartData, 'cwts')); ?>
                 }]
             });
         }
 
         // Add this to check if data is available
         console.log('Chart Data:', <?php echo json_encode($chartData); ?>);
-        console.log('Gender Data:', <?php echo json_encode($genderChartData); ?>);
+        console.log('Line Chart Data:', <?php echo json_encode($lineChartData); ?>);
+
+        function confirmLogout() {
+            if (confirm("Do you want to Logout?")) {
+                window.location.href = "logout.php";
+            }
+        }
+
     </script>
 
 </body>

@@ -49,8 +49,9 @@ $results = getAuditLogs($page, $records_per_page);
 
   <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="slsulogo.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Audit Log</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
       integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
@@ -59,11 +60,6 @@ $results = getAuditLogs($page, $records_per_page);
   </head>
 
   <body>
-    <div class="header">
-      <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
-      <h1>Southern Luzon State University</h1>
-      <p>National Service Training Program</p>
-    </div>
 
 
   
@@ -151,17 +147,30 @@ $results = getAuditLogs($page, $records_per_page);
         <li><a href="rotcStud.php"><i class="fa-solid fa-user"></i>ROTC Students</a></li>
         <li><a href="instructor.php"><i class="fa-regular fa-user"></i>Instructor</a></li>
         <li><a href="audit_log.php"><i class="fa-solid fa-folder-open"></i>Audit Log</a></li>
-        <li><a href="logout.php" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
+        <li><a href="#" onclick="confirmLogout()" class="logout-link"><i class="fa-solid fa-power-off"></i>Logout</a></li>
       </ul>
     </div>
 
+<div class="content-wrapper">
+    <div class="header">
+      <a href="homepage.php"><img src="slsulogo.png" class="headlogo"></a>
+      <h1>Southern Luzon State University</h1>
+      <p>National Service Training Program</p>
+    </div>
+</div>
+
 
     <style>
-      body {
-        background: url('backgroundss.jpg');
-        background-position: center;
-
-      }
+body {
+    background: url('backgroundss.jpg') no-repeat center center fixed;
+    background-size: cover;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
 
       /* Sidebar */
       .sidebar {
@@ -224,61 +233,93 @@ $results = getAuditLogs($page, $records_per_page);
       }
 
       /* Sidebar toggle button */
+ 
+
       #check {
-        display: none;
-      }
+            display: none;
+        }
 
-      /* Styling for the open button */
-      label #btn,
-      label #cancel {
-        position: absolute;
-        cursor: pointer;
-        background: #0a3a20;
-        border-radius: 3px;
-      }
+        /* Styling for the open button */
+        label #btn,
+        label #cancel {
+            position: absolute;
+            cursor: pointer;
+            background: #0a3a20;
+            border-radius: 3px;
+            z-index: 1001;
+        }
 
-      /* Button to open the sidebar */
-      label #btn {
-        left: 20px;
-        top: 130px;
-        font-size: 35px;
-        color: white;
-        padding: 6px 12px;
-        transition: all .5s;
-      }
+        /* Button to open the sidebar */
+        label #btn {
+            left: 20px;
+            top: 130px;
+            font-size: 35px;
+            color: white;
+            padding: 6px 12px;
+            transition: all .5s;
+        }
 
-      /* Button to close the sidebar */
-      label #cancel {
-        z-index: 1111;
-        left: -195px;
-        top: 170px;
-        font-size: 30px;
-        color: #fff;
-        padding: 4px 9px;
-        transition: all .5s ease;
-      }
+        /* Button to close the sidebar */
+        label #cancel {
+            z-index: 1111;
+            left: -195px;
+            top: 170px;
+            font-size: 30px;
+            color: #fff;
+            padding: 4px 9px;
+            transition: all .5s ease;
+        }
 
-      /* Toggle: When checked, open the sidebar */
-      #check:checked~.sidebar {
-        left: 0;
-      }
+        /* Toggle: When checked, open the sidebar */
+        #check:checked~.sidebar {
+            left: 0;
+        }
 
-      /* Hide the open button and show the close button when the sidebar is open */
-      #check:checked~label #btn {
-        left: 250px;
-        opacity: 0;
-        pointer-events: none;
-      }
+        /* Hide the open button and show the close button when the sidebar is open */
+        #check:checked~label #btn {
+            left: 200px;
+            opacity: 0;
+            pointer-events: none;
+        }
 
-      /* Move the close button when the sidebar is open */
-      #check:checked~label #cancel {
-        left: 195px;
-      }
+        /* Move the close button when the sidebar is open */
+        #check:checked~label #cancel {
+            left: 195px;
+        }
 
-      /* Ensure the content shifts when the sidebar is open */
-      #check:checked~body {
-        margin-left: 250px;
-      }
+        /* Ensure the content shifts when the sidebar is open */
+        #check:checked~body {
+            margin-left: 250px;
+        }
+
+        /* Create a wrapper for all content except sidebar */
+.content-wrapper {
+    transition: all .5s ease;
+    position: relative;
+    width: 100%;
+    margin-left: 0;
+    z-index: 1;
+}
+
+/* Adjust the content when sidebar is open */
+#check:checked ~ .content-wrapper {
+    margin-left: 150px;
+}
+
+/* Remove the existing body margin rule if present */
+#check:checked ~ body {
+    margin-left: 0;
+}
+
+/* Ensure header stays full width but shifts with content */
+.header {
+    width: 100%;
+    transition: margin-left .5s ease;
+}
+
+#check:checked ~ .content-wrapper .header {
+    margin-left: 100px;
+}
 
       .user-avatar {
         width: 80px;
@@ -552,6 +593,65 @@ dialog::backdrop {
     line-height: 1.5;
     color: #000;  /* Set to black */
     font-weight: 500;  /* Added medium font weight for better readability */
+}
+
+
+
+@media screen and (max-width: 2520px){
+
+
+    #searchInput { width: 300px;
+    left: 1700px;
+        
+    }
+
+
+}
+
+
+@media screen and (max-width: 1920px){
+
+
+    #searchInput { width: 300px;
+    left: 1550px;
+        
+    }
+
+
+}
+
+
+@media screen and (max-width: 1710px){
+
+    #searchInput { width: 300px;
+    left: 1350px;
+        
+    }
+
+
+}
+
+@media screen and (max-width: 1600px){
+
+
+
+    #searchInput { width: 300px; 
+    left: 1200px; 
+        
+    }
+
+}
+
+
+@media screen and (max-width: 1500px){
+
+
+    #searchInput { 
+    width: 300px;
+    left: 1050px;
+        
+    }
+
 }
 
     </style>
@@ -878,6 +978,12 @@ function confirmInstructor() {
         document.getElementById('selectAllCheckbox').checked = false;
         toggleSelectionActions();
       }
+      
+              function confirmLogout() {
+            if (confirm("Do you want to Logout?")) {
+                window.location.href = "logout.php";
+            }
+        }
 
     
     </script>

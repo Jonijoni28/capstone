@@ -1,16 +1,9 @@
 <?php
-$host = "localhost"; // Host name
-$username = "root"; // Mysql username
-$password = ""; // Mysql password
-$database = "login"; // Database name
+// Include the database connection file
+require_once 'db_conn.php';
 
-// Create connection
-$conn = new mysqli($host, $username, $password, $database);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Use the connect_db function to establish a connection
+$conn = connect_db();
 
 // CRUD Operations
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
